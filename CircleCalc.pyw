@@ -39,11 +39,17 @@ class CircleCalc:
 
         numberChosen = ttk.Combobox(self.tk, width=12, textvariable=self.unit, state='readonly')
         numberChosen['values'] = ("mm","cm","m")  # 设置下拉列表的值
-        numberChosen.grid(row=1, column=2)  # 设置其在界面中出现的位置  column代表列   row 代表行
+        numberChosen.grid(row=1, column=2,sticky=E)  # 设置其在界面中出现的位置  column代表列   row 代表行
         numberChosen.current(0)  # 设置下拉列表默认显示的值，0为 numberChosen['values'] 的下标值
         numberChosen.bind("<<ComboboxSelected>>",self.unit_change)
 
         #Checkbutton(self.tk, text="单位有效", variable=self.unit_change_enable_flag).grid(row=2, column=2,sticky=E)
+        namelst=['半径', '直径', '周长', '面积']
+        self.tree = ttk.Treeview(self.tk, columns=namelst, show='headings')
+        for x in namelst:
+            self.tree.column(x, width=100, anchor='center')
+            self.tree.heading(x,text=x)
+        self.tree.grid(row=5, column=0,columnspan=3)
 
 
         self.tk.mainloop()
@@ -73,6 +79,9 @@ class CircleCalc:
         self.perimeter.set(lst[2])
         self.area.set(lst[3])
 
+        #更新treeview
+        self.tree.insert('','end',values=lst)
+
     def clear(self):
         for x in self.lst:
             x.set(0)
@@ -90,6 +99,7 @@ class CircleCalc:
             self.area.set(self.area.get() * scale**2)
 
             self.unit_before = self.unit.get()
+
 
 
 
