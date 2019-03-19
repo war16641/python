@@ -1,6 +1,9 @@
 from tkinter import *
 from tkinter import ttk
+from numberwithdimension import FloatVarWithDimension
 import math
+
+
 
 class CircleCalc:
     """圆的计算器"""
@@ -12,10 +15,12 @@ class CircleCalc:
     def __init__(self):
         self.tk = Tk()
         self.tk.title("圆计算器")
-        self.radius=DoubleVar(self.tk)
-        self.diameter=DoubleVar(self.tk)
-        self.perimeter=DoubleVar(self.tk)
-        self.area=DoubleVar(self.tk)
+
+
+        self.radius=FloatVarWithDimension(self.tk,unit='mm')
+        self.diameter=FloatVarWithDimension(self.tk,unit='mm')
+        self.perimeter=FloatVarWithDimension(self.tk,unit='mm')
+        self.area=FloatVarWithDimension(self.tk,unit='mm',order=2)
         self.lst = [self.radius, self.diameter, self.perimeter, self.area]
 
         self.unit=StringVar(self.tk)
@@ -50,6 +55,8 @@ class CircleCalc:
             self.tree.column(x, width=100, anchor='center')
             self.tree.heading(x,text=x)
         self.tree.grid(row=5, column=0,columnspan=3)
+
+
 
 
         self.tk.mainloop()
@@ -87,18 +94,20 @@ class CircleCalc:
             x.set(0)
 
     def unit_change(self,evt):
-        #print(self.unit.get())
+        for x in self.lst:
+            x.get() # 从控件中载入值
+
         if self.unit.get() != self.unit_before:
             #print("单位改变:%s->%s"%(self.unit_before,self.unit.get()))
 
             # 改变4个值
-            scale=CircleCalc.unit_scale[self.unit_before]/CircleCalc.unit_scale[self.unit.get()]
-            self.radius.set(self.radius.get()*scale)
-            self.diameter.set(self.diameter.get() * scale)
-            self.perimeter.set(self.perimeter.get() * scale)
-            self.area.set(self.area.get() * scale**2)
-
+            for x in self.lst:
+                x.unit=self.unit.get()
             self.unit_before = self.unit.get()
+
+
+
+
 
 
 
