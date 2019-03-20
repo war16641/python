@@ -25,14 +25,24 @@ class ValueWithDimension:
                       'm':1000}
     mass_dimension={'kg':1,
                     't':1000}
+    time_dimesion={'ms':1e-3,
+                   's':1,
+                   'min':60,
+                   'h':3600}
     valid_dimension={'length':length_dimension,
-                     'mass':mass_dimension}
+                     'mass':mass_dimension,
+                     'time':time_dimesion}
 
     def __init__(self,value=0,*args):
-        """args是两个一组的，第一个指定单位类型可以是length mass 第二个指定阶数"""
+        """构造用法案例"""
+        """g=9.8 m*s^-2可用"""
+        """g=ValueWithDimension(9.8,"m*s^-2")"""
+        """g=ValueWithDimension(9.8,'m',1,'s',-2)"""
+
         self.value=value
         self.dimension={'length':SmallDimension('m',0),
-                        'mass':SmallDimension('kg',0)}
+                        'mass':SmallDimension('kg',0),
+                        'time':SmallDimension('s',0)}
         if 0!=len(args) % 2:
             if 1==len(args) and isinstance(args[0],str):
                 dtext=args[0]
@@ -170,10 +180,14 @@ class ValueWithDimension:
     @staticmethod
     def dimension_interpreter(dim):
         """根据具体的单位返回单位的类别"""
-        if dim in ValueWithDimension.length_dimension.keys():
-            return "length"
-        if dim in ValueWithDimension.mass_dimension.keys():
-            return "mass"
+        # if dim in ValueWithDimension.length_dimension.keys():
+        #     return "length"
+        # if dim in ValueWithDimension.mass_dimension.keys():
+        #     return "mass"
+        for k,v in ValueWithDimension.valid_dimension.items():
+            if dim in v.keys():
+                return k
+
         raise Exception("无效单位")
 
     @staticmethod
@@ -217,6 +231,10 @@ if __name__=="__main__":
     assert a-b ==b
     tc.assertRaises(None,Exception,a.__add__,d)
     assert b**2==f
+
+    a=ValueWithDimension(60,'s')
+    b=ValueWithDimension(1,"min")
+    assert a==b
     # 测试结束
 
 
