@@ -1,4 +1,5 @@
 from copy import deepcopy
+from unittest import TestCase as tc
 class SmallDimension:
     """描述某一类量纲的单位和阶数"""
     def __init__(self,dim,unit):
@@ -117,10 +118,24 @@ class ValueWithDimension:
             return c
         raise Exception("类型错误")
 
+    def __pow__(self, power, modulo=None):
+        c=deepcopy(self)
+        c.value=c.value**power
+        for v in c.dimension.values():
+            v.order=v.order*power
+        return c
+
     def __eq__(self, other):
         if isinstance(other,(float,int)):# 与数比较
             tmp=[x.order for x in self.dimension.values()]
-            print(tmp)
+            tmp=[x for x in tmp if x!=0]
+            if len(tmp)==0:
+                if other==self.value:
+                    return True
+                else:
+                    return False
+            else:
+                return False
 
 
         other.switch_dimension(self.dimension_text_exclude_order)  # 统一单位
@@ -185,42 +200,29 @@ class ValueWithDimension:
 
 
 if __name__=="__main__":
-    # a=ValueWithDimension(10,'mm',1,'t',2)
-    # print(a)
-    # a.switch_dimension('kg')
-    # print(a)
-    # a.switch_dimension('kg','m')
-    # print(a)
-    # print(a.dimension_text)
-    # b=ValueWithDimension(1.1,"mm*t^2")
-    # print(b)
-    # b = ValueWithDimension(1.1, "mm^4*t^2")
-    # print(b)
-    # print(b.dimension_text_exclude_order)
-    # b.switch_dimension("mm,kg")
-    # print(b)
+    # 以下为测试所用 不能抛出异常
+    # 测试开始
+    a=ValueWithDimension(1,"mm*kg^-1")
+    b=ValueWithDimension(0.5,"m*t^-1")
+    c=ValueWithDimension(1.5,"m*t^-1")
+    d=ValueWithDimension(0.5,"m^2*t^-2")
+    e=2
+    e1=ValueWithDimension(2)
+    f=ValueWithDimension(0.25,"mm^2*kg^-2")
 
-    # a=ValueWithDimension(1.1,"mm*t")
-    # b = ValueWithDimension(2, "m*t")
-    # print(a)
-    # print(b)
-    # print(a.is_same_dimension(b))
-    # c=a+b
-    # print(c)
-    # print(a)
-    # print(b)
-    # a.value=6
-    # print(a)
-    # print(b)
-    # print(c)
-    #
-    # a=ValueWithDimension(1.1,"kg")
-    # b = ValueWithDimension(2, "mm*t")
-    # c=a/b
-    # print(c)
+    assert a+b==c
+    assert a*b==d
+    assert a/b==e
+    assert a/b==e1
+    assert a-b ==b
+    tc.assertRaises(None,Exception,a.__add__,d)
+    assert b**2==f
+    # 测试结束
 
-    a=ValueWithDimension(1.1)
-    print(a==1.1)
+
+
+
+
 
 
 
