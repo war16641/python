@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter import ttk
-from numberwithdimension import FloatVarWithDimension
+from floatvarwithdimension import FloatVarWithDimension
 import math
 
 
@@ -17,10 +17,10 @@ class CircleCalc:
         self.tk.title("圆计算器")
 
 
-        self.radius=FloatVarWithDimension(self.tk,unit='mm')
-        self.diameter=FloatVarWithDimension(self.tk,unit='mm')
-        self.perimeter=FloatVarWithDimension(self.tk,unit='mm')
-        self.area=FloatVarWithDimension(self.tk,unit='mm',order=2)
+        self.radius=FloatVarWithDimension(self.tk,dimension_text='mm')
+        self.diameter=FloatVarWithDimension(self.tk,dimension_text='mm')
+        self.perimeter=FloatVarWithDimension(self.tk,dimension_text='mm')
+        self.area=FloatVarWithDimension(self.tk,dimension_text='mm^2')
         self.lst = [self.radius, self.diameter, self.perimeter, self.area]
 
         self.unit=StringVar(self.tk)
