@@ -97,12 +97,34 @@ class ValueWithDimension:
         lst=re.split('[*/^]',x)
         tmp=[x for x in lst if not x.isdigit()]
         self.switch_dimension(",".join(tmp))
-    def switch_dimension(self,*args):
-        """args为多个单位 也可以是字符串"""
-        if len(args)==1 and isinstance(args[0],str):
-            args=args[0].split(",")
+    def switch_dimension(self,line,flag_auto=True):
+        """改变单位体系"""
+        """
+        line是字符串可以是：
+        kg,s,t
+        kg/s*t^2
+
+        flag_auto代表是否进行智能判断 开启智能判断可能会导致死循环
+        """
+
+        assert isinstance(line,str)
+        if '*' in line or '/' in line or '^' in line:
+            lst = re.split('[*/^]', line)
+            args = [x for x in lst if not x.isdigit()]
         else:
-            args=list(args)
+            args = line.split(",")
+
+        # 如果有力的单位将质量设为0 如果有质量的的单位将力设为0
+        if True==flag_auto:
+            for ut in args:
+                if self.dimension_interpreter(ut) == 'force':
+                    self.format(erase_dim='mass')
+                    break
+                if self.dimension_interpreter(ut) == 'mass':
+                    self.format(erase_dim='force')
+                    break
+
+
 
         for ut in args:
             tp=self.dimension_interpreter(ut)
@@ -120,16 +142,18 @@ class ValueWithDimension:
                 return False
         return True
 
+
+
     def format(self,erase_dim='force'):
         """由于时间 质量 长度 和力 是重复的，在一些情况下会造成麻烦 这里默认去掉力"""
         assert erase_dim in self.dimension.keys()
-        self.switch_dimension("kg,m,s,N") # 先转化为默认单位
+        self.switch_dimension("kg,m,s,N",False) # 先转化为默认单位
         if self.dimension[erase_dim].order==0:
             return
         tmp=deepcopy(self.dimensionless)
         scale=-1.0/tmp[erase_dim]
-        for v in tmp.values():
-            v=v*scale
+        for k in tmp.keys():
+            tmp[k]=tmp[k]*scale
         x=self.dimension[erase_dim].order
         for k,v in self.dimension.items():
             if k==erase_dim:
@@ -335,6 +359,18 @@ if __name__=="__main__":
     assert b*c==a
     d=ValueWithDimension(2,"N")
     e=a+d
+
+    a = ValueWithDimension(1.1, 'N')
+    a.switch_dimension('kg')
+    b= ValueWithDimension(1.1, 'kg*m*s^-2')
+    b.switch_dimension('N')
+
+    assert a.dimension['mass'].order==1
+    assert b.dimension['force'].order==1
+
+    print(a)
+    print(b)
+
     # 测试结束
 
 
