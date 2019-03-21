@@ -29,9 +29,17 @@ class ValueWithDimension:
                    's':1,
                    'min':60,
                    'h':3600}
+    force_dimesion={'N':1,
+                    'kN':1000}
     valid_dimension={'length':length_dimension,
                      'mass':mass_dimension,
-                     'time':time_dimesion}
+                     'time':time_dimesion,
+                     'force':force_dimesion}
+
+    dimensionless={'length':1,
+                     'mass':1,
+                     'time':-2,
+                     'force':-1} # 这个字典代表1=m*kg*s^-2*N^-1
 
     def __init__(self,value=0,*args):
         """构造用法案例"""
@@ -42,7 +50,8 @@ class ValueWithDimension:
         self.value=value
         self.dimension={'length':SmallDimension('m',0),
                         'mass':SmallDimension('kg',0),
-                        'time':SmallDimension('s',0)}
+                        'time':SmallDimension('s',0),
+                        'force':SmallDimension('N',0)}
         if 0!=len(args) % 2:
             if 1==len(args) and isinstance(args[0],str):
                 dtext=args[0]
@@ -81,10 +90,51 @@ class ValueWithDimension:
 
     def is_same_dimension(self,x):
         """判断两个数是否有相同的量纲"""
+        self.format()
+        x.format()
         for k in self.dimension.keys():
             if self.dimension[k]!=x.dimension[k]:
                 return False
         return True
+
+    def format(self,erase_dim='force'):
+        """由于时间 质量 长度 和力 是重复的，在一些情况下会造成麻烦 这里默认去掉力"""
+        assert erase_dim in self.dimension.keys()
+        self.switch_dimension("kg,m,s,N") # 先转化为默认单位
+        if self.dimension[erase_dim].order==0:
+            return
+        tmp=deepcopy(self.dimensionless)
+        scale=-1.0/tmp[erase_dim]
+        for v in tmp.values():
+            v=v*scale
+        x=self.dimension[erase_dim].order
+        for k,v in self.dimension.items():
+            if k==erase_dim:
+                v.order=0
+                continue
+            v.order+=tmp[k]*x
+        #
+        #
+        #
+        #
+        #
+        #
+        # if self.dimension['force'].order!=0:
+        #     if 'N'==self.dimension['force'].dim:
+        #         self.switch_dimension("kg,m,s")
+        #         self.dimension['length'].order+=self.dimension['force'].order
+        #         self.dimension['mass'].order += self.dimension['force'].order
+        #         self.dimension['time'].order -= self.dimension['force'].order*2
+        #         self.dimension['force'].order=0
+        #     elif 'kN'==self.dimension['force'].dim:
+        #         self.switch_dimension("t,m,s")
+        #         self.dimension['length'].order+=self.dimension['force'].order
+        #         self.dimension['mass'].order += self.dimension['force'].order
+        #         self.dimension['time'].order -= self.dimension['force'].order*2
+        #         self.dimension['force'].order=0
+        #     else:
+        #         raise Exception("不应该执行到这里")
+
 
     def __add__(self, other):
         assert self.is_same_dimension(other)
@@ -148,6 +198,9 @@ class ValueWithDimension:
                 return False
 
 
+
+        self.format()
+        other.format()
         other.switch_dimension(self.dimension_text_exclude_order)  # 统一单位
         if self.value!=other.value:
             return False
@@ -235,6 +288,20 @@ if __name__=="__main__":
     a=ValueWithDimension(60,'s')
     b=ValueWithDimension(1,"min")
     assert a==b
+
+
+    a=ValueWithDimension(1.1,"kN")
+    print(a)
+    b=ValueWithDimension(1100,"kg*m*s^-2")
+    assert a==b
+    print(a)
+
+    a=ValueWithDimension(1.1,'N')
+    b=ValueWithDimension(2.2,"kg*m")
+    c=ValueWithDimension(0.5,"s^-2")
+    assert b*c==a
+    d=ValueWithDimension(2,"N")
+    e=a+d
     # 测试结束
 
 
