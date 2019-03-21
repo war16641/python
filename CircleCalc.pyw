@@ -102,7 +102,7 @@ class CircleCalc:
 
             # 改变4个值
             for x in self.lst:
-                x.unit=self.unit.get()
+                x.switch_dimension(self.unit.get())
             self.unit_before = self.unit.get()
 
 

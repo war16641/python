@@ -1,5 +1,6 @@
 from copy import deepcopy
 from unittest import TestCase as tc
+import re
 class SmallDimension:
     """描述某一类量纲的单位和阶数"""
     def __init__(self,dim,unit):
@@ -18,6 +19,24 @@ class SmallDimension:
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+def save_dimension_wrapper(func):
+    """在对ValueWithDimension进行运算前 保存单位系统 在结束后复原单位系统"""
+    def wrapper(*args):
+        assert len(args)==2
+        one=args[0]
+        save_dimension1=one.dimension_text_exclude_order
+        second=args[1]
+        if isinstance(second,ValueWithDimension):
+            save_dimension2=second.dimension_text_exclude_order # 存储单位
+        v=func(*args)
+        if isinstance(second,ValueWithDimension):
+            second.switch_dimension(save_dimension2)
+        one.switch_dimension(save_dimension1)
+        return v
+    return wrapper
+
+
 
 class ValueWithDimension:
     length_dimension={'mm':1,
@@ -73,7 +92,11 @@ class ValueWithDimension:
                 raise Exception("重复指定同一个量纲")
             self.dimension[self.dimension_interpreter(dim)].order = od
 
-
+    def switch_dimension1(self,x):
+        """处理给定具体单位时的字符串如 x='kg/s*m^2'"""
+        lst=re.split('[*/^]',x)
+        tmp=[x for x in lst if not x.isdigit()]
+        self.switch_dimension(",".join(tmp))
     def switch_dimension(self,*args):
         """args为多个单位 也可以是字符串"""
         if len(args)==1 and isinstance(args[0],str):
@@ -135,15 +158,18 @@ class ValueWithDimension:
         #     else:
         #         raise Exception("不应该执行到这里")
 
-
+    @save_dimension_wrapper
     def __add__(self, other):
         assert self.is_same_dimension(other)
         # 单位会向第一个看齐
+        save_dimension=other.dimension_text_exclude_order
         other.switch_dimension(self.dimension_text_exclude_order)
         c=deepcopy(self)
         c.value+=other.value
+        other.switch_dimension(save_dimension)
         return c
 
+    @save_dimension_wrapper
     def __sub__(self, other):
         assert self.is_same_dimension(other)
         # 单位会向第一个看齐
@@ -152,24 +178,28 @@ class ValueWithDimension:
         c.value -= other.value
         return c
 
+    @save_dimension_wrapper
     def __truediv__(self, other):
         c = deepcopy(self)
         if isinstance(other, (float, int)):
             c.value = c.value / other
-            return
+            return c
         if isinstance(other, ValueWithDimension):
+            # save_dimension = other.dimension_text_exclude_order
             other.switch_dimension(self.dimension_text_exclude_order)  # 统一单位
             c.value = self.value / other.value
             for k in c.dimension.keys():
                 c.dimension[k].order -= other.dimension[k].order
+            # other.switch_dimension(save_dimension)
             return c
         raise Exception("类型错误")
 
+    @save_dimension_wrapper
     def __mul__(self, other):
         c=deepcopy(self)
         if isinstance(other,(float,int)):
             c.value=c.value*other
-            return
+            return c
         if isinstance(other,ValueWithDimension):
             other.switch_dimension(self.dimension_text_exclude_order) # 统一单位
             c.value=self.value*other.value
@@ -185,8 +215,11 @@ class ValueWithDimension:
             v.order=v.order*power
         return c
 
+    @save_dimension_wrapper
     def __eq__(self, other):
         if isinstance(other,(float,int)):# 与数比较
+            if other==0 and self.value==0:
+                return True
             tmp=[x.order for x in self.dimension.values()]
             tmp=[x for x in tmp if x!=0]
             if len(tmp)==0:
@@ -216,7 +249,7 @@ class ValueWithDimension:
     @property
     def dimension_text(self):
         """返回单位字符串"""
-        line = [v.dim + "^%d" % v.order for v in self.dimension.values()]
+        line = [v.dim + "^%f" % v.order for v in self.dimension.values()]
         line = "*".join(line)
         return line
 
