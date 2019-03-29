@@ -3,7 +3,7 @@ from tkinter import *
 from line import Line
 import itertools
 import smallmodel
-
+import copy
 import random
 
 
@@ -36,21 +36,37 @@ class Ball:
     distance_on_reflect = 5  # 反射时与边线最大的距离
     distance_on_collision = 5  # 碰撞发生的最大距离
 
-    def __init__(self, name='', x0=0, y0=0, dx=0, dy=0, court=None, canvas=None, color='red'):
+    def __init__(self, name='', x0=0, y0=0, dx=0, dy=0,maxv=10,acel=Vector(0,0),maxacel=0,court=None, canvas=None, color='red',strategy=None):
         self.name = name
         self.pos = Vector(x0, y0)
         self.speed = Vector(dx, dy)
+        self.maxv=maxv
+        self.acel=acel
+        self.maxacel=maxacel
         self.canvas = canvas
         self.court = court
         self.color = color
         self.pic = None
+        if None is strategy:
+            strategy=Strategy(self)
+        self.strategy=strategy
+
 
     def update(self, dt=0):
-        """根据速度 时间 更新坐标"""
+        """根据加速度 速度更新速度和位置
+        假定：加速度在dt内不变"""
         if dt == 0:
             return
+        self.pos +=self.speed*dt+self.acel*dt**2*0.5
+        speed1=self.speed+self.acel*dt
+        if self.maxv>-1 and speed1.modulus>self.maxv: # 不能超过最大速度
+            speed1.modulus=self.maxv
+            self.speed=speed1
 
-        self.pos += self.speed * dt
+        self.speed+=self.acel*dt
+
+        self.strategy.run_stategy()
+
 
         # 检查是否到了边界
         dis = [ln.distance_to_point(self.pos.x, self.pos.y) for ln in self.court.line_lst]
@@ -88,6 +104,7 @@ class Ball:
     def un_draw(self):
         self.draw('white')
 
+
     @staticmethod
     def distance(b1, b2):
         """返回两个球之间的距离"""
@@ -95,7 +112,34 @@ class Ball:
         v = b1.pos - b2.pos
         return v.modulus
 
+class Strategy:
+    """球的策略 通常在ball.update中调用"""
+    def __init__(self,ball=None):
+        if ball is None or not isinstance(ball,Ball):
+            raise Exception("要求是ball类")
+        self.ball=ball
 
+    def run_stategy(self):
+        """策略的具体"""
+        pass
+class StategyChase(Strategy):
+    """追赶一个球"""
+    def __init__(self,ball=None,chasetarget=None,):
+        """
+
+        :param ball:
+        :param chasetarget:
+        """
+        super().__init__(ball)
+        assert isinstance(chasetarget,Ball)
+        self.chasetarget=chasetarget
+
+
+    def run_stategy(self):
+        """直接把加速度指向目标"""
+        direction=self.chasetarget.pos-self.ball.pos
+        direction.modulus=self.ball.maxacel
+        self.ball.acel=direction
 class Football:
     def __init__(self):
         # 窗口和标题
@@ -112,37 +156,17 @@ class Football:
 
         # 产生球
         self.ball_list = []
-        self.generate_balllist()
+        self.generate_balllist_script1()
 
         for ball in self.ball_list:
             ball.draw()
 
-        # 绑定鼠标左键事件，交由processMouseEvent函数去处理，事件对象会作为参数传递给该函数
-        self.canvas.bind(sequence="<Button-1>", func=self.processMouseEvent)
-
-        # 绑定鼠标键盘事件，交由processKeyboardEvent函数去处理，事件对象会作为参数传递给该函数
-        self.canvas.bind(sequence="<Key>", func=self.processKeyboardEvent)
         self.canvas.after(1000, self.action)
 
         # 消息循环
         window.mainloop()
 
-    # 处理鼠标事件，me为控件传递过来的鼠标事件对象
-    def processMouseEvent(self, me):
-        pass
-        # print("me=", type(me))  # me= <class>
-        #
-        # print("位于屏幕", me.x_root, me.y_root)
-        # print("位于窗口", me.x, me.y)
-        # print("位于窗口", me.num)
-        # self.canvas.create_rectangle(me.x-5,me.y-5,me.x+5,me.y+5,edge='red')
 
-    # 处理鼠标事件，ke为控件传递过来的键盘事件对象
-    def processKeyboardEvent(self, ke):
-        pass
-        # print("ke.keysym", ke.keysym)  # 按键别名
-        # print("ke.char", ke.char)  # 按键对应的字符
-        # print("ke.keycode", ke.keycode)
 
     def action(self):
 
@@ -155,7 +179,7 @@ class Football:
                                                                           from_m2_to_m1=b1.pos - b2.pos,
                                                                           v10=b1.speed,
                                                                           v20=b2.speed,
-                                                                          e=0
+                                                                          e=1
                                                                           )
                     b1.speed, b2.speed = v1, v2
                     print("碰撞")
@@ -193,6 +217,26 @@ class Football:
                   canvas=self.canvas,
                   color='green')
         self.ball_list.extend([b1, b2])
+
+    def generate_balllist_script1(self):
+        """生成两个追赶的球"""
+        b1 = Ball(x0=30,
+                  y0=30,
+                  dx=5.1,
+                  dy=0,
+                  court=self.court,
+                  canvas=self.canvas)
+        b2 = Ball(x0=30,
+                  y0=200,
+                  dx=0,
+                  dy=0,
+                  court=self.court,
+                  canvas=self.canvas,
+                  color='green',
+                  maxacel=1)
+        b2.strategy=StategyChase(ball=b2,
+                                 chasetarget=b1)
+        self.ball_list.extend([b1,b2])
 
     def generate_ball(self):
         """产生一个球 这个函数主要设置如何产生"""
