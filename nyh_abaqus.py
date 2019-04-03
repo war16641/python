@@ -1,4 +1,7 @@
-"""this package is for abaqus ues"""
+# -*- coding:utf-8 -*-
+"""this package is for abaqus ues
+before use, initialize p
+p = mdb.models[modelname].parts['P20']"""
 from abaqus import *
 from abaqusConstants import *
 from caeModules import *
@@ -224,32 +227,32 @@ def get_arc_by_radius(radius,setname='selected_arc'):
         print("no arc selected")
     return lst
 
-def select_face_by_plane(normal,point=Vector3D(0,0,0),setname='selected_face'):
+def select_face_by_plane(normal,point=Vector3D(0,0,0),facename='selected_face'):
     """
     select all faces which are on the specified plane
     :param normal: the normal of the plane
     :param point: a point on the plane
-    :param setname:
+    :param facename: surface set name
     :return: faces list
     """
     assert isinstance(normal,Vector3D)
-    lst_o=select_face_by_normal(normal,setname)
+    lst_o=select_face_by_normal(normal,facename)
     lst=[]
     for f in lst_o:
         p1=f.pointOn[0]
         p1=Vector3D(p1[0],p1[1],p1[2])
         if abs((p1-point)*normal)<1e-6:
             lst.append(f)
-    p.Set(faces=convert_to_sequence(lst), name=setname)
+    p.Surface(side1Faces=convert_to_sequence(lst), name=facename)
     if len(lst) == 0:
         print("no face selected")
     return lst
 
-def select_face_by_normal(normal,setname='selected_face'):
+def select_face_by_normal(normal,facename='selected_face'):
     """
     select all faces whose normal are specified
     :param normal:
-    :param setname:
+    :param facename:surface set name
     :return:
     """
     assert isinstance(normal, Vector3D)
@@ -261,7 +264,7 @@ def select_face_by_normal(normal,setname='selected_face'):
         n=Vector3D(n[0],n[1],n[2])
         if Vector3D.angle(n,normal)<tol:
             lst.append(f)
-    p.Set(faces=convert_to_sequence(lst), name=setname)
+    p.Surface(side1Faces=convert_to_sequence(lst), name=facename)
     if len(lst) == 0:
         print("no face selected")
     return lst
