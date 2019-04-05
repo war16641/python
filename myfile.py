@@ -1,79 +1,95 @@
-import os
 """这个包是一些和文件操作相关的类"""
+import os
+import sys
+import re
 
-def change_file_type(path,oldtype,newtype):
+
+def rename_file(fullname: str, newname: str) -> None:
     """
-    更改文件目录下所有指定类型的文件 包含子文件夹
-    :param path: 路径
-    :param oldtype: 原文件类型 带点
-    :param newtype: 新文件类型 带点
+    重命名文件
+    :param fullname:文件全路径名 如"D:\测试文件\mydata.txt"
+    :param newname: 新文件名newdata.txt
     :return:
     """
-    assert isinstance(oldtype,str)
+    assert os.path.isfile(fullname)
+    assert isinstance(newname, str)
+    (pathname, tmpfilename) = os.path.split(fullname)
+    newfullname = os.path.join(pathname, newname)
+    try:
+        os.rename(fullname, newfullname)
+    except FileExistsError:
+        print("警告：新文件名已存在，重命名失败。(" + __file__ + " " + sys._getframe().f_code.co_name + ")")
+
+
+def retype_file(fullname: str, newtype: str) -> None:
+    """
+    重新制定文件的后缀名
+    :param fullname:
+    :param newtype: 后缀名 如  .txt 如果没有点 会自动加点
+    :return:
+    """
     assert isinstance(newtype, str)
-    print("搜索目录:"+path)
-    for file in os.listdir(path):
-        str1=file
-        if os.path.isfile(os.path.join(path, file)):# 是文件
-            nm=os.path.splitext(file)[0]# 获取前名
-            tp=os.path.splitext(file)[1]# 获取扩展名
-            if tp==oldtype:
-                str1+=" 命中"
-                # 修改文件扩展名
-                try:
-                    os.rename(os.path.join(path, file), os.path.join(path, nm + newtype))
-                except FileExistsError:
-                    pass
+    # 分解全路径文件名
+    (pathname, tmpfilename) = os.path.split(fullname)
+    (filename, extension) = os.path.splitext(tmpfilename)
+    if newtype[0] != '.':
+        newtype = '.' + newtype
+    try:
+        rename_file(fullname, filename + newtype)
+    except FileExistsError:
+        print("警告：新文件名已存在，更改文件类型失败。(" + __file__ + " " + sys._getframe().f_code.co_name + ")")
 
 
-            else:
-                pass
-
-        else:
-            str1+=" 目录:"+path+"\\"+file
-            # print(path+"\\"+file,oldtype,newtype)
-            change_file_type(os.path.join(path, file),oldtype,newtype)
-        print(str1)
-
-def remove_file_type(path,filetype):
+def del_file(fullname: str) -> None:
     """
-    删除文件夹下指定类型的文件 含子文件夹
-    :param path:
-    :param filetype: 文件类型 带点
+    删除文件
+    :param fullname:
     :return:
     """
+    if not os.path.isfile(fullname):
+        print("警告：文件不存在，取消删除文件操作。(" + __file__ + " " + sys._getframe().f_code.co_name + ")")
+        return
+    os.rename(fullname)
 
-    assert isinstance(filetype,str)
-    print("搜索目录:"+path)
-    for file in os.listdir(path):
-        str1=file
-        if os.path.isfile(os.path.join(path, file)):# 是文件
-            nm=os.path.splitext(file)[0]# 获取前名
-            tp=os.path.splitext(file)[1]# 获取扩展名
-            if tp==filetype:
-                str1+=" 命中"
-                # 修改文件扩展名
-                os.remove(os.path.join(path, file))
+
+def search_directory(directory: str, rex: str, func: callable, *args, **kwargs) -> None:
+    """
+    对文件夹下所有文件 含子文件夹 进行筛选 
+    筛选规则 使用正则表达式rex进行匹配
+    :param directory: 
+    :param rex: 正则表达式
+    :param func: 筛选成功后 进行的操作
+    :param args: 
+    :param kwargs: 
+    :return: 
+    """
+    assert os.path.exists(directory)
+    assert callable(func)
+    for filename in os.listdir(directory):
+        curent_full_name = os.path.join(directory, filename)
+        print(curent_full_name, end='')
+        if os.path.isfile(curent_full_name):  # 文件
+            flag = len(re.findall(rex, filename)) > 0
+            if flag is True:
+                print("->命中")
+                func(fullname=curent_full_name,
+                     *args, **kwargs)
             else:
-                pass
+                print("->未命中")
+        else:  # 文件夹
+            print("->文件夹")
+            search_directory(directory=curent_full_name,
+                             rex=rex,
+                             func=func,
+                             *args, **kwargs)
 
-        else:
-            str1+=" 目录:"+path+"\\"+file
-            # print(path+"\\"+file,oldtype,newtype)
-            remove_file_type(os.path.join(path, file),filetype)
-        print(str1)
 
 if __name__ == '__main__':
-    path = "E:\我的文档\py\lib"
-    # remove_file_type(path,'.pyc')
-    # change_file_type(path,'.pyc_dis','.py')
-    # count = 1
-
-    # for file in os.listdir(path):
-    #     print(file)
-    #     if os.path.isfile(file):
-    #         print('file')
-    #         print(os.path.splitext(file)[1])
-    #     else:
-    #         print('dir')
-    #     count += 1
+    line = 'test.txt'
+    m = 'txdt'
+    print(re.findall(m, line))
+    # print(re.match(m,line).group(0))
+    search_directory(directory="D:\测试文件",
+                     func=retype_file,
+                     rex='.txt$',
+                     newtype='txt1')
