@@ -3,6 +3,7 @@ import random
 import copy
 from typing import TypeVar, Generic
 import numpy
+from enum import Enum, unique
 
 T_Vector = TypeVar('T_Vector')
 T_Plane = TypeVar('T_Plane')
@@ -68,8 +69,8 @@ class Vector3D(Generic[T_Vector]):
         :param modulo:
         :return:
         """
-        assert power==2.0
-        return self*self
+        assert power == 2.0
+        return self * self
 
     def __eq__(self, other: (T_Vector, int)) -> bool:
         if isinstance(other, Vector3D):
@@ -128,7 +129,16 @@ class Vector3D(Generic[T_Vector]):
         v1_st.modulus = 1
         v2_st = copy.deepcopy(v2)
         v2_st.modulus = 1
-        return v1_st == v2_st
+        return 1 - abs(v1_st * v2_st) < Vector3D.tol_for_eq
+
+    def is_perpendicular(self, other: T_Vector) -> bool:
+        """
+        判断是否垂直
+        :param other:
+        :return:
+        """
+        assert isinstance(other, Vector3D)
+        return self * other == 0
 
     @property
     def modulus(self) -> float:
@@ -198,6 +208,14 @@ class Plane3D(Generic[T_Plane]):
 class Line3D(Generic[T_Line]):
     """线"""
 
+    @unique
+    class PositionRelation(Enum):  # 位置关系枚举类
+        parallel = 1
+        perpendicular = 2
+        intersect = 3
+        non_intersect = 4
+        collinear = 5
+
     def __init__(self,
                  direction: T_Vector,
                  point: T_Vector = Vector3D(0, 0, 0)
@@ -221,23 +239,50 @@ class Line3D(Generic[T_Line]):
         return Vector3D.is_parallel(item - self.point, self.direction)
 
     @staticmethod
-    def distance_between_two_lines(elo1:T_Line,elo2:T_Line)->float:
+    def distance_between_two_lines(elo1: T_Line, elo2: T_Line) -> float:
         """
         两个线之间的距离
+        警告：当两个线平行的时候 返回的距离为0
         :param elo1:
         :param elo2:
         :return:
         """
-        assert isinstance(elo1,Line3D)
-        assert isinstance(elo2,Line3D)
-        A=numpy.matrix([[2*elo1.direction**2,-2*elo1.direction*elo2.direction],
-                        [-2*elo1.direction*elo2.direction,2*elo2.direction**2]])
-        b=numpy.matrix([[2*elo1.direction*elo2.point-2*elo1.direction*elo1.point],
-                        [2*elo2.direction*elo1.point-2*elo2.direction*elo2.point]])
-        xishu=A.I*b
-        t1=xishu[0,0]
-        t2=xishu[1,0]
-        return (elo1.point+t1*elo1.direction-elo2.point-t2*elo2.direction).modulus
+        assert isinstance(elo1, Line3D)
+        assert isinstance(elo2, Line3D)
+
+        # A=numpy.matrix([[2*elo1.direction**2,-2*elo1.direction*elo2.direction],
+        #                 [-2*elo1.direction*elo2.direction,2*elo2.direction**2]])
+        # b=numpy.matrix([[2*elo1.direction*elo2.point-2*elo1.direction*elo1.point],
+        #                 [2*elo2.direction*elo1.point-2*elo2.direction*elo2.point]])
+        # xishu=A.I*b
+        # t1=xishu[0,0]
+        # t2=xishu[1,0]
+        # return (elo1.point+t1*elo1.direction-elo2.point-t2*elo2.direction).modulus
+
+        t1 = Vector3D.cross_product(elo1.direction, elo2.direction)  # 先得到最短垂线的方向
+        t2 = elo1.point - elo2.point  # 取连接两条线的任一向量
+        return abs(t1 * t2)
+
+    def judge_position_relation(self, other: T_Line) -> PositionRelation:
+        """
+        判断两直线的最准确的位置关系
+        不相交时也不会平行
+        :param other:
+        :return: 平行 垂直 相交 不相交
+        """
+        assert isinstance(other, Line3D)
+        if Vector3D.is_parallel(self.direction, other.direction):  # 同向
+            tmp1 = self.point - other.point
+            if Vector3D.is_parallel(tmp1, self.direction):  # 共线
+                return self.PositionRelation.collinear
+            return self.PositionRelation.intersect
+        if self.distance_between_two_lines(self, other) < Vector3D.tol_for_eq:  # 共面
+            if self.direction.is_perpendicular(other.direction):
+                return self.PositionRelation.perpendicular
+            else:
+                return self.PositionRelation.intersect
+        else:  # 不相交
+            return self.PositionRelation.non_intersect
 
 
 if __name__ == '__main__':
@@ -278,12 +323,13 @@ if __name__ == '__main__':
     c = Vector3D(1, 4, 3)
     assert b in a
     assert c not in a
-    assert b.distance_to_line(a)==0
-    assert c.distance_to_line(a)==5.
+    assert b.distance_to_line(a) == 0
+    assert c.distance_to_line(a) == 5.
 
     a = Line3D(Vector3D(1, 0, 0))
-    b = Line3D(Vector3D(0,1,0),Vector3D(0, 0, 4))
-    assert 4==Line3D.distance_between_two_lines(a,b)
-
-
+    b = Line3D(Vector3D(0, 1, 0), Vector3D(0, 0, 4))
+    assert 4 == Line3D.distance_between_two_lines(a, b)
+    assert a.judge_position_relation(b) == a.PositionRelation.non_intersect
+    c = Line3D(Vector3D(-1.3, 0, 0), Vector3D(111, 0, 0))
+    assert a.judge_position_relation(c) == a.PositionRelation.collinear
     # 测试结束
