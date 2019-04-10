@@ -172,6 +172,20 @@ class Vector3D(Generic[T_Vector]):
 
 class Plane3D(Generic[T_Plane]):
     """平面"""
+    @unique
+    class PositionRelationForPlane(Enum): # 面与面的位置关系 同样一下定义是严格互斥 不同于数学上的定义
+        coplane=1
+        parallel=2
+        perpendicular=3
+        skew=4
+
+
+    @unique
+    class PositionRelationForLine(Enum):
+        include=1
+        parallel=2
+        perpendicular = 3
+        skew = 4
 
     def __init__(self, normal: Vector3D, point: Vector3D):
         """
@@ -187,29 +201,72 @@ class Plane3D(Generic[T_Plane]):
     def __str__(self) -> str:
         return "normal:%s point:%s" % (self.normal, self.point)
 
-    def __contains__(self, item: Vector3D) -> bool:
+    def __contains__(self, item: (T_Vector,T_Line)) -> bool:
         """
-        判断点是否在平面上
+        判断点、线是否在平面上
         :param item:
         :return:
         """
-        assert isinstance(item, Vector3D)
-        if item.distance_to_plane(self) < Vector3D.tol_for_eq:
-            return True
+        if isinstance(item, Vector3D):
+            if item.distance_to_plane(self) < Vector3D.tol_for_eq:
+                return True
+            else:
+                return False
+        elif isinstance(item, Line3D):
+            if item.point.distance_to_plane(self) < Vector3D.tol_for_eq \
+                    and item.direction.is_perpendicular(self.normal):
+                return True
+            else:
+                return False
+
         else:
-            return False
-        # if self.point ==item:
-        #     return True
-        # if self.normal*(self.point-item)==0:
-        #     return True
-        # return False
+            raise Exception("type error")
+
+    def __judge_pr_plane(self,pl:T_Plane)->PositionRelationForPlane:
+        """
+        判断面与面的位置关系 只能内部调用
+        :param pl:
+        :return:
+        """
+        if Vector3D.is_parallel(self.normal,pl.normal): #至少平行
+            tmp1=self.point-pl.point
+            if tmp1.is_perpendicular(self.normal):
+                return self.PositionRelationForPlane.coplane
+            else:
+                return self.PositionRelationForPlane.parallel
+        else: # 相交了
+            if self.normal.is_perpendicular(pl.normal):
+                return self.PositionRelationForPlane.perpendicular
+            else:
+                return self.PositionRelationForPlane.skew
+
+    def __judge_pr_line(self,elo:T_Line)->PositionRelationForLine:
+        if self.normal.is_perpendicular(elo.direction):#至少平行
+            if elo.point in self:
+                return self.PositionRelationForLine.include
+            else:
+                return self.PositionRelationForLine.parallel
+        else:#非平行
+            if Vector3D.is_parallel(self.normal,elo.direction):
+                return self.PositionRelationForLine.perpendicular
+            else:
+                return self.PositionRelationForLine.skew
+
+    def judge_position_relation(self,item:(T_Line,T_Plane))->Enum:
+        if isinstance(item,Plane3D):
+            return self.__judge_pr_plane(item)
+        elif isinstance(item,Line3D):
+            return self.__judge_pr_line(item)
+        else:
+            raise Exception("type error")
+
 
 
 class Line3D(Generic[T_Line]):
     """线"""
 
     @unique
-    class PositionRelation(Enum):  # 位置关系枚举类
+    class PositionRelation(Enum):  # 线与线位置关系枚举类 以下的定义不是严格意义上的数学定义 它们之间是互斥的 比如intersect就只指不会平行也不会垂直也不会共线的相交
         parallel = 1
         perpendicular = 2
         intersect = 3
@@ -315,6 +372,27 @@ if __name__ == '__main__':
     c = Vector3D(1, 1.1, 2)
     assert c in p1
     assert a not in p1
+    elo=Line3D(Vector3D(0,1,0),Vector3D(2, -.2, 2))
+    assert elo in p1
+
+    a = Plane3D(normal=Vector3D(0,0,1),point=Vector3D(0,0,0))
+    b=Plane3D(normal=Vector3D(0,0,1),point=Vector3D(10,10,10))
+    assert a.judge_position_relation(b)==a.PositionRelationForPlane.parallel
+    b = Plane3D(normal=Vector3D(0, 1, 0), point=Vector3D(10, 10, 10))
+    assert a.judge_position_relation(b) == a.PositionRelationForPlane.perpendicular
+    b = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(10, 10, 0))
+    assert a.judge_position_relation(b) == a.PositionRelationForPlane.coplane
+    b = Plane3D(normal=Vector3D(1, 0, 1), point=Vector3D(10, 10, 0))
+    assert a.judge_position_relation(b) == a.PositionRelationForPlane.skew
+
+    elo=Line3D(direction=Vector3D(0,1,0),point=Vector3D(0,0,0))
+    assert a.judge_position_relation(elo) is a.PositionRelationForLine.include
+    elo = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D(0, 0, 10))
+    assert a.judge_position_relation(elo) is a.PositionRelationForLine.parallel
+    elo = Line3D(direction=Vector3D(0, 0, 1), point=Vector3D(0, 0, 10))
+    assert a.judge_position_relation(elo) is a.PositionRelationForLine.perpendicular
+    elo = Line3D(direction=Vector3D(1, 1, 1), point=Vector3D(0, 0, 10))
+    assert a.judge_position_relation(elo) is a.PositionRelationForLine.skew
     # 测试结束
 
     # 测试开始 直线
