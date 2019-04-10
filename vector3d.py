@@ -2,6 +2,7 @@ import math
 import random
 import copy
 from typing import TypeVar, Generic
+import numpy
 
 T_Vector = TypeVar('T_Vector')
 T_Plane = TypeVar('T_Plane')
@@ -59,6 +60,16 @@ class Vector3D(Generic[T_Vector]):
     def __rmul__(self, other: float) -> T_Vector:
         assert isinstance(other, (float, int))
         return self.__mul__(other)
+
+    def __pow__(self, power, modulo=None):
+        """
+
+        :param power:
+        :param modulo:
+        :return:
+        """
+        assert power==2.0
+        return self*self
 
     def __eq__(self, other: (T_Vector, int)) -> bool:
         if isinstance(other, Vector3D):
@@ -209,6 +220,25 @@ class Line3D(Generic[T_Line]):
         assert isinstance(item, Vector3D)
         return Vector3D.is_parallel(item - self.point, self.direction)
 
+    @staticmethod
+    def distance_between_two_lines(elo1:T_Line,elo2:T_Line)->float:
+        """
+        两个线之间的距离
+        :param elo1:
+        :param elo2:
+        :return:
+        """
+        assert isinstance(elo1,Line3D)
+        assert isinstance(elo2,Line3D)
+        A=numpy.matrix([[2*elo1.direction**2,-2*elo1.direction*elo2.direction],
+                        [-2*elo1.direction*elo2.direction,2*elo2.direction**2]])
+        b=numpy.matrix([[2*elo1.direction*elo2.point-2*elo1.direction*elo1.point],
+                        [2*elo2.direction*elo1.point-2*elo2.direction*elo2.point]])
+        xishu=A.I*b
+        t1=xishu[0,0]
+        t2=xishu[1,0]
+        return (elo1.point+t1*elo1.direction-elo2.point-t2*elo2.direction).modulus
+
 
 if __name__ == '__main__':
     # 测试开始
@@ -250,4 +280,10 @@ if __name__ == '__main__':
     assert c not in a
     assert b.distance_to_line(a)==0
     assert c.distance_to_line(a)==5.
+
+    a = Line3D(Vector3D(1, 0, 0))
+    b = Line3D(Vector3D(0,1,0),Vector3D(0, 0, 4))
+    assert 4==Line3D.distance_between_two_lines(a,b)
+
+
     # 测试结束
