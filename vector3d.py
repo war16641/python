@@ -295,7 +295,7 @@ class Plane3D(Generic[T_Plane]):
         if isinstance(item, Vector3D):
             return self.__projection_point(item)
         elif isinstance(item, Line3D):
-            pass
+            return self.__projection_line(item)
         else:
             raise Exception("type error")
 
@@ -312,6 +312,23 @@ class Plane3D(Generic[T_Plane]):
         n.modulus = m
         b = a - n
         return self.point + b
+
+    def __projection_line(self, elo: T_Line) -> T_Line:
+        """
+        直线在此平面内的投影
+        要求直线不能垂直于平面
+        :param elo:
+        :return:
+        """
+        assert isinstance(elo, Line3D)
+        assert self.judge_position_relation(
+            elo) is not self.PositionRelationForLine.perpendicular  # 直线不能垂直于此平面 否则不会产生投影直线
+        # 利用直线上任意两点在平面的投影计算投影直线
+        pt1 = elo.point
+        pt2 = elo.point + elo.direction
+        pt1_pro = self.projection(pt1)
+        pt2_pro = self.projection(pt2)
+        return Line3D.make_line_by_2_points(pt1_pro, pt2_pro)
 
 
 class Line3D(Generic[T_Line]):
@@ -346,6 +363,18 @@ class Line3D(Generic[T_Line]):
         """判断点是否在线上"""
         assert isinstance(item, Vector3D)
         return Vector3D.is_parallel(item - self.point, self.direction)
+
+    def __eq__(self, other: T_Line) -> bool:
+        assert isinstance(other, Line3D)
+        if not Vector3D.is_parallel(self.direction, other.direction):  # 方向要相同
+            return False
+        if self.point == other.point:  # 点相同
+            return True
+        else:
+            if Vector3D.is_parallel(self.direction, self.point - other.point):  # 两线任一点构成的向量与方向相同
+                return False
+            else:
+                return True
 
     @staticmethod
     def distance_between_two_lines(elo1: T_Line, elo2: T_Line) -> float:
@@ -402,6 +431,19 @@ class Line3D(Generic[T_Line]):
         """
         assert isinstance(other, Line3D)
         return Vector3D.angle(self.direction, other.direction)
+
+    @staticmethod
+    def make_line_by_2_points(point1: Vector3D, point2: Vector3D) -> T_Line:
+        """
+        通过直线上两点生成直线
+        :param point1:
+        :param point2:
+        :return:
+        """
+        assert isinstance(point1, Vector3D)
+        assert isinstance(point2, Vector3D)
+        assert point1 != point2
+        return Line3D(direction=point2 - point1, point=point1)
 
 
 if __name__ == '__main__':
@@ -474,6 +516,16 @@ if __name__ == '__main__':
     b = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 2))
     assert b.projection(pt) == Vector3D(10, 10, 2)
 
+    a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
+    line = Line3D(direction=Vector3D(0, 0, 1), point=Vector3D())
+    nose.tools.assert_raises(AssertionError, a.projection, line)
+    line = Line3D(direction=Vector3D(1, 1, 0), point=Vector3D(0, 0, 10))
+    line1 = Line3D(direction=Vector3D(1, 1, 0), point=Vector3D())
+    t = a.projection(line)
+    assert t == line1
+    line = Line3D(direction=Vector3D(0, 1, 1), point=Vector3D(0, 0, 0))
+    line1 = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D())
+    assert a.projection(line) == line1
     # 测试结束
 
     # 测试开始 直线
