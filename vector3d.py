@@ -142,46 +142,45 @@ class Vector3D(Generic[T_Vector]):
         assert isinstance(other, Vector3D)
         return self * other == 0
 
-    def mixed_product(self,b:T_Vector,c:T_Vector)->float:
+    def mixed_product(self, b: T_Vector, c: T_Vector) -> float:
         """
         混合积 [self,b,c]
         :param b:
         :param c:
         :return:
         """
-        assert isinstance(b,Vector3D)
-        assert isinstance(c,Vector3D)
-        return self*Vector3D.cross_product(b,c)
-
-    def decompose(self,a:T_Vector,b:T_Vector,c:T_Vector)->list:
-        """
-        将向量分解到3个方向上去 3个方向不能同平面
-        :param a: 只表示方向
-        :param b:
-        :param c:
-        :return: 3个向量组成的list
-        """
-        assert isinstance(a,Vector3D)
         assert isinstance(b, Vector3D)
         assert isinstance(c, Vector3D)
-        if abs(a.mixed_product(b,c))<self.tol_for_eq:
-            raise Exception("3个向量同平面")
-        #利用线性方程组求解
-        A=numpy.hstack((a.get_matrix(),b.get_matrix(),c.get_matrix()))
-        b=self.get_matrix()
-        eq=MyLinearAlgebraEquations(A=A,b=b)
-        assert eq.num_of_solutions is MyLinearAlgebraEquations.NumOfSolution.one #这种分解一定是唯一的
-        a1=a*eq.x[0]
-        b1 = a * eq.x[1]
-        c1 = a * eq.x[2]
-        return [a1,b1,c1]
+        return self * Vector3D.cross_product(b, c)
 
-    def get_matrix(self)->numpy.matrix:
+    def decompose(self, v1: T_Vector, v2: T_Vector, v3: T_Vector) -> list:
+        """
+        将向量分解到3个方向上去 3个方向不能同平面
+        :param v1: 只表示方向
+        :param v2:
+        :param v3:
+        :return: 3个向量组成的list
+        """
+        assert isinstance(v1, Vector3D)
+        assert isinstance(v2, Vector3D)
+        assert isinstance(v3, Vector3D)
+        assert abs(v1.mixed_product(v2, v3)) > self.tol_for_eq  # "3个向量不能是同平面"
+        # 利用线性方程组求解
+        A = numpy.hstack((v1.get_matrix(), v2.get_matrix(), v3.get_matrix()))
+        b = self.get_matrix()
+        eq = MyLinearAlgebraEquations(A=A, b=b)
+        assert eq.num_of_solutions is MyLinearAlgebraEquations.NumOfSolution.one  # 这种分解一定是唯一的
+        a1 = v1 * eq.x[0, 0]
+        b1 = v2 * eq.x[1, 0]
+        c1 = v3 * eq.x[2, 0]
+        return [a1, b1, c1]
+
+    def get_matrix(self) -> numpy.matrix:
         """
         将坐标以列矩阵的形式返回
         :return:
         """
-        t = numpy.matrix([self.x,self.y,self.z])
+        t = numpy.matrix([self.x, self.y, self.z])
         return t.T
 
     @property
@@ -216,6 +215,17 @@ class Vector3D(Generic[T_Vector]):
         assert isinstance(v2, Vector3D)
         t = v1 * v2 / (v1.modulus * v2.modulus)
         return math.acos(t)
+
+    @staticmethod
+    def make_random_vector()->T_Line:
+        """
+        随机产生一直线
+        :return:
+        """
+        return Vector3D(x=random.random(),
+                        y=random.random(),
+                        z=random.random())
+
 
 
 class Plane3D(Generic[T_Plane]):
@@ -328,11 +338,12 @@ class Plane3D(Generic[T_Plane]):
         else:
             raise Exception("type error")
 
-    def projection(self, item: (T_Line, T_Vector)) -> T_Line:
+    def projection(self, item: (T_Line, T_Vector)) -> (T_Line,T_Vector):
         """
-        直线elo在此平面内的投影所得的直线
+        直线elo在此平面内的投影所得的直线 或是
+        点在此平面的投影所得点
         elo不能垂直于平面
-        :param elo:
+        :param item:
         :return:
         """
         if isinstance(item, Vector3D):
@@ -371,7 +382,57 @@ class Plane3D(Generic[T_Plane]):
         pt2 = elo.point + elo.direction
         pt1_pro = self.projection(pt1)
         pt2_pro = self.projection(pt2)
-        return Line3D.make_line_by_2_points(pt1_pro, pt2_pro)
+        tmp=Line3D.make_line_by_2_points(pt1_pro, pt2_pro)
+        assert abs(elo.direction.mixed_product(tmp.direction,self.normal))<Vector3D.tol_for_eq
+        return tmp
+
+    def get_intersect_line(self,other:T_Plane)->T_Line:
+        """
+        计算此平面与另一平面的交线
+        要求此两平面的关系为斜交 垂直 否则返回None
+        :param other:
+        :return:
+        """
+        assert isinstance(other,Plane3D)
+        if self.judge_position_relation(other) not in (self.PositionRelationForPlane.skew,\
+                                                       self.PositionRelationForPlane.perpendicular):
+            return None
+        else:
+            d=Vector3D.cross_product(self.normal,other.normal)
+            tmp=Line3D.make_line_by_2_points(self.get_random_point(),other.get_random_point())#随机穿过两平面的一直线
+            # tmp=Line3D.make_line_by_2_points(Vector3D(10,0,0),Vector3D(0,1,10))
+            tmp1=self.projection(tmp)#该直线在此平面的投影
+            p=other.get_intersect_point(tmp1)#投影直线与另一平面的交点
+            return Line3D(direction=d,point=p)
+
+    def get_intersect_point(self,elo:T_Line)->T_Vector:
+        """
+        获取直线与此平面的交点
+        要求直线与平面： 斜交或者垂直 否则返回None
+        :param elo:
+        :return:
+        """
+        assert isinstance(elo,Line3D)
+        if self.judge_position_relation(elo) not in (self.PositionRelationForLine.skew,\
+                                                     self.PositionRelationForLine.perpendicular):
+            return None
+        else:
+            m=self.point-elo.point
+            t=(m*self.normal)/(elo.direction*self.normal)
+            return elo.point+t*elo.direction
+
+    def get_random_line(self)->T_Line:
+        """
+        随机获取平面上一直线
+        :return:
+        """
+        tmp=Line3D(direction=Vector3D.make_random_vector(),
+                   point=Vector3D.make_random_vector())#产生随机直线
+        return self.projection(tmp)#返回随机直线在平面上的投影
+
+    def get_random_point(self)->T_Vector:
+        """随机获得平面上一点"""
+        return self.get_random_line().get_random_point()
 
 
 class Line3D(Generic[T_Line]):
@@ -415,9 +476,9 @@ class Line3D(Generic[T_Line]):
             return True
         else:
             if Vector3D.is_parallel(self.direction, self.point - other.point):  # 两线任一点构成的向量与方向相同
-                return False
-            else:
                 return True
+            else:
+                return False
 
     @staticmethod
     def distance_between_two_lines(elo1: T_Line, elo2: T_Line) -> float:
@@ -454,6 +515,8 @@ class Line3D(Generic[T_Line]):
         assert isinstance(other, Line3D)
         if Vector3D.is_parallel(self.direction, other.direction):  # 同向
             tmp1 = self.point - other.point
+            if tmp1==0:
+                tmp1+=self.direction#处理当两个直线的点重合时的意外情况
             if Vector3D.is_parallel(tmp1, self.direction):  # 共线
                 return self.PositionRelation.collinear
             return self.PositionRelation.intersect
@@ -474,7 +537,28 @@ class Line3D(Generic[T_Line]):
         """
         assert isinstance(other, Line3D)
         return Vector3D.angle(self.direction, other.direction)
+    def get_intersect_point(self,other:T_Line)->T_Vector:
+        """
+        计算与另一直线的交点
+        要求此两直线位置关系为 相交 垂直 否则返回None
+        :param other:
+        :return:
+        """
+        assert isinstance(other,Line3D)
+        if self.judge_position_relation(other) not in (self.PositionRelation.perpendicular,\
+                                                       self.PositionRelation.intersect):
+            return None
+        else:
+            tmp=other.point-self.point
+            li=tmp.decompose(self.direction,other.direction,Vector3D.cross_product(self.direction,other.direction))
+            return self.point+li[0]
 
+    def get_random_point(self)->T_Vector:
+        """
+        随机获得直线上一点
+        :return:
+        """
+        return self.point+self.direction*random.uniform(0.1,100)
     @staticmethod
     def make_line_by_2_points(point1: Vector3D, point2: Vector3D) -> T_Line:
         """
@@ -508,6 +592,25 @@ if __name__ == '__main__':
     a = Vector3D(1, 1, 1)
     b = Vector3D(2, 2, 2)
     assert b == 2 * a
+
+    v = Vector3D(1, 1, 1)
+    a = Vector3D(1, 0, 0)
+    b = Vector3D(0, 1, 0)
+    b1 = Vector3D(1, 1, 0)
+    c = Vector3D(0, 0, 1)
+    nose.tools.assert_raises(AssertionError, v.decompose, a, b, b1)
+    li = v.decompose(a, b, c)
+    assert li[0] == a and li[1] == b and li[2] == c
+
+    elo1=Line3D(direction=Vector3D(1,0,0),point=Vector3D())
+    elo2=Line3D(direction=Vector3D(0,1,0),point=Vector3D(2,0,0))
+    assert Vector3D(2,0,0)==elo1.get_intersect_point(elo2) and Vector3D(2,0,0)==elo2.get_intersect_point(elo1)
+    elo2=Line3D(direction=Vector3D(0,1,0),point=Vector3D(2,0,1))
+    # nose.tools.assert_raises(AssertionError,elo1.get_intersect_point,elo2)
+    assert elo1.get_intersect_point(elo2) is None
+    elo2 = Line3D(direction=Vector3D(1, -1, 0), point=Vector3D(0, 1, 0))
+    assert Vector3D(1,0,0)==elo1.get_intersect_point(elo2)
+
 
     # 测试结束
 
@@ -569,6 +672,21 @@ if __name__ == '__main__':
     line = Line3D(direction=Vector3D(0, 1, 1), point=Vector3D(0, 0, 0))
     line1 = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D())
     assert a.projection(line) == line1
+
+    a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
+    assert a.get_random_line() in a
+    assert a.get_random_point() in a
+
+    a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
+    b=Plane3D(normal=Vector3D(1, 0, 0), point=Vector3D(0, 0, 0))
+    elo=Line3D(direction=Vector3D(0, 1, 0), point=Vector3D())
+    assert a.get_intersect_line(b)==elo
+
+    a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
+    elo=Line3D(direction=Vector3D(0, 0, 1), point=Vector3D(10,20,0))
+    assert a.get_intersect_point(elo) == Vector3D(10,20,0)
+    elo = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D(10, 20, 0))
+    assert a.get_intersect_point(elo) is None
     # 测试结束
 
     # 测试开始 直线
@@ -590,4 +708,7 @@ if __name__ == '__main__':
     a = Line3D(Vector3D(1, 0, 0))
     b = Line3D(Vector3D(0, 1, 0), Vector3D(0, 0, 4))
     assert a.angle(b) == math.pi / 2
+
+    a = Line3D(Vector3D(1, 0, 0))
+    assert a.get_random_point() in a
     # 测试结束
