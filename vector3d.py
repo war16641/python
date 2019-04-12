@@ -3,6 +3,7 @@ import random
 import copy
 from typing import TypeVar, Generic
 import numpy
+from GoodToolPython.linearalgebra import MyLinearAlgebraEquations
 from enum import Enum, unique
 import nose.tools
 
@@ -140,6 +141,48 @@ class Vector3D(Generic[T_Vector]):
         """
         assert isinstance(other, Vector3D)
         return self * other == 0
+
+    def mixed_product(self,b:T_Vector,c:T_Vector)->float:
+        """
+        混合积 [self,b,c]
+        :param b:
+        :param c:
+        :return:
+        """
+        assert isinstance(b,Vector3D)
+        assert isinstance(c,Vector3D)
+        return self*Vector3D.cross_product(b,c)
+
+    def decompose(self,a:T_Vector,b:T_Vector,c:T_Vector)->list:
+        """
+        将向量分解到3个方向上去 3个方向不能同平面
+        :param a: 只表示方向
+        :param b:
+        :param c:
+        :return: 3个向量组成的list
+        """
+        assert isinstance(a,Vector3D)
+        assert isinstance(b, Vector3D)
+        assert isinstance(c, Vector3D)
+        if abs(a.mixed_product(b,c))<self.tol_for_eq:
+            raise Exception("3个向量同平面")
+        #利用线性方程组求解
+        A=numpy.hstack((a.get_matrix(),b.get_matrix(),c.get_matrix()))
+        b=self.get_matrix()
+        eq=MyLinearAlgebraEquations(A=A,b=b)
+        assert eq.num_of_solutions is MyLinearAlgebraEquations.NumOfSolution.one #这种分解一定是唯一的
+        a1=a*eq.x[0]
+        b1 = a * eq.x[1]
+        c1 = a * eq.x[2]
+        return [a1,b1,c1]
+
+    def get_matrix(self)->numpy.matrix:
+        """
+        将坐标以列矩阵的形式返回
+        :return:
+        """
+        t = numpy.matrix([self.x,self.y,self.z])
+        return t.T
 
     @property
     def modulus(self) -> float:
