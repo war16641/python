@@ -4,11 +4,9 @@ from enum import Enum, unique
 
 
 class MyLinearAlgebraEquations:
-    # @unique
-    # class EquationType(Enum):
-    #     under_determined=0
-    #     well_determined=1
-    #     over_determined=2#依次是 不定  确定 超定
+    """
+    线性方程组的求解
+    """
 
     @unique
     class NumOfSolution(Enum):
@@ -25,6 +23,7 @@ class MyLinearAlgebraEquations:
         self.rank_A = numpy.linalg.matrix_rank(A)  # A的秩
         self.rank_Ab = numpy.linalg.matrix_rank(numpy.hstack((A, b)))  # 增广矩阵的秩
         self.num_of_x = A.shape[1]  # 未知数个数
+        self.x = None  # 方程的解（当无解时给出最小二乘解）
 
         # 先判断解的数量
         if self.rank_A == self.rank_Ab:
@@ -36,12 +35,15 @@ class MyLinearAlgebraEquations:
             self.num_of_solutions = self.NumOfSolution.no
 
         # 求解
-        self.x = None  # 无解时 x为none 其他情况 为方程的一个解
+
         if self.NumOfSolution.one is self.num_of_solutions:
             self.x = numpy.linalg.solve(a=A, b=b)
         elif self.NumOfSolution.many is self.num_of_solutions:
             (x, res, rank, s) = numpy.linalg.lstsq(a=A, b=b, rcond=None)
-            self.x = x  # 给出一个解
+            self.x = x  # 给出一个解即可
+        else:  # 无解给出最小二乘解
+            (x, res, rank, s) = numpy.linalg.lstsq(a=A, b=b, rcond=None)
+            self.x = x
 
 
 if __name__ == '__main__':
@@ -57,6 +59,10 @@ if __name__ == '__main__':
     sol = MyLinearAlgebraEquations(A=A, b=b)
     assert MyLinearAlgebraEquations.NumOfSolution.one == sol.num_of_solutions
     assert (x.T == sol.x).all()
+    t = sol.x
+
+    # print(t)
+    # print(type(t))
 
     # 无穷解
     A = numpy.matrix([[1, 1, 1],
@@ -66,4 +72,14 @@ if __name__ == '__main__':
     sol = MyLinearAlgebraEquations(A=A, b=b)
     assert MyLinearAlgebraEquations.NumOfSolution.many == sol.num_of_solutions
     assert numpy.linalg.norm(A * sol.x - b) < 1e-10
+
+    # 无解
+    A = numpy.matrix([[1, 1, 1],
+                      [2, 3, 1],
+                      [3, 4, 2]])
+    b = numpy.matrix([[2],
+                      [7],
+                      [-6]])
+    assert MyLinearAlgebraEquations.NumOfSolution.no == sol.num_of_solutions
+    assert sol.x is None
     # 测试结束
