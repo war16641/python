@@ -49,7 +49,7 @@ def del_file(fullname: str) -> None:
     if not os.path.isfile(fullname):
         print("警告：文件不存在，取消删除文件操作。(" + __file__ + " " + sys._getframe().f_code.co_name + ")")
         return
-    os.rename(fullname)
+    os.remove(fullname)
 
 
 def search_directory(directory: str, rex: str, func: callable, *args, **kwargs) -> None:
