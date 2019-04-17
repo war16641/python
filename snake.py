@@ -103,6 +103,7 @@ class Snake:
         for it in range(1,length0):
             self.segments.append(xy0-it*dxy)
         self.food=None
+        self.score=0
 
 
     def direction_interpreter(self,d):
@@ -188,6 +189,13 @@ class Snake:
         assert len(self.segments)>1#小于1无法添加
         sg=2*self.segments[-1]-self.segments[-2]
         self.segments.append(sg)
+        self.score+=1
+
+    def draw_score(self):
+        scoreSurf = BASICFONT.render('Score: %s' % (self.score), True, White)
+        scoreRect = scoreSurf.get_rect()
+        scoreRect.topleft = (Window_Width - 120, 10)
+        DISPLAYSURF.blit(scoreSurf, scoreRect)
 
 
 
@@ -210,6 +218,7 @@ if __name__ == '__main__':
     while True:
         #检查是否游戏结束
         if snake.check_gameover()==True:
+            print("游戏结束。分数：%d"%snake.score)
             show_gameover_screen()
         #画网格
         drawGrid()
@@ -241,6 +250,8 @@ if __name__ == '__main__':
         snake.draw()
         # 画食物
         draw_food(food)
+        #更新分数
+        snake.draw_score()
 
         #收尾工作
         pygame.display.update()
