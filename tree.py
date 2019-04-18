@@ -72,9 +72,32 @@ class Tree:
                 else:  # 为枝
                     lst.append(nd)
                     search_in_child_nodes(nd.child_nodes,lst)
-        lst = []
+        lst = [self.root_node]
         search_in_child_nodes(self.root_node.child_nodes,lst)
         return lst
+
+    def get_path(self,ancestor:T_Node,descendent:T_Node)->list:
+        """
+        寻找从一个节点到另一个节点的路
+        :param ancestor:
+        :param descendent:
+        :return: 如果没找到 返回空列表
+        """
+        assert isinstance(ancestor,Node)
+        assert isinstance(descendent,Node)
+        up=descendent.parent
+        path=[descendent]
+        while True:
+            if up==ancestor:
+                path.append(up)
+                path.reverse()
+                return path
+            elif up==rootNode:
+                return []
+            else:
+                path.append(up)
+                up=up.parent
+
 
 
 
