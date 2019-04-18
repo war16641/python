@@ -4,6 +4,13 @@ from enum import Enum, unique
 from enum import Enum, unique
 import operator
 import os
+class SpecialPoint:
+    """带有特殊花费的点 非特殊点的花费均为1
+    模拟可以通过的障碍 但需要比一般格子更高的花费"""
+    def __init__(self,vecotr:T_Vector,cost=1):
+        assert isinstance(vecotr,Vector3D)
+        self.vector=vecotr
+        self.cost=cost
 class RectMap:
     """
     带障碍的方块地图
@@ -13,17 +20,18 @@ class RectMap:
         ValidPoint=0#不属于obstacle的内部点
         OutPoint=1#外部点
         Obstacle=2#障碍点
-    def __init__(self,W:int,H:int,obstacles:list=[]):
+    def __init__(self, W:int, H:int, special_points:list=[],obstacles=[]):
         """
 
         :param W:
         :param H: 宽高 取值是0~W-1\H-1
-        :param obstacles: list of vector3d
+        :param special_points: list of MapPoint
         """
-        assert isinstance(obstacles,list)
+        assert isinstance(special_points, list)
         self.Width=W
         self.Height=H
         self.obstacles=obstacles
+        self.special_points=special_points
         self.topline=Line3D(direction=Vector3D(1,0,0),point=Vector3D())#四条边线
         self.bottomline = Line3D(direction=Vector3D(1,0, 0), point=Vector3D(0,H-1,0))
         self.rightline=Line3D(direction=Vector3D(0,1, 0), point=Vector3D(W-1,0,0))
@@ -89,6 +97,15 @@ class RectMap:
     #     #判断点是不是在地图上
     #     if self.judge_point_postion(pt) is in (self.PointPosition.InnerPoint,self.PointPosition.ob)
 
+    def get_cost(self,pt:T_Vector)->float:
+        #从相邻点走到这一点的花费
+        assert isinstance(pt,Vector3D)
+        assert self.judge_point_postion(pt) is self.PointPosition.ValidPoint#必须是有效点
+        for x in self.special_points:
+            if x.vector==pt:
+                return x.cost
+        return 1
+
 
 def A_star_search_algorithm(map,start,goal):
     """
@@ -136,7 +153,7 @@ def A_star_search_algorithm(map,start,goal):
             dead_leafs.append(active_node)
             # return [], -1  # 寻路失败
         for nd in neighbors:
-            node_data=NodeData(g=active_node.data.g+1,#默认每走一步 花费加1
+            node_data=NodeData(g=active_node.data.g+map.get_cost(nd),#默认每走一步 花费加1
                                h=estimate_distance(nd,goal),# 估算花费
                                pt=nd)
             # print(node_data)
@@ -205,18 +222,18 @@ if __name__ == '__main__':
                                       goal=goal)
     assert f == 4
 
-    map = RectMap(W=10, H=10, obstacles=[Vector3D(1,2),
-                                         Vector3D(2,2),
-                                         Vector3D(3,2),
-                                         Vector3D(4,2),
-                                         Vector3D(4,3),
-                                         Vector3D(4,4),
-                                         Vector3D(4,5),
-                                         Vector3D(4,6),
-                                         Vector3D(3,6),
-                                         Vector3D(2,6),
-                                         Vector3D(1,6)
-                                         ])
+    map = RectMap(W=10, H=10, obstacles=[Vector3D(1, 2),
+                                              Vector3D(2,2),
+                                              Vector3D(3,2),
+                                              Vector3D(4,2),
+                                              Vector3D(4,3),
+                                              Vector3D(4,4),
+                                              Vector3D(4,5),
+                                              Vector3D(4,6),
+                                              Vector3D(3,6),
+                                              Vector3D(2,6),
+                                              Vector3D(1,6)
+                                              ])
     start = Vector3D(0, 4)
     goal = Vector3D(6, 3)
     path, f = A_star_search_algorithm(map=map,
@@ -225,6 +242,49 @@ if __name__ == '__main__':
     for nd in path:
         print(nd.data.pt)
     assert f==11
+
+    map = RectMap(W=10, H=10, special_points=[SpecialPoint(Vector3D(1, 2), 100),
+                                              SpecialPoint(Vector3D(2, 2), 100),
+                                              SpecialPoint(Vector3D(3, 2), 100),
+                                              SpecialPoint(Vector3D(4, 2), 100),
+                                              SpecialPoint(Vector3D(4, 3), 100),
+                                              SpecialPoint(Vector3D(4, 4), 100),
+                                              SpecialPoint(Vector3D(4, 5), 100),
+                                              SpecialPoint(Vector3D(4, 6), 100),
+                                              SpecialPoint(Vector3D(3, 6), 100),
+                                              SpecialPoint(Vector3D(2, 6), 100),
+                                              SpecialPoint(Vector3D(1, 6), 100)
+                                              ])
+    start = Vector3D(0, 4)
+    goal = Vector3D(6, 3)
+    path, f = A_star_search_algorithm(map=map,
+                                      start=start,
+                                      goal=goal)
+    for nd in path:
+        print(nd.data.pt)
+    assert f == 11
+
+    map = RectMap(W=10, H=10, special_points=[SpecialPoint(Vector3D(1, 2), 100),
+                                              SpecialPoint(Vector3D(2, 2), 100),
+                                              SpecialPoint(Vector3D(3, 2), 100),
+                                              SpecialPoint(Vector3D(4, 2), 100),
+                                              SpecialPoint(Vector3D(4, 3), 2),
+                                              SpecialPoint(Vector3D(4, 4), 100),
+                                              SpecialPoint(Vector3D(4, 5), 100),
+                                              SpecialPoint(Vector3D(4, 6), 100),
+                                              SpecialPoint(Vector3D(3, 6), 100),
+                                              SpecialPoint(Vector3D(2, 6), 100),
+                                              SpecialPoint(Vector3D(1, 6), 100)
+                                              ])
+    start = Vector3D(0, 4)
+    goal = Vector3D(6, 3)
+    path, f = A_star_search_algorithm(map=map,
+                                      start=start,
+                                      goal=goal)
+    print('__________________')
+    for nd in path:
+        print(nd.data.pt)
+    assert f == 8
     #测试结束
 
 
