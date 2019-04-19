@@ -25,7 +25,7 @@ class RectMap:
 
         :param W:
         :param H: 宽高 取值是0~W-1\H-1
-        :param special_points: list of MapPoint
+        :param special_points: list of MapPoint 有特殊代价的地图点
         """
         assert isinstance(special_points, list)
         self.Width=W

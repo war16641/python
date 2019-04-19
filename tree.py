@@ -37,6 +37,7 @@ class Node(Generic[T_Node]):
 class Tree:
     """
     树 数据结构
+    来源：https://en.wikipedia.org/wiki/Tree_(data_structure)
     """
     def __init__(self,rootNode:T_Node):
         assert isinstance(rootNode,Node)
