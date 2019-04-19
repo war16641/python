@@ -146,7 +146,7 @@ def A_star_search_algorithm(map,start,goal):
             #寻找路
             return tree.get_path(ancestor=start_node,descendent=active_node),active_node.data.f
         neighbors=map.get_neighbors(active_node.data.pt)
-        tree_nodes=tree.get_all_nodes()
+        tree_nodes=tree.get_nodes_below()
         tree_nodes_data=[x.data.pt for x in tree_nodes]
         neighbors=[x for x in neighbors if x not in tree_nodes_data]
         if len(neighbors)==0:
@@ -160,7 +160,7 @@ def A_star_search_algorithm(map,start,goal):
             # os.system('pause')
             active_node.add_child(node_data)
         #在leaf中寻找最短的节点
-        leafs=tree.get_all_leafs()
+        leafs=tree.get_leafs_below()
         leafs=[x for x in leafs if x not in dead_leafs]
         if len(leafs)==0:
             return [],-1
