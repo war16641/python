@@ -1,10 +1,13 @@
-from typing import TypeVar, Generic
+from typing import TypeVar, Generic,List
 T_Node=TypeVar('T_Node')
-rootNode='root'#parent=rootnode的节点时根节点 这个值不重要
-# tbdNode='tbd'#父节点待定
+rootNode='root'#根节点标志 这个值不重要
+class Node:
+    pass
+
 class Node(Generic[T_Node]):
     """
     树上的节点
+    节点实例化通过：调用tree中make_root_node方法生成根节点 或 内部addchild方法
     """
     def __init__(self,parent,data=None):
         if not( isinstance(parent,Node) or parent == rootNode):
@@ -38,14 +41,27 @@ class Tree:
     """
     树 数据结构
     来源：https://en.wikipedia.org/wiki/Tree_(data_structure)
+    使用方法：
+    tree=Tree()#实例化树
+    rn=tree.make_root_node(数据1)#生成根节点
+    rn.add_child(数据2)#生成其他节点
     """
-    def __init__(self,rootNode:T_Node):
-        assert isinstance(rootNode,Node)
-        self.root_node=rootNode
+    def __init__(self):
+        self.root_node=None
+        pass
+
+    def make_root_node(self,data)->T_Node:
+        """
+        #返回生成的节点
+        :param data: 节点数据
+        :return:
+        """
+        self.root_node=Node(rootNode,data)
+        return self.root_node
 
 
 
-    def get_all_leafs(self) -> list:
+    def get_all_leafs(self) -> List[Node]:
         """
         获取所有的叶
         :return:
@@ -60,7 +76,8 @@ class Tree:
 
 
         lst = []
-        search_in_child_nodes(self.root_node.child_nodes,lst)
+        # search_in_child_nodes(self.root_node.child_nodes,lst)
+        search_in_child_nodes([self.root_node], lst)
         return lst
 
     def get_all_nodes(self)->list:
@@ -73,8 +90,8 @@ class Tree:
                 else:  # 为枝
                     lst.append(nd)
                     search_in_child_nodes(nd.child_nodes,lst)
-        lst = [self.root_node]
-        search_in_child_nodes(self.root_node.child_nodes,lst)
+        lst = []
+        search_in_child_nodes([self.root_node],lst)
         return lst
 
     def get_path(self,ancestor:T_Node,descendent:T_Node)->list:
@@ -103,18 +120,18 @@ class Tree:
 
 
 if __name__ == '__main__':
-    rn=Node(parent=rootNode,
-            data='0')
-    tree=Tree(rn)
+    tree=Tree()
+    rn=tree.make_root_node(data='0')
     n1=rn.add_child('01')
     n2=rn.add_child('02')
-
     n1.add_child('011')
     n1.add_child('012')
     n1.add_child('013')
     n2.add_child('021')
     n2.add_child('022')
-    for nd in tree.get_all_leafs():
-        print(nd.data)
-    for nd in tree.get_all_nodes():
-        print(nd.data)
+    assert len(tree.get_all_leafs())==5
+    assert len(tree.get_all_nodes())==8
+
+    tree = Tree()
+    rn = tree.make_root_node(data='0')
+    tree.get_all_leafs()[0]
