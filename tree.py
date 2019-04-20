@@ -1,10 +1,8 @@
 import copy
 import time
-import tkinter
-from threading import Thread
-from tkinter import ttk  # 导入内部包
 from typing import TypeVar, Generic, List
 
+import wx
 from nose.tools import *
 
 T_Node = TypeVar('T_Node')
@@ -91,13 +89,39 @@ class Tree(Generic[T_Tree]):
     rn.add_child(数据2)#生成其他节点
     """
 
+    class MyFrame(wx.Frame):
+        def __init__(self, parent=None, tree=None, valexp=None, app=None):
+            super().__init__(parent, -1, "请关闭gui", size=(450, 250))
+            # 检查树
+            assert isinstance(tree, Tree)
+            assert tree.root_node is not None
+            # 设置valexp的默认参数
+            if valexp is None:
+                valexp = lambda x: x.__str__()  # 默认字符串方法
+            self.tree = wx.TreeCtrl(self)  # 创建树形控件
+            root = self.tree.AddRoot(valexp(tree.root_node.data))  # 设置根
+            self.show_nodes_below(parent=root,
+                                  nds=tree.root_node.child_nodes,
+                                  valexp=valexp)
+            self.tree.Expand(root)  # 展开根节点
+            self.app = app
+
+        def run_to_mainloop(self):
+            self.app.MainLoop()
+
+        def show_nodes_below(self, parent, nds, valexp):
+            for nd in nds:
+                cur = self.tree.AppendItem(parent, valexp(nd.data))
+                if nd.degree != 0:  # 有子节点
+                    self.show_nodes_below(cur, nd.child_nodes, valexp)
+
     def __init__(self):
         self.root_node = None
         self._node_list = []  # 保存所有的节点
         self._leaf_list = []  # 保存所有的叶
         self._height = -1  # 在没有节点时高度为-1
-        # self.tk=None
-        # self.tk_thread=None
+        self.wx_frame = None
+        self.wx_app = wx.App()
         pass
 
     def make_root_node(self, data) -> T_Node:
@@ -231,29 +255,16 @@ class Tree(Generic[T_Tree]):
                 return x
         return None
 
-    def show_in_tk(self, valueexp=None) -> None:
-        # 在tk中显示树
-        # 始终在新县城中打开
-        tk_thread = Thread(target=self._show_in_tk, args=(valueexp,))
-        tk_thread.daemon = True  # 后台线程
-        tk_thread.start()
-        time.sleep(1)  # 主线程睡眠 tk才能显示
-
-    def _show_in_tk(self, valueexp=None):
-        # 在tk中显示树 由于线程之间尽量不要共享资源 这里把tk的显示代码尽量写在一个函数里面
-        def show_nodes_below(nd_lst: list, parentid, tree, valueexp):
-            for nd in nd_lst:
-                thisid = tree.insert(parentid, 'end', text=valueexp(nd.data))
-                if nd.degree != 0:  # 有后代
-                    show_nodes_below(nd.child_nodes, thisid, tree, valueexp)
-
-        if valueexp is None:
-            valueexp = lambda x: x.__str__()  # 默认显示的值是data的str方法
-        win = tkinter.Tk()
-        tree = ttk.Treeview(win)
-        show_nodes_below([self.root_node], '', tree, valueexp)
-        tree.pack()
-        win.mainloop()
+    def show_in_gui(self, valueexp=None) -> None:
+        """
+        此函数为阻塞 需要用户手动关闭
+        :param valueexp: 匿名函数 表示节点的text数据取data的什么值
+        :return:
+        """
+        print('请手动关闭gui')
+        self.frame = self.MyFrame(tree=self, app=self.wx_app, valexp=valueexp)
+        self.frame.Show()
+        self.frame.run_to_mainloop()
 
 
 def instance1():  # 实例化一个tree 用于调试
@@ -288,9 +299,9 @@ if __name__ == '__main__':
     n1.add_child('013')
     n2.add_child('021')
     n2.add_child('022')
-    tree.show_in_tk()
+    tree.show_in_gui()
     rn.data = '0'
-    tree.show_in_tk()
+    tree.show_in_gui()
     assert len(tree.get_leafs_below()) == 5
     assert len(tree.get_leafs_below(n1)) == 3
     assert len(tree.get_nodes_below()) == 8
@@ -314,7 +325,7 @@ if __name__ == '__main__':
     assert_raises(AttributeError, n2.__getattribute__, 'data')
 
     tree = instance1()
-    tree.show_in_tk()
+    tree.show_in_gui()
     n1 = tree.find_by_data('01121')
     n2 = n1.parent
     assert n2.degree == 1
