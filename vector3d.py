@@ -201,6 +201,49 @@ class Vector3D(Generic[T_Vector]):
         self.y *= v / t * sign
         self.z *= v / t * sign
 
+    def get_spheroidal_coordinates(self):
+        """
+        返回该点在求坐标系下的坐标
+        球坐标系定义见《微积分 下册》P146 图7-25
+        :return: phi,theta,r
+                phi -pi,pi
+                theta 0,pi
+                r >=0
+        """
+        phi=self.calculate_angle_in_xoy(self.x,self.y)
+        r=self.modulus
+        tmp1=(self.x**2+self.y**2)**0.5
+        theta=math.asin(tmp1/r)
+        return phi,theta,r
+        pass
+
+
+    @staticmethod
+    def calculate_angle_in_xoy(x:float=0.,y:float=0.)->float:
+        """
+        计算平面内的点(x,y)与原点连线 和 x轴形成的夹角 以x轴正向转向y轴正向为正
+        :param x:
+        :param y:
+        :return:-pi,pi
+        """
+        if x==0:
+            if y==0:
+                return 0.0 # 0向量与x轴夹角为0
+            elif y>0:
+                return math.pi/2
+            else:
+                return -math.pi/2
+
+        t=math.atan(y/x)
+
+        if x<0:
+            if y>0:
+                return t + math.pi
+            else:
+                return t-math.pi
+
+        return t
+
     @staticmethod
     def cross_product(v1, v2) -> T_Vector:
         """向量叉乘"""
@@ -559,6 +602,7 @@ class Line3D(Generic[T_Line]):
         :return:
         """
         return self.point+self.direction*random.uniform(0.1,100)
+
     @staticmethod
     def make_line_by_2_points(point1: Vector3D, point2: Vector3D) -> T_Line:
         """
@@ -572,6 +616,22 @@ class Line3D(Generic[T_Line]):
         assert point1 != point2
         return Line3D(direction=point2 - point1, point=point1)
 
+    def get_point(self,axis:str='x',v:float=0.)->T_Vector:
+        """
+        通过指定直线上一点某一个分量的值 返回此点坐标
+        :param axis:
+        :param v:
+        :return:
+        """
+        assert isinstance(axis,str)
+        assert isinstance(v,(int,float))
+        axis=axis.lower()
+        if axis == 'x':
+            assert self.direction.x>1e-15,'此直线不存在x=0的点'
+            t=(v-self.point.x)/self.direction.x
+            return self.point+t*self.direction
+        else:
+            raise Exception("参数错误")
 
 if __name__ == '__main__':
     # 测试开始
@@ -611,7 +671,21 @@ if __name__ == '__main__':
     elo2 = Line3D(direction=Vector3D(1, -1, 0), point=Vector3D(0, 1, 0))
     assert Vector3D(1,0,0)==elo1.get_intersect_point(elo2)
 
-
+    v = Vector3D(1, 1, 1)
+    phi,_,_=v.get_spheroidal_coordinates()
+    assert phi==math.pi/4
+    v = Vector3D(-1, -1, 1)
+    phi, _, _ = v.get_spheroidal_coordinates()
+    assert phi == -3*math.pi / 4
+    v = Vector3D(1, -1, 1)
+    phi, _, _ = v.get_spheroidal_coordinates()
+    assert phi == -math.pi / 4
+    v = Vector3D(-1, 1, 1)
+    phi, _, _ = v.get_spheroidal_coordinates()
+    assert phi == 3*math.pi / 4
+    v = Vector3D(-1, 3**0.5, 1)
+    phi, _, _ = v.get_spheroidal_coordinates()
+    assert abs(phi - 2 * math.pi / 3)<1e-15
     # 测试结束
 
     # 测试开始平面
@@ -711,4 +785,8 @@ if __name__ == '__main__':
 
     a = Line3D(Vector3D(1, 0, 0))
     assert a.get_random_point() in a
+
+    elo=Line3D(point=Vector3D(1,1,0),
+               direction=Vector3D(1,2,0))
+    assert elo.get_point('x',6)==Vector3D(6,11)
     # 测试结束
