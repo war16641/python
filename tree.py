@@ -1,7 +1,7 @@
 import copy
 import time
 from typing import TypeVar, Generic, List
-
+from GoodToolPython.mybaseclasses.selfdelete import SelfDelete
 import wx
 from nose.tools import *
 
@@ -10,7 +10,7 @@ T_Tree = TypeVar('T_Tree')
 rootNode = 'root'  # 根节点标志 这个值不重要
 
 
-class Node(Generic[T_Node]):
+class Node(Generic[T_Node],SelfDelete):
     """
     树上的节点
     节点实例化通过：调用tree中make_root_node方法生成根节点 或 内部addchild方法
@@ -69,14 +69,6 @@ class Node(Generic[T_Node]):
         siblings = self.parent.child_nodes
         siblings = [x for x in siblings if x != self]
         return siblings
-
-    def delete(self, ):
-        # 强制删除所有成员变量
-        # python内部采用gc机制 当引用为0时才真正删除对象 有时候需要在还有其他引用时仍删除对象
-        tmp = copy.deepcopy(list(vars(self).keys()))
-        for name in tmp:
-            delattr(self, name)
-        pass
 
 
 class Tree(Generic[T_Tree]):
@@ -334,5 +326,4 @@ if __name__ == '__main__':
     assert len(tree.get_leafs_below()) == 6
     assert n2.degree == 0
     assert n2 in tree.get_leafs_below()
-    time.sleep(10)
     # 测试结束
