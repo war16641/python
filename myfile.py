@@ -118,7 +118,7 @@ def get_numbers_from_line(line,additional_separator=''):
         #     numbers.append(number)
     return numbers
 
-def read_file(pathname,omit_lines='auto',column_expected=0,separator=''):
+def read_file(pathname,omit_lines='auto',style='separator',column_expected=0,separator='',width=0)->np.ndarray:
     """
     从文件中读取数据
     :param separator: 额外的分隔符 默认以空白字符风格
@@ -138,7 +138,7 @@ def read_file(pathname,omit_lines='auto',column_expected=0,separator=''):
     def print_error_info(row,line):#打印出错时的信息
         print("行数:%d"%row)
         print("该行:%s"%line)
-    def handle_line(line,separator):
+    def handle_line_on_separator(line,separator):
         """
         处理行
         :param line:
@@ -156,9 +156,36 @@ def read_file(pathname,omit_lines='auto',column_expected=0,separator=''):
         else:#有效行
             tpe = TypeOfLine.Valid
             return tpe, lst
+
+    def handle_line_on_fixedwidth(line,width):
+        #用固定宽度处理行
+        if line[-1]=='\n':
+            line=line[:-1]
+        line_width=len(line)
+        lst=[]
+        if line_width%width!=0:
+            tpe=TypeOfLine.Invalid
+            return tpe,[]
+        for i in range(0,line_width,width):
+            flag,number=is_number(line[i:i+width])
+            if flag==False:
+                tpe = TypeOfLine.Invalid
+                return tpe, []
+            else:
+                lst.append(number)
+        return TypeOfLine.Valid,lst
     data_list=[]
     row=0#指示当前行
     f=open(pathname,'r')
+    #处理读取风格
+    if style=='separator':
+        handle_line_method=handle_line_on_separator
+        handle_line_param=separator
+    elif style=='fixedwidth':
+        handle_line_method=handle_line_on_fixedwidth
+        handle_line_param=width
+    else:
+        raise Exception("参数错误")
     #先处理数据头
     flag,number=is_number(omit_lines)
     if flag:#指定跳过行
@@ -169,7 +196,7 @@ def read_file(pathname,omit_lines='auto',column_expected=0,separator=''):
         while True:
             row += 1
             line=f.readline()
-            tpe,lst=handle_line(line,separator)
+            tpe,lst=handle_line_method(line,handle_line_param)
             if tpe is not TypeOfLine.Valid:#有非数字文本 或者 空行
                 continue
             else:
@@ -189,7 +216,7 @@ def read_file(pathname,omit_lines='auto',column_expected=0,separator=''):
     row+=1
     line=f.readline()
     while line:
-        tpe, lst = handle_line(line,separator)
+        tpe, lst = handle_line_method(line,handle_line_param)
         if tpe is TypeOfLine.Valid:#有效行
             if len(lst)!=column_expected:
                 print_error_info(row,line)
@@ -239,7 +266,10 @@ if __name__ == '__main__':
     # print(is_number('-.1'))
     # print(is_number('   -.1e2'))
     # print(is_number('   -1.1e 2  '))
-    print(get_numbers_from_line(',  1.1e-1   ,    .2e+2    3e1 \t \n',additional_separator=','))
+    # print(get_numbers_from_line(',  1.1e-1   ,    .2e+2    3e1 \t \n',additional_separator=','))
     mat=read_file("F:\\的t1.txt",column_expected=3,separator=',')
+    assert mat.shape==(3,3)
+    mat=read_file("F:\的t1 - 副本.txt",style='fixedwidth',width=5)
     print(mat)
+
 
