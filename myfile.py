@@ -3,6 +3,7 @@ import os
 import sys
 import re
 from enum import Enum, unique
+import numpy as np
 
 def rename_file(fullname: str, newname: str) -> None:
     """

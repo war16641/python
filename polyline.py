@@ -3,9 +3,13 @@ from typing import List
 from nose.tools import assert_raises
 
 from GoodToolPython.vector3d import Vector3D, Line3D
-
+import matplotlib.pyplot as plt
+import numpy as np
 
 class Polylines2D:
+    """
+    平面多段线 x递增
+    """
     points_list: List[Vector3D]
     tol = 1e-15  # 判断相等的误差
 
@@ -16,7 +20,7 @@ class Polylines2D:
     def append(self, pt: Vector3D) -> None:
         assert isinstance(pt, Vector3D)
         if self.num_of_points > 0:
-            assert pt.x > self.points_list[-1].x, '要求x坐标严格递增'
+            assert pt.x > self.points_list[-1].x, '要求x坐标递增'
         self.points_list.append(pt)
 
     @property
@@ -89,6 +93,19 @@ class Polylines2D:
                 return elo.get_point('x', x).y
         raise Exception("x大于最大x值，不在多段线上")
 
+    def show(self):
+        #使用matplot显示
+        x,y=self.get_array()
+        plt.plot(x,y)
+        plt.show()
+        pass
+
+    def get_array(self):
+        x_list=[x.x for x in self.points_list]
+        y_list = [x.y for x in self.points_list]
+        x=np.array(x_list)
+        y=np.array(y_list)
+        return x,y
 
 if __name__ == '__main__':
     pl = Polylines2D()
@@ -111,3 +128,8 @@ if __name__ == '__main__':
     assert_raises(Exception, pl.get_value, -1.1)
     assert_raises(Exception, pl.get_value, 2.1)
     assert_raises(Exception,pl.get_slope,1,'stop')
+    pl.show()
+    pl.show()
+    pl = Polylines2D()
+    pl.append(Vector3D())
+    pl.show()
