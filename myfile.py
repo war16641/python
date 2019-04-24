@@ -100,16 +100,17 @@ def is_number(s):
     except ValueError:
         flag=False
     return flag,number
-def get_numbers_from_line(line):
+def get_numbers_from_line(line,additional_separator=''):
     """
     从字符串中得到所有的数
     数之间以空白字符连接
     :param line:
+    :arg additional_separator: 额外的分隔符
     :return: 数组成的列表 没有时返回空列表
     """
     numbers=[]
     line=line.strip()
-    for item in re.split(r'\s+', line):
+    for item in re.split('[\\s'+ additional_separator+']+', line):
         # print(item)
         flag,number=is_number(item)
         numbers.append(number)
@@ -117,9 +118,10 @@ def get_numbers_from_line(line):
         #     numbers.append(number)
     return numbers
 
-def read_file(pathname,omit_lines='auto',column_expected=0):
+def read_file(pathname,omit_lines='auto',column_expected=0,separator=''):
     """
     从文件中读取数据
+    :param separator: 额外的分隔符 默认以空白字符风格
     :param pathname:
     :param omit_lines: 'auto' 或者是大于0的整数
             'auto' 自动舍弃数据头的非数据行
@@ -136,7 +138,7 @@ def read_file(pathname,omit_lines='auto',column_expected=0):
     def print_error_info(row,line):#打印出错时的信息
         print("行数:%d"%row)
         print("该行:%s"%line)
-    def handle_line(line):
+    def handle_line(line,separator):
         """
         处理行
         :param line:
@@ -144,7 +146,7 @@ def read_file(pathname,omit_lines='auto',column_expected=0):
                 tpe 行的类型
                 lst 提取到的数据列表 只有当tpe=valid时，才有用
         """
-        lst=get_numbers_from_line(line)
+        lst=get_numbers_from_line(line,separator)
         if len(lst)==0:#空行 或者 空白行
             tpe=TypeOfLine.Null
             return tpe,lst
@@ -167,7 +169,7 @@ def read_file(pathname,omit_lines='auto',column_expected=0):
         while True:
             row += 1
             line=f.readline()
-            tpe,lst=handle_line(line)
+            tpe,lst=handle_line(line,separator)
             if tpe is not TypeOfLine.Valid:#有非数字文本 或者 空行
                 continue
             else:
@@ -187,7 +189,7 @@ def read_file(pathname,omit_lines='auto',column_expected=0):
     row+=1
     line=f.readline()
     while line:
-        tpe, lst = handle_line(line)
+        tpe, lst = handle_line(line,separator)
         if tpe is TypeOfLine.Valid:#有效行
             if len(lst)!=column_expected:
                 print_error_info(row,line)
@@ -237,18 +239,7 @@ if __name__ == '__main__':
     # print(is_number('-.1'))
     # print(is_number('   -.1e2'))
     # print(is_number('   -1.1e 2  '))
-    # print(get_numbers_from_line('  1.d1e-1       .2e+2    3e1 \t \n'))
-    # read_file("F:\\的t1.txt")
-    # print(os.path.isfile("F:\英雄时刻\\t1.txt"))
-    mat=read_file("F:\\的t1.txt",column_expected=3)
+    print(get_numbers_from_line(',  1.1e-1   ,    .2e+2    3e1 \t \n',additional_separator=','))
+    mat=read_file("F:\\的t1.txt",column_expected=3,separator=',')
     print(mat)
 
-# if __name__ == '__main__':
-#     line = 'test.txt'
-#     m = 'txdt'
-#     print(re.findall(m, line))
-#     # print(re.match(m,line).group(0))
-#     search_directory(directory="D:\测试文件",
-#                      func=retype_file,
-#                      rex='.txt$',
-#                      newtype='txt1')
