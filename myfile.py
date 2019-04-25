@@ -121,6 +121,10 @@ def get_numbers_from_line(line,additional_separator=''):
 def read_file(pathname,omit_lines='auto',style='separator',column_expected=0,separator='',width=0)->np.ndarray:
     """
     从文件中读取数据
+    :param style: 'separator' 'fixedwidth' 'matrix'
+            'separator' 使用分隔符创建的文件
+            'fixedwidth' 固定宽度
+            'matrix' 矩阵格式 返回列矩阵
     :param separator: 额外的分隔符 默认以空白字符风格
     :param pathname:
     :param omit_lines: 'auto' 或者是大于0的整数
@@ -174,6 +178,32 @@ def read_file(pathname,omit_lines='auto',style='separator',column_expected=0,sep
             else:
                 lst.append(number)
         return TypeOfLine.Valid,lst
+    def read_file_on_matrix(f,data_list,width,column_expected,row):
+        #处理data_list剥皮
+        data_list=data_list[0]
+        #已经读取了一行了
+        row += 1
+        line = f.readline()
+        pardon_one_error=False#允许发生一次列数不符合期望的错误
+        while line:
+            tpe, lst=handle_line_on_fixedwidth(line,width)
+            if tpe is TypeOfLine.Valid:  # 有效行
+                if len(lst) != column_expected and pardon_one_error==True:
+                    print_error_info(row, line)
+                    raise Exception("和期望的列数个数不一致")
+                elif len(lst) != column_expected and pardon_one_error==False:
+                    pardon_one_error=True
+            else:
+                print_error_info(row, line)
+                raise Exception("非有效数据行")
+            # 保存数据
+            data_list.extend(lst)
+            # 下一行
+            row += 1
+            line = f.readline()
+        f.close()
+        return data_list
+
     data_list=[]
     row=0#指示当前行
     f=open(pathname,'r')
@@ -184,6 +214,9 @@ def read_file(pathname,omit_lines='auto',style='separator',column_expected=0,sep
     elif style=='fixedwidth':
         handle_line_method=handle_line_on_fixedwidth
         handle_line_param=width
+    elif style=='matrix':
+        handle_line_method = handle_line_on_fixedwidth
+        handle_line_param = width
     else:
         raise Exception("参数错误")
     #先处理数据头
@@ -192,6 +225,13 @@ def read_file(pathname,omit_lines='auto',style='separator',column_expected=0,sep
         for i in range(omit_lines):
             row+=1
             f.readline()
+        #再读一行
+        row += 1
+        line=f.readline()
+        tpe, lst = handle_line_method(line, handle_line_param)
+        if tpe is not TypeOfLine.Valid:
+            print_error_info(row,line)
+            raise Exception("非有效行")
     elif omit_lines=='auto':
         while True:
             row += 1
@@ -203,7 +243,7 @@ def read_file(pathname,omit_lines='auto',style='separator',column_expected=0,sep
                 break
     else:
         raise Exception("参数错误")
-    #检查是否和期望的列数一致
+    #检查数据第一行是否和期望的列数一致
     if column_expected != 0 and column_expected!= len(lst):
         print_error_info(row,line)
         raise Exception("和期望的列数不一致")
@@ -212,6 +252,11 @@ def read_file(pathname,omit_lines='auto',style='separator',column_expected=0,sep
         column_expected=len(lst)
         #保存数据
         data_list.append(lst)
+    #使用matrix风格时比较特殊 采用专写的函数
+    if style=='matrix':
+        data_list=read_file_on_matrix(f,data_list,width,column_expected,row)
+        tmp= np.array(data_list)
+        return tmp.reshape(len(tmp),1)
     #读取下一行
     row+=1
     line=f.readline()
@@ -262,14 +307,12 @@ def read_file(pathname,omit_lines='auto',style='separator',column_expected=0,sep
 
 
 if __name__ == '__main__':
-    # print(is_number(' -.123E-12 '))
-    # print(is_number('-.1'))
-    # print(is_number('   -.1e2'))
-    # print(is_number('   -1.1e 2  '))
-    # print(get_numbers_from_line(',  1.1e-1   ,    .2e+2    3e1 \t \n',additional_separator=','))
-    mat=read_file("F:\\的t1.txt",column_expected=3,separator=',')
+    mat=read_file("F:\\的t1.txt",column_expected=3,separator=',',omit_lines=1)
     assert mat.shape==(3,3)
     mat=read_file("F:\的t1 - 副本.txt",style='fixedwidth',width=5)
+    assert mat.shape==(2,3)
+    mat = read_file("F:\的t1 - 副本.txt", style='matrix', width=5)
+    assert mat.shape==(6,1)
+    mat = read_file("F:\编辑3.txt", style='matrix', width=5)
     print(mat)
-
 
