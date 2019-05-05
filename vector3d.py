@@ -175,6 +175,23 @@ class Vector3D(Generic[T_Vector]):
         c1 = v3 * eq.x[2, 0]
         return [a1, b1, c1]
 
+    def get_coordinates_under_cartesian_coordinates_system(self,basic_vectors:tuple)->T_Vector:
+        """
+        将本向量在新的笛卡尔坐标系中分解 返回新坐标
+        :param basic_vectors: 新的笛卡尔坐标的基向量 这些基向量既不一定正交 也不一定是单位向量 但是要求不能共面
+        :return: 新笛卡尔坐标系的坐标 组成的向量
+        """
+        assert isinstance(basic_vectors,tuple)
+        assert len(basic_vectors)==3#要求其为包含3个向量的元组
+        v1,v2,v3=basic_vectors
+        assert abs(v1.mixed_product(v2, v3)) > self.tol_for_eq  , "3个向量不能是同平面"
+        # 利用线性方程组求解
+        A = numpy.hstack((v1.get_matrix(), v2.get_matrix(), v3.get_matrix()))
+        b = self.get_matrix()
+        eq = MyLinearAlgebraEquations(A=A, b=b)
+        assert eq.num_of_solutions is MyLinearAlgebraEquations.NumOfSolution.one  # 这种分解一定是唯一的
+        return Vector3D(eq.x[0, 0],eq.x[1, 0],eq.x[2, 0])#这个向量仅代表在basic_vectors下的坐标
+
     def get_matrix(self) -> numpy.matrix:
         """
         将坐标以列矩阵的形式返回
@@ -203,7 +220,7 @@ class Vector3D(Generic[T_Vector]):
 
     def get_spheroidal_coordinates(self):
         """
-        返回该点在求坐标系下的坐标
+        返回该点在球坐标系下的坐标
         球坐标系定义见《微积分 下册》P146 图7-25
         :return: phi,theta,r
                 phi -pi,pi
