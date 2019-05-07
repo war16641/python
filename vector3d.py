@@ -276,6 +276,11 @@ class Vector3D(Generic[T_Vector]):
         t = v1 * v2 / (v1.modulus * v2.modulus)
         return math.acos(t)
 
+    def angle(self,other)->float:
+        assert isinstance(other,Vector3D)
+        t = self * other / (self.modulus * other.modulus)
+        return math.acos(t)
+
     @staticmethod
     def make_random_vector()->T_Line:
         """
@@ -286,6 +291,17 @@ class Vector3D(Generic[T_Vector]):
                         y=random.random(),
                         z=random.random())
 
+    @staticmethod
+    def make_from_array(arr)->T_Vector:
+        """
+        从array中生成向量
+        要求arr的长度为3
+        :param arr:
+        :return:
+        """
+        assert isinstance(arr,numpy.ndarray)
+        assert len(arr)==3
+        return Vector3D(arr[0],arr[1],arr[2])
 
 
 class Plane3D(Generic[T_Plane]):
@@ -385,12 +401,14 @@ class Plane3D(Generic[T_Plane]):
         :return: 范围：0,pi 与平面  0,pi/2 与直线
         """
         if isinstance(other, Plane3D):
-            return math.pi - Vector3D.angle(self.normal, other.normal)
+            return math.pi-self.normal.angle(other.normal)
+            # return math.pi - Vector3D.angle(self.normal, other.normal)
         elif isinstance(other, Line3D):
             # 要求直线与平面的关系必须为斜交或者垂直
             assert self.judge_position_relation(other) in (self.PositionRelationForLine.skew, \
                                                            self.PositionRelationForLine.perpendicular)
-            alpha = Vector3D.angle(self.normal, other.direction)
+            alpha=self.normal.angle(other.direction)
+            # alpha = Vector3D.angle(self.normal, other.direction)
             if alpha < math.pi / 2:
                 return math.pi / 2 - alpha
             else:
@@ -596,7 +614,8 @@ class Line3D(Generic[T_Line]):
         :return: 位于0到pi之间
         """
         assert isinstance(other, Line3D)
-        return Vector3D.angle(self.direction, other.direction)
+        return self.direction.angle(other.direction)
+        # return Vector3D.angle(self.direction, other.direction)
     def get_intersect_point(self,other:T_Line)->T_Vector:
         """
         计算与另一直线的交点
