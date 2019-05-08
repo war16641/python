@@ -6,8 +6,9 @@ def eigenvalue_problem(A:np.ndarray)->(np.ndarray,np.ndarray):
     """
     求方阵的特征向量 特征值
     :param A:
-    :return: eigenvalue按从大到小排列 形状为1*多列
+    :returns: eigenvalue按从大到小排列 形状为1*多列
              eigenvector与eigenvalue一一对应 每一列为一个特征向量
+
     """
     assert isinstance(A,np.ndarray)
     (m,n)=A.shape

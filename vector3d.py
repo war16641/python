@@ -279,6 +279,12 @@ class Vector3D(Generic[T_Vector]):
     def angle(self,other)->float:
         assert isinstance(other,Vector3D)
         t = self * other / (self.modulus * other.modulus)
+        #有时候t会在±1处波动 把他设置为±1
+        if t>1 and t-1<self.tol_for_eq:
+            t=1
+        elif t<-1 and -1-t<self.tol_for_eq:
+            t=-1
+
         return math.acos(t)
 
     @staticmethod
