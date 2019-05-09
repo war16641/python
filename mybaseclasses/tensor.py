@@ -1,65 +1,67 @@
-from numpy.core._multiarray_umath import ndarray
-from GoodToolPython.mybaseclasses.singleton import Singleton
-from numpy.linalg import norm#求二范数
-from GoodToolPython.vector3d import Vector3D
-from GoodToolPython.plasticmechanics.usefulscripts import *
-from GoodToolPython.mybaseclasses.todoexception import ToDoException
-from math import *
-import numpy as np
 from copy import deepcopy
 from typing import Union
 
+import numpy as np
+from math import *
+from numpy.core._multiarray_umath import ndarray
+from numpy.linalg import norm  # 求二范数
 
-tol_for_eq=1e-6#判断相等的误差
+from GoodToolPython.mybaseclasses.singleton import Singleton
+from GoodToolPython.mybaseclasses.todoexception import ToDoException
+from GoodToolPython.plasticmechanics.usefulscripts import *
+from GoodToolPython.vector3d import Vector3D
+
+tol_for_eq = 1e-6  # 判断相等的误差
+
 
 class LetterDistributor(Singleton):
     """
     字母分配机
     将字母按letters中的顺序一一分配出去
     """
-    def __init__(self):
-        # self.letters={0:'i',
-        #               1:'j',
-        #               2:'k',
-        #               3:'l',
-        #               4:'m',
-        #               5:'n',
-        #               6:'p',
-        #               7:'q',
-        #               8:'r',
-        #               9:'s'}
-        self.letters=['i','j','k','l','m','n','p','q','r','s']
-        self.max_index=len(self.letters)-1
-        self.used_number=0#已经使用的字母个数
 
-    def initial(self):
+    def __init__(self):
+        # 如果已经构造过一次了，不执行首次初始化
+        if 'letters' in self.__dict__.keys():
+            return
+        self.letters = ['i', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's']
+        self.max_index = len(self.letters) - 1
         self.used_number = 0
 
-    def get_letters(self,number=1):
+    def initial(self):
+        self.used_number = 0  # 已经使用的字母个数
+
+    def get_letters(self, number=1):
         """
         获取字母 多个字母形成字符串
         :param number: 字母个数
         :return: str
         """
-        if number+self.used_number>self.max_index+1:
+        if number + self.used_number > self.max_index + 1:
             raise Exception("字母表的剩余个数不够。")
-        r=''
-        for i in range(self.used_number,self.used_number+number):
-            r+=self.letters[i]
-        self.used_number+=number
+        r = ''
+        for i in range(self.used_number, self.used_number + number):
+            r += self.letters[i]
+        self.used_number += number
         return r
 
-    @property
-    def last_letter(self):
-        #上一个分配出去的字母
-        assert self.used_number>0,'字母还未分配'
-        return self.letters[self.used_number-1]
+    def last_letters(self, number=1):
+        # 上一个分配出去的字母
+        assert self.used_number - number >= 0, '字母还未分配'
+        r = ''
+        for i in range(self.used_number - number, self.used_number):
+            r += self.letters[i]
+        return r
 
-    @property
-    def next_letter(self):
-        #即将分配出去的字母
-        assert self.used_number<self.max_index+1,'字母表中字母分配完毕。'
-        return  self.letters[self.used_number]
+    def next_letters(self, number=1):
+        # 即将分配出去的字母
+        assert self.used_number + number - 1 < self.max_index + 1, '字母表中字母分配完毕。'
+        r = ''
+        for i in range(self.used_number, self.used_number + number):
+            r += self.letters[i]
+        return r
+
+
 class SubscriptIteration:
     """
     下标迭代器 每一个下标可取0 1 2
@@ -118,22 +120,21 @@ class CartesianCoordinateSystem:
     :type basic_vectors:tuple[Vector3D]
     """
 
-    def __init__(self, basic_vectors: Union[tuple,np.ndarray]):
+    def __init__(self, basic_vectors: Union[tuple, np.ndarray]):
         """
 
         :param basic_vectors: 可以是3个向量组成的元组 可以是3*3array 每一列为一个向量
         """
 
-        #如果参数为数组
-        if isinstance(basic_vectors,np.ndarray):
-            if basic_vectors.shape==(3,3):
-                v1=Vector3D.make_from_array(basic_vectors[:,0])
-                v2 = Vector3D.make_from_array(basic_vectors[:,1])
-                v3 = Vector3D.make_from_array(basic_vectors[:,2])
-                basic_vectors=(v1,v2,v3,)
+        # 如果参数为数组
+        if isinstance(basic_vectors, np.ndarray):
+            if basic_vectors.shape == (3, 3):
+                v1 = Vector3D.make_from_array(basic_vectors[:, 0])
+                v2 = Vector3D.make_from_array(basic_vectors[:, 1])
+                v3 = Vector3D.make_from_array(basic_vectors[:, 2])
+                basic_vectors = (v1, v2, v3,)
             else:
                 raise Exception("参数错误")
-
 
         assert isinstance(basic_vectors, tuple)
         assert len(basic_vectors) == 3
@@ -166,18 +167,17 @@ class CartesianCoordinateSystem:
         return icc
 
     def __eq__(self, other):
-        #判断两个坐标系是否相等 other 可以是空
-        if other==None:
-            return  False
-        assert isinstance(other,CartesianCoordinateSystem)
+        # 判断两个坐标系是否相等 other 可以是空
+        if other == None:
+            return False
+        assert isinstance(other, CartesianCoordinateSystem)
         for i in range(3):
-            if self.basic_vectors[i]!=other.basic_vectors[i]:
+            if self.basic_vectors[i] != other.basic_vectors[i]:
                 return False
         return True
 
     def __str__(self):
-        return "%s\n%s\n%s"%(self.basic_vectors[0],self.basic_vectors[1],self.basic_vectors[2])
-
+        return "%s\n%s\n%s" % (self.basic_vectors[0], self.basic_vectors[1], self.basic_vectors[2])
 
 
 # 世界坐标系
@@ -220,16 +220,15 @@ def summation(muliplier_list):
     :rtype:Tensor
     """
     assert isinstance(muliplier_list, list)
-    #检查张量的坐标系是否相同
-    last_ccs=None
+    # 检查张量的坐标系是否相同
+    last_ccs = None
     for m in muliplier_list:
-        this_ccs=m.tensor.ccs
-        if last_ccs==None:
-            last_ccs=this_ccs
+        this_ccs = m.tensor.ccs
+        if last_ccs == None:
+            last_ccs = this_ccs
             continue
-        assert last_ccs==this_ccs,'坐标系不同，不能进行爱因斯坦求和运算。'
-        last_ccs=this_ccs
-
+        assert last_ccs == this_ccs, '坐标系不同，不能进行爱因斯坦求和运算。'
+        last_ccs = this_ccs
 
     index_list = [x.index for x in muliplier_list]
     index_string = ''  # 把所有的index放进一个字符串
@@ -278,7 +277,6 @@ class Tensor:
     :type component:ndarray|float
     """
 
-
     def __init__(self, component, ccs: CartesianCoordinateSystem = global_ccs):
         """
 
@@ -287,10 +285,10 @@ class Tensor:
         """
         assert isinstance(ccs, CartesianCoordinateSystem)
 
-        #长度为3数值列表
-        if isinstance(component,list):
-            if len(component)==3 and isinstance(component[0],(int,float)):
-                component=np.array(component)
+        # 长度为3数值列表
+        if isinstance(component, list):
+            if len(component) == 3 and isinstance(component[0], (int, float)):
+                component = np.array(component)
             else:
                 raise Exception("参数错误。")
 
@@ -314,9 +312,9 @@ class Tensor:
         if self.order == 0:
             return "%f" % self.component
         elif self.order == 1:
-            return "%f,%f,%f\n坐标系\n%s" % (self.component[0], self.component[1], self.component[2],self._ccs)
+            return "%f,%f,%f\n坐标系\n%s" % (self.component[0], self.component[1], self.component[2], self._ccs)
         elif self.order == 2:
-            return "二阶\n%s\n坐标系\n%s"%(self.component.__str__(),self._ccs)
+            return "二阶\n%s\n坐标系\n%s" % (self.component.__str__(), self._ccs)
 
     @property
     def ccs(self):
@@ -336,13 +334,13 @@ class Tensor:
             beta = Tensor(component=beta1, ccs=new_ccs)
             self._ccs = new_ccs
             t = summation([beta['ji'], self['j']])
-            self.component=t.component
+            self.component = t.component
 
         elif self.order == 2:
             beta1 = self._ccs.get_inverse_conversion_coefficient(new_ccs)
             beta = Tensor(component=beta1, ccs=new_ccs)
             self._ccs = new_ccs
-            t = summation([beta['ri'], beta['sj'],self['rs']])
+            t = summation([beta['ri'], beta['sj'], self['rs']])
             self.component = t.component
 
         else:
@@ -424,15 +422,15 @@ class Tensor:
         else:
             raise Exception("参数错误。")
 
-    def diagonalize(self)->None:
+    def diagonalize(self) -> None:
         """
         对角化 只针对二阶张量
         :return:
         """
-        assert self.order==2,'只有2阶张量可以对角化'
-        _,vector=eigenvalue_problem(self.component)
-        new=CartesianCoordinateSystem(vector)
-        self.ccs=new
+        assert self.order == 2, '只有2阶张量可以对角化'
+        _, vector = eigenvalue_problem(self.component)
+        new = CartesianCoordinateSystem(vector)
+        self.ccs = new
 
     def __eq__(self, other):
         """
@@ -440,43 +438,50 @@ class Tensor:
         :param other: tensor或者none
         :return:
         """
-        if other==None:
+        if other == None:
             return False
-        assert isinstance(other,Tensor)
-        item=deepcopy(other)
-        item.ccs=self.ccs
-        if self.order!=item.order:
+
+        # 与数比较 此时只能是0阶
+        if isinstance(other, (int, float)):
+            if self.order != 0:
+                return False
+            return abs(self.component - other) < tol_for_eq
+
+        assert isinstance(other, Tensor)
+        item = deepcopy(other)
+        item.ccs = self.ccs
+        if self.order != item.order:
             return False
-        if self.order==0:
-            return abs(self.component-item.component)<tol_for_eq
-        elif self.order==1 or self.order==2:
-            t=self.component-item.component
-            return norm(t)<tol_for_eq
+        if self.order == 0:
+            return abs(self.component - item.component) < tol_for_eq
+        elif self.order == 1 or self.order == 2:
+            t = self.component - item.component
+            return norm(t) < tol_for_eq
         else:
             raise Exception("未知错误")
 
     def __add__(self, other):
-        assert isinstance(other,Tensor)
-        assert self.order==other.order,'阶数不同不能加减'
-        r=deepcopy(self)
-        item=deepcopy(other)
-        item.ccs=r.ccs
-        r.component=r.component+item.component
+        assert isinstance(other, Tensor)
+        assert self.order == other.order, '阶数不同不能加减'
+        r = deepcopy(self)
+        item = deepcopy(other)
+        item.ccs = r.ccs
+        r.component = r.component + item.component
         return r
 
     def __sub__(self, other):
-        assert isinstance(other,Tensor)
-        assert self.order==other.order,'阶数不同不能加减'
-        r=deepcopy(self)
-        item=deepcopy(other)
-        item.ccs=r.ccs
-        r.component=r.component-item.component
+        assert isinstance(other, Tensor)
+        assert self.order == other.order, '阶数不同不能加减'
+        r = deepcopy(self)
+        item = deepcopy(other)
+        item.ccs = r.ccs
+        r.component = r.component - item.component
         return r
 
     def __rmul__(self, other):
-        r=deepcopy(self)
-        if isinstance(other,(float,int)):
-            r.component=r.component*other
+        r = deepcopy(self)
+        if isinstance(other, (float, int)):
+            r.component = r.component * other
             return r
         else:
             raise Exception("参数错误")
@@ -488,31 +493,66 @@ class Tensor:
         :param ccs: 默认是世界坐标系
         :return:
         """
-        assert isinstance(ccs,CartesianCoordinateSystem)
-        A=np.array([[1,0,0],
-                    [0,1,0],
-                    [0,0,1]])
-        return Tensor(component=A,ccs=ccs)
+        assert isinstance(ccs, CartesianCoordinateSystem)
+        A = np.array([[1, 0, 0],
+                      [0, 1, 0],
+                      [0, 0, 1]])
+        return Tensor(component=A, ccs=ccs)
 
-    def contraction(self,other,arg1='.'):
-        assert isinstance(other,Tensor)
-        assert other.order>=1 and self.order >= 1,'参与缩并的张量阶数必须大于0'
+    def contraction(self, other, arg1: str = '.'):
+        """
+        张量的缩并 这里只实现了点积 双点积
+        计算的方式 使用kronecker张量实现
+        :param other: 另一个张量
+        :param arg1: 指定点积 . 或者 双点积 ..
+        :return:
+        :rtype: Tensor
+        """
+        assert isinstance(other, Tensor)
+        assert other.order >= 1 and self.order >= 1, '参与缩并的张量阶数必须大于0'
 
-        other=deepcopy(other)
-        other.ccs=self.ccs#计算前统一坐标系
-        ld=LetterDistributor()
+        other = deepcopy(other)
+        other.ccs = self.ccs  # 计算前统一坐标系
+        ld = LetterDistributor()
         ld.initial()
-        if arg1=='dot' or arg1=='.':#点积
-            m1=self[ld.get_letters(self.order)]
-            subscript_for_kronecker=ld.last_letter+ld.next_letter#kronecker张量的下标 负责连接前面两个张量
-            m2=other[ld.get_letters(other.order)]
-            return summation([m1,m2,Tensor.kronecker()[subscript_for_kronecker]])
-        elif arg1=='double_dot'or arg1=='..':#双点积
-            raise ToDoException
+        if arg1 == 'dot' or arg1 == '.':  # 点积
+            m1 = self[ld.get_letters(self.order)]
+            subscript_for_kronecker = ld.last_letters() + ld.next_letters()  # kronecker张量的下标 负责连接前面两个张量
+            m2 = other[ld.get_letters(other.order)]
+            return summation([m1,
+                              m2,
+                              Tensor.kronecker(self.ccs)[subscript_for_kronecker]])
+        elif arg1 == 'double_dot' or arg1 == '..':  # 双点积
+            m1 = self[ld.get_letters(self.order)]
+            subscript_for_kronecker1 = ld.last_letters() + ld.next_letters()  # kronecker张量的下标 负责连接前面两个张量
+            subscript_for_kronecker2 = ld.last_letters(2)[0] + ld.next_letters(2)[-1]  # kronecker张量的下标 负责连接前面两个张量
+            m2 = other[ld.get_letters(other.order)]
+            return summation([m1,
+                              m2,
+                              Tensor.kronecker(self.ccs)[subscript_for_kronecker1],
+                              Tensor.kronecker(self.ccs)[subscript_for_kronecker2]])
         else:
             raise Exception("参数错误")
 
+    def __mul__(self, other):
+        """
+        * 用作张量的点积 调用contraction函数
+        :param other: 另一个张量
+        :return:
+        :rtype:Tensor
+        """
+        assert isinstance(other, Tensor), '点积运算的对象必须为张量'
+        return self.contraction(other)
 
+    def __pow__(self, power, modulo=None):
+        """
+        ** 用作双点积 调用contraction函数
+        :param power:
+        :param modulo:
+        :return:
+        """
+        assert isinstance(power, Tensor), '双点积运算的对象必须为张量'
+        return self.contraction(power, '..')
 
 
 def test1():
@@ -521,34 +561,35 @@ def test1():
                                      Vector3D(1, 0, 0),))
 
     v = np.array([5, 5, 0])
-    T = Tensor(component=[5,5,0])
+    T = Tensor(component=[5, 5, 0])
     T.ccs = new
-    T1=Tensor(component=[5,0,5],ccs=new)
-    assert T==T1
+    T1 = Tensor(component=[5, 0, 5], ccs=new)
+    assert T == T1
+
 
 def test2():
-    A = np.array([[-10,9,5],
-                  [9,0,0],
-                  [5,0,8]])
-    T=Tensor(component=A)
+    A = np.array([[-10, 9, 5],
+                  [9, 0, 0],
+                  [5, 0, 8]])
+    T = Tensor(component=A)
     T.diagonalize()
-    assert abs(T[0,0]-10.08)<0.1 and abs(T[1,1]-4)<0.1 and abs(T[2,2]--16.08)<0.1
-    T.ccs=global_ccs
+    assert abs(T[0, 0] - 10.08) < 0.1 and abs(T[1, 1] - 4) < 0.1 and abs(T[2, 2] - -16.08) < 0.1
+    ccs1 = T.ccs
+    T.ccs = global_ccs
     A = np.array([[1, 0, 0],
                   [0, 1, 0],
                   [0, 0, 1]])
     T1 = Tensor(component=A)
-    A = np.array([[-9.00000000e+00,9.00000000e+00,5.00000000e+00],
-                 [ 9.00000000e+00,1.00000000e+00,-2.22044605e-16],
-                 [ 5.00000000e+00,-4.44089210e-16,9.00000000e+00]])
+    A = np.array([[-9.00000000e+00, 9.00000000e+00, 5.00000000e+00],
+                  [9.00000000e+00, 1.00000000e+00, -2.22044605e-16],
+                  [5.00000000e+00, -4.44089210e-16, 9.00000000e+00]])
     T2 = Tensor(component=A)
-    assert T2==T1+T,'相加测试'
+    assert T2 == T1 + T, '相加测试'
     A = np.array([[-11, 9.00000000e+00, 5.00000000e+00],
                   [9.00000000e+00, -1, -2.22044605e-16],
                   [5.00000000e+00, -4.44089210e-16, 7.00000000e+00]])
     T3 = Tensor(component=A)
     assert T3 == T - T1, '相减测试'
-
 
     A = np.array([[1, 0, 0],
                   [0, 1, 0],
@@ -558,17 +599,34 @@ def test2():
                   [0, 2, 0],
                   [0, 0, 2]])
     T1 = Tensor(component=A)
-    assert T1==2*T,'与实数相乘测试'
+    assert T1 == 2 * T, '与实数相乘测试'
 
     A = np.array([[-10, 9, 4],
                   [9, 0, 0],
                   [5, 0, 8]])
     T = Tensor(component=A)
-    T1=Tensor(component=[1,1,1])
-    T0=Tensor(component=[3,9,13])
-    delta=Tensor.kronecker()
-    assert T0==summation([T['ij'],T1['k'],delta['jk']])
-    assert T0==T.contraction(T1),'点积测试'
+    T1 = Tensor(component=[1, 1, 1])
+    T0 = Tensor(component=[3, 9, 13])
+    delta = Tensor.kronecker()
+    assert T0 == summation([T['ij'], T1['k'], delta['jk']])
+    assert T0 == T.contraction(T1), '点积测试'
+    T1.ccs = ccs1
+    assert T0 == T.contraction(T1), '点积测试'
+    assert T0 == T * T1
+
+    A = np.array([[-10, 9, 4],
+                  [9, 0, 0],
+                  [5, 0, 8]])
+    T1 = Tensor(component=A)
+    A = np.array([[1, 8, 4],
+                  [9, 0, 0],
+                  [5, 0, 1]])
+    T2 = Tensor(component=A)
+    assert T1.contraction(T2, arg1='..') == 191, '双点积测试'
+    T1.ccs = ccs1
+    assert T1.contraction(T2, arg1='..') == 191, '双点积测试'
+    assert T1 ** T2 == 191
+
 
 if __name__ == '__main__':
     test1()
