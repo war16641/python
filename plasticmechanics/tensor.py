@@ -4,7 +4,7 @@ from typing import Union
 import numpy as np
 from math import *
 from numpy.core._multiarray_umath import ndarray
-from numpy.linalg import norm  # 求二范数
+from numpy.linalg import norm,det  # 求二范数
 
 from GoodToolPython.mybaseclasses.singleton import Singleton
 from GoodToolPython.mybaseclasses.todoexception import ToDoException
@@ -141,7 +141,7 @@ class CartesianCoordinateSystem:
         for v in basic_vectors:
             assert abs(v.modulus - 1) < Vector3D.tol_for_eq, '模要求为1'
         v1, v2, v3 = basic_vectors
-        assert abs(v1.mixed_product(v2, v3) - 1) < Vector3D.tol_for_eq
+        assert abs(v1.mixed_product(v2, v3) - 1) < Vector3D.tol_for_eq,'不是右手法则下的标准正交基'
         self.basic_vectors = deepcopy(basic_vectors)
 
     def get_coordinates(self, v):
@@ -274,7 +274,7 @@ def summation(muliplier_list):
 
 class Tensor:
     """张量
-    :type component:ndarray|float
+    :type component:ndarray|float 当张量阶数为0时，component是float其余是个3*1 或3*3矩阵
     """
 
     def __init__(self, component, ccs: CartesianCoordinateSystem = global_ccs):
@@ -283,6 +283,11 @@ class Tensor:
         :param component: 可以是ndarray 要求其格式为长度是3 或者shape是3*3 还可以是长度为3数值列表
         :param ccs: 坐标系
         """
+
+        # 先复制一份 当矩阵较大时可能会影响性能 这一条语句是偏于安全的做法
+        component=deepcopy(component)
+        ccs=deepcopy(ccs)
+
         assert isinstance(ccs, CartesianCoordinateSystem)
 
         # 长度为3数值列表
@@ -324,6 +329,7 @@ class Tensor:
     def ccs(self, new_ccs):
         """设定新的坐标系"""
         assert isinstance(new_ccs, CartesianCoordinateSystem)
+        new_ccs=deepcopy(new_ccs)#复制新的对象
         if new_ccs == self._ccs:
             return  # 与原坐标系相同
         # 不同就要进行分量的重新计算
@@ -547,14 +553,60 @@ class Tensor:
     def __pow__(self, power, modulo=None):
         """
         ** 用作双点积 调用contraction函数
-        :param power:
+        :param power:另一个张量
         :param modulo:
         :return:
+        :rtype:Tensor
         """
         assert isinstance(power, Tensor), '双点积运算的对象必须为张量'
         return self.contraction(power, '..')
 
+    def get_matrix(self):
+        """
+        返回对应的矩阵形式
+        可能返回1*1 3*1 3*3的矩阵
+        :return:
+        :rtype:np.ndarray
+        """
+        if self.order==0:
+            r=np.array(self.component)
+            r=r.reshape(1,1)
+            return r
+        elif self.order in (1,2):
+            r=deepcopy(self.component)
+            return r
+        else:
+            raise Exception("未知错误")
 
+    def get_invariant(self):
+        """
+        返回三个不变量 只有2阶张量才有不变量
+        不变量为1、2、3阶主子式的和
+        :return:
+        :rtype:tuple[float]
+        """
+        assert self.order==2,'只有2阶张量才有不变量'
+        i1=self[0,0]+self[1,1]+self[2,2]
+        i2=self[0,0]*self[1,1]+self[0,0]*self[2,2]+self[2,2]*self[1,1]-self[0,1]**2-self[0,2]**2-self[1,2]**2
+        i3=det(self.component)
+        return (i1,i2,i3,)
+
+    def decompose(self,mode='deviator'):
+        """
+        分解张量
+        :param mode: 分解模式
+                        deviator:分解为球应力张量+应力偏量 sphere,deviator
+
+        :return:两个张量
+        :rtype:Tensor
+        """
+        if mode=='deviator':
+            I=self.get_invariant()
+            sphere=I[0]/3*self.kronecker(ccs=self.ccs)
+            deviator=self-sphere
+            return sphere,deviator
+        else:
+            raise Exception("参数错误")
 def test1():
     new = CartesianCoordinateSystem((Vector3D(0, 1, 0),
                                      Vector3D(0, 0, 1),
@@ -618,6 +670,9 @@ def test2():
                   [9, 0, 0],
                   [5, 0, 8]])
     T1 = Tensor(component=A)
+    assert (A==T1.get_matrix()).all(),'返回矩阵不对'
+    A[0,0]=1
+    assert not (A == T1.get_matrix()).all(),'改动参数影响了之前生成的张量，是不是忘记使用copy'
     A = np.array([[1, 8, 4],
                   [9, 0, 0],
                   [5, 0, 1]])
@@ -627,8 +682,32 @@ def test2():
     assert T1.contraction(T2, arg1='..') == 191, '双点积测试'
     assert T1 ** T2 == 191
 
+    t=Tensor(1.1)
+    assert t.get_matrix().shape==(1,1),'返回矩阵不对'
+    A = np.array([[-10, 9, 5],
+                  [9, 0, 0],
+                  [5, 0, 8]])
+    T1 = Tensor(component=A)
+    i1=T1.get_invariant()
+    T1.diagonalize()
+    i2=T1.get_invariant()
+    i1=np.array(list(i1))
+    i2 = np.array(list(i2))
+    assert norm(i1-i2)<tol_for_eq,'不变量不应该随着坐标系变化'
 
-
+    A = np.array([[-10, 9, 5],
+                  [9, 0, 0],
+                  [5, 0, 8]])
+    T1 = Tensor(component=A)
+    sphere, deviator=T1.decompose()
+    assert sphere+deviator==T1,'张量分解错误'
+    A = np.array([[1,2,4],
+                  [2,2,1],
+                  [4,1,3]])
+    T1 = Tensor(component=A)
+    sphere, deviator = T1.decompose()
+    print(sphere)
+    print(deviator)
 if __name__ == '__main__':
     test1()
     test2()
