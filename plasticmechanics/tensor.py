@@ -20,10 +20,10 @@ class LetterDistributor(Singleton):
     将字母按letters中的顺序一一分配出去
     """
 
-    def __init__(self):
-        # 如果已经构造过一次了，不执行首次初始化
-        if 'letters' in self.__dict__.keys():
-            return
+    def init(self):
+        # # 如果已经构造过一次了，不执行首次初始化
+        # if 'letters' in self.__dict__.keys():
+        #     return
         self.letters = ['i', 'j', 'k', 'l', 'm', 'n', 'p', 'q', 'r', 's']
         self.max_index = len(self.letters) - 1
         self.used_number = 0
