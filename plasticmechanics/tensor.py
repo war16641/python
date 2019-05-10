@@ -513,6 +513,7 @@ class Tensor:
         :param arg1: 指定点积 . 或者 双点积 ..
         :return:
         :rtype: Tensor
+        https://onedrive.live.com/redir?resid=C917E8FBBE646EE0%215516&page=Edit&wd=target%28%E6%9D%90%E6%96%99%E5%8A%9B%E5%AD%A6.one%7Ca99c90f4-9476-f94f-90db-e5b45d142dae%2F%E5%BC%A0%E9%87%8F%E8%BF%90%E7%AE%97%7C915b1112-2f09-c644-a2ba-d931cb24a94e%2F%29
         """
         assert isinstance(other, Tensor)
         assert other.order >= 1 and self.order >= 1, '参与缩并的张量阶数必须大于0'
@@ -588,6 +589,7 @@ class Tensor:
         assert self.order==2,'只有2阶张量才有不变量'
         i1=self[0,0]+self[1,1]+self[2,2]
         i2=self[0,0]*self[1,1]+self[0,0]*self[2,2]+self[2,2]*self[1,1]-self[0,1]**2-self[0,2]**2-self[1,2]**2
+        # i2=0.5*summation([self['ij'],self['ji']]).component
         i3=det(self.component)
         return (i1,i2,i3,)
 
@@ -598,7 +600,7 @@ class Tensor:
                         deviator:分解为球应力张量+应力偏量 sphere,deviator
 
         :return:两个张量
-        :rtype:Tensor
+        :rtype: Tensor
         """
         if mode=='deviator':
             I=self.get_invariant()
@@ -706,8 +708,20 @@ def test2():
                   [4,1,3]])
     T1 = Tensor(component=A)
     sphere, deviator = T1.decompose()
-    print(sphere)
-    print(deviator)
+    assert  T1==sphere+deviator
+
+
+def test3():
+    A = np.array([[3/2,-1/2/2**0.5,-1/2/2**0.5],
+                  [-1/2/2**0.5, 11/4, -5/4],
+                  [-1/2/2**0.5, -5/4, 11/4]])
+    T1 = Tensor(component=A)
+    I=[7,14,8]
+    assert norm(np.array(I)-np.array(T1.get_invariant()))<tol_for_eq,'不变量计算测试'
+    J=[0,-7/3.,20/27.]
+    sphere, deviator = T1.decompose()
+    assert  norm(np.array(J)-np.array(deviator.get_invariant()))<tol_for_eq,'不变量计算测试'
 if __name__ == '__main__':
     test1()
     test2()
+    test3()
