@@ -77,6 +77,15 @@ class A(Singleton):
     def init(self):
         self.a=10
 
+class C(Singleton):
+    def __init__(self):
+        pass
+
+
+class D(Singleton):
+    pass
+
+
 if __name__ == '__main__':
 
     a=Foo()
@@ -89,4 +98,5 @@ if __name__ == '__main__':
     c = A()
     assert c.a==10
     assert b.a==2
-    # assert_raises(AssertionError,A)
+    assert_raises(AssertionError,C)
+    assert_raises(AssertionError, D)
