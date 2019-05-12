@@ -4,6 +4,9 @@
 from GoodToolPython.vector3d import Vector3D
 from typing import Union
 from nose.tools import assert_raises
+import time
+import itertools
+
 
 class ZeroLengthException(Exception):
     """
@@ -49,9 +52,43 @@ def factorial(n):
         p*=i
     return p
 
+def print_elapse_time(func):
+    #装饰器函数 打印消耗时间
+    def wrapper(*args):
+        start_time=time.time()
+        r=func(*args)
+        print('耗时%fs'% (time.time()-start_time))
+        return r
+    return wrapper
 
 
 
+class Benchmark:
+    """
+    性能测试函数 全为静态函数
+    """
+    @staticmethod
+    @print_elapse_time
+    def run1(n=11):
+        """
+        计算数字的全排列耗时 测试性能
+        :param n:
+        :return:
+        """
+        numbers=[]
+        for i in range(1,n+1):
+            numbers.append(i)
+        counter=0
+        counter_max=factorial(n)
+        print_coutner=0
+        print_coutner_max=0.05*counter_max
+        for i in itertools.permutations(numbers,len(numbers)):
+            counter+=1
+            print_coutner+=1
+            if print_coutner>=print_coutner_max:
+                print('%f'%(counter/counter_max))
+                print_coutner=0
+        assert counter==counter_max,'计数出错'
 
 
 #以下为测试函数 名称为test_开头
@@ -72,6 +109,8 @@ def test_factorial():
     assert factorial(1)==1
     assert factorial(3)==6
 
+
 if __name__ == '__main__':
     test_is_sequence_with_specified_type()
     test_factorial()
+    Benchmark.run1()
