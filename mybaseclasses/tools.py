@@ -3,7 +3,17 @@
 """
 from GoodToolPython.vector3d import Vector3D
 from typing import Union
-def is_sequence_with_one_type(sequence:Union[Vector3D,list], tp:type=None)->bool:
+from nose.tools import assert_raises
+
+class ZeroLengthException(Exception):
+    """
+    序列长度为0异常 由is_sequence_with_one_type抛出
+    使用is_sequence_with_one_type时，可能会遇到sequence为0长度序列，这时候返回true或者false都是有可能 所以把它做成了异常
+    """
+    pass
+
+
+def is_sequence_with_one_type(sequence:Union[tuple,list], tp:type=None)->bool:
     """
     判断sequence是否是某一个类型的对象组成的序列
     :param sequence:序列
@@ -13,6 +23,8 @@ def is_sequence_with_one_type(sequence:Union[Vector3D,list], tp:type=None)->bool
     # assert isinstance(sequence,(list,tuple)),'sequnce必须为元组或者列表'
     if not isinstance(sequence,(list,tuple)):#sequnce必须为元组或者列表,否则返回false
         return False
+    if len(sequence)==0:
+        raise ZeroLengthException('序列长度为0')
     if tp is None:
         tp=type(sequence[0])
     assert isinstance(tp,type),'tp必须为类'
@@ -30,3 +42,6 @@ if __name__ == '__main__':
     i2=2.
     assert is_sequence_with_one_type([i1,i2],float)
     assert not is_sequence_with_one_type([i1, i2,v1], float)
+    assert is_sequence_with_one_type([i1, i2])
+    assert not is_sequence_with_one_type([i1, i2, v1])
+    assert_raises(ZeroLengthException,is_sequence_with_one_type,[])
