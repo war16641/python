@@ -39,7 +39,23 @@ def is_sequence_with_specified_type(sequence:Union[tuple, list], tp:type=None)->
             return False
     return True
 
-if __name__ == '__main__':
+def factorial(n):
+    #计算阶乘
+    assert n>=0 and isinstance(n,int),'n必须为自然数'
+    if n==0:
+        return 1
+    p=1
+    for i in range(1,n+1):
+        p*=i
+    return p
+
+
+
+
+
+
+#以下为测试函数 名称为test_开头
+def test_is_sequence_with_specified_type():
     assert not is_sequence_with_specified_type(1, Vector3D)
     v1=Vector3D()
     v2=Vector3D(1)
@@ -50,3 +66,12 @@ if __name__ == '__main__':
     assert is_sequence_with_specified_type([i1, i2])
     assert not is_sequence_with_specified_type([i1, i2, v1])
     assert_raises(ZeroLengthException, is_sequence_with_specified_type, [])
+
+def test_factorial():
+    assert factorial(0)==1
+    assert factorial(1)==1
+    assert factorial(3)==6
+
+if __name__ == '__main__':
+    test_is_sequence_with_specified_type()
+    test_factorial()
