@@ -5,7 +5,7 @@ import numpy as np
 from math import *
 from numpy.core._multiarray_umath import ndarray
 from numpy.linalg import norm,det  # 求二范数
-from GoodToolPython.mybaseclasses.tools import is_sequence_with_one_type
+from GoodToolPython.mybaseclasses.tools import is_sequence_with_specified_type
 from GoodToolPython.mybaseclasses.singleton import Singleton
 from GoodToolPython.mybaseclasses.todoexception import ToDoException
 from GoodToolPython.plasticmechanics.usefulscripts import *
@@ -220,7 +220,7 @@ def summation(muliplier_list):
     :rtype:Tensor
     """
     # assert isinstance(muliplier_list, list)
-    assert is_sequence_with_one_type(muliplier_list,SummationMultiplier),'muliplier_list必须为SummationMultiplier组成的列表'
+    assert is_sequence_with_specified_type(muliplier_list, SummationMultiplier), 'muliplier_list必须为SummationMultiplier组成的列表'
     # 检查张量的坐标系是否相同
     last_ccs = None
     for m in muliplier_list:
@@ -417,6 +417,7 @@ class Tensor:
         :param ccs:
         :return: 张量
         """
+        ccs=deepcopy(ccs)
         if order == 0:
             return Tensor(component=0,
                           ccs=ccs)

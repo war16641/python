@@ -13,9 +13,9 @@ class ZeroLengthException(Exception):
     pass
 
 
-def is_sequence_with_one_type(sequence:Union[tuple,list], tp:type=None)->bool:
+def is_sequence_with_specified_type(sequence:Union[tuple, list], tp:type=None)->bool:
     """
-    判断sequence是否是某一个类型的对象组成的序列
+    判断sequence是否是指定的类型的对象组成的序列
     :param sequence:序列
     :param tp:类型 如果是none 则取第一个元素的类型
     :return:
@@ -27,7 +27,12 @@ def is_sequence_with_one_type(sequence:Union[tuple,list], tp:type=None)->bool:
         raise ZeroLengthException('序列长度为0')
     if tp is None:
         tp=type(sequence[0])
-    assert isinstance(tp,type),'tp必须为类'
+
+    if  not isinstance(tp,tuple):
+        tp=(tp,)#使其成为tuple
+    for t in tp:
+        assert isinstance(t,type),'tp必须为类或类组成的tuple'
+    # assert isinstance(tp,type),'tp必须为类'
 
     for i in sequence:
         if not isinstance(i,tp):
@@ -35,13 +40,13 @@ def is_sequence_with_one_type(sequence:Union[tuple,list], tp:type=None)->bool:
     return True
 
 if __name__ == '__main__':
-    assert not is_sequence_with_one_type(1,Vector3D)
+    assert not is_sequence_with_specified_type(1, Vector3D)
     v1=Vector3D()
     v2=Vector3D(1)
     i1=1.
     i2=2.
-    assert is_sequence_with_one_type([i1,i2],float)
-    assert not is_sequence_with_one_type([i1, i2,v1], float)
-    assert is_sequence_with_one_type([i1, i2])
-    assert not is_sequence_with_one_type([i1, i2, v1])
-    assert_raises(ZeroLengthException,is_sequence_with_one_type,[])
+    assert is_sequence_with_specified_type([i1, i2], float)
+    assert not is_sequence_with_specified_type([i1, i2, v1], float)
+    assert is_sequence_with_specified_type([i1, i2])
+    assert not is_sequence_with_specified_type([i1, i2, v1])
+    assert_raises(ZeroLengthException, is_sequence_with_specified_type, [])
