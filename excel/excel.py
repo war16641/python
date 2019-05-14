@@ -71,7 +71,16 @@ class FlatDataModel:
     """
 
     @staticmethod
-    def load_from_file(fullname, sheetname=None, row_variable_name=0, row_caption=None, row_data_start=None):
+    def load_from_file(fullname, sheetname=None, row_variable_name=0, row_caption=None, row_data_start=None)->FlatDataModel:
+        """
+        从excel'文件中载入平面数据模型
+        :param fullname:
+        :param sheetname:
+        :param row_variable_name: 变量名所在行 0-based
+        :param row_caption: 注释行 可以是列表，代表多行注释 默认为空
+        :param row_data_start: 数据起始行 默认为变量名行下一行
+        :return:
+        """
         self=FlatDataModel()
         workbook = load_workbook(fullname, data_only=True)
         assert len(workbook.sheetnames) > 0, '此表无工作簿'
@@ -294,22 +303,78 @@ class FlatDataModel:
             col_rd = 1
 
 
+    def add_variables_from_other_model(self,
+                                       other:FlatDataModel,
+                                       link_variable:str,
+                                       add_variable:Union[str,List[str]]=None)->None:
+        #参数处理
+        assert isinstance(other,FlatDataModel),'other必须为FlatDataModel对象'
+        assert isinstance(link_variable,str) and \
+            link_variable in self.vn and \
+            link_variable in other.vn,\
+            'link_variable必须是两个模型中均存在的变量名'
+        if add_variable is None:
+            #默认添加全部, 除了连接变量
+            add_variable=[x for x in other.vn if x != link_variable]
+        elif isinstance(add_variable,str):
+            add_variable=[add_variable]
+        else:
+            assert is_sequence_with_specified_type(add_variable,str),'add_variable为字符串列表'
+
+        #开始添加
+        for unit in self:
+            link_variable_value=unit[link_variable]
+            expr=lambda x:x[link_variable].__eq__(link_variable_value)
+            cor_unit=other.find(expr)#找到此模型的unit对应的在另外一个unit
+            if cor_unit is None:#没找到
+                raise Exception("另外一个模型中未找到对应的unit")
+            for name in add_variable:
+                unit.data[name]=cor_unit[name]
+
+        #处理数变量名
+        self.vn+=add_variable
+
+
+
+    def find(self,epxr,flag_find_all=False)->Union[DataUnit,List[DataUnit]]:
+        """
+        查找满足epxr的unit
+        :param epxr: 真假判断函数
+        :param flag_find_all: 是否查找全部
+        :return: 找不到的时候 返回None
+        """
+        assert callable(epxr),'expr必须为函数'
+        r=[]
+        for unit in self:
+            if epxr(unit) is True:
+                if flag_find_all is False:
+                    return unit
+                else:
+                    r.append(unit)
+        if flag_find_all is False:
+            return None
+        else:
+            return r
 
 
 
 if __name__ == '__main__':
     fullname="F:\我的文档\python_file\\14个人工波RP50和2000固定.xlsx"
+    fullname1="D:\新建 Microsoft Excel 工作表.xlsx"
     model=FlatDataModel.load_from_file(fullname=fullname,
                                        row_variable_name=1,
                                        row_caption=2)
     u=model[0]
     print(u['文件名','间距'])
+    model2=FlatDataModel.load_from_file(fullname=fullname1)
+    model.add_variables_from_other_model(model2,'工况名',['随机数1','随机数2'])
+    model.save('test.xlsx')
     # model.flhz(classify_names=['工况名','拉杆刚度'],
     #            statistics_func=[['P1底剪力',max,'p1底剪力'],
     #                             ['P1底剪力',len,'个数']])
-    model.flhz(classify_names=['工况名','拉杆刚度'],
-               statistics_func=[['P1底剪力',max],
-                                ]).append_to_file(fullname,'flhz')
+    # model.flhz(classify_names=['工况名','拉杆刚度'],
+    #            statistics_func=[['P1底剪力',max],
+    #                             ]).append_to_file(fullname,'flhz')
 
 
 
