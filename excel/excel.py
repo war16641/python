@@ -202,9 +202,15 @@ class FlatDataModel:
             classify_names=[classify_names]
         assert is_sequence_with_specified_type(classify_names,str),'is_sequence_with_specified_type参数错误'
         assert isinstance(statistics_func,dict),'statistics_func必须为字典'
-        for s_name,func in statistics_func.items():
+        for s_name,val in statistics_func.items():
             assert s_name in self.vn,'键必须为变量名'
-            assert callable(func),'值必须为函数'
+            if callable(val):
+                # val=[val,s_name]
+                statistics_func[s_name]=[val,s_name]
+            else:
+                assert isinstance(val,list) and callable(val[0]) and isinstance(val[1],str),'值必须为[函数,str]'
+
+
 
         model_copy=deepcopy(self)#复制
         return_model=FlatDataModel()#返回值
@@ -225,6 +231,8 @@ class FlatDataModel:
                 bunchs.append(bunch)
                 bunch=[unit]
                 current_classify_value=this_classify_value
+        if len(bunch)!=0:
+            bunchs.append(bunch)
 
         #按变量名提取值
         for bunch in bunchs:
@@ -236,12 +244,12 @@ class FlatDataModel:
             #添加统计变量
             for s_name in statistics_func.keys():
                 value_list=[x[s_name] for x in bunch]
-                statistics_value=statistics_func[s_name](value_list)
-                unit.data[s_name]=statistics_value
+                statistics_value=statistics_func[s_name][0](value_list)
+                unit.data[statistics_func[s_name][1]]=statistics_value
             return_model.units.append(unit)
 
         #处理vn
-        return_model.vn=classify_names+list(statistics_func.keys())
+        return_model.vn=classify_names+[v[1] for v in statistics_func.values()]
 
         return_model.save('t1.xlsx')
 
@@ -257,7 +265,8 @@ if __name__ == '__main__':
     u=model[0]
     print(u['文件名','间距'])
     model.flhz(classify_names=['工况名','拉杆刚度'],
-               statistics_func={'P1底剪力':max})
+               statistics_func={'P1底剪力':[max,'p1底剪力'],
+                                'P1底剪力':[len,'个数']})
 
 
 
