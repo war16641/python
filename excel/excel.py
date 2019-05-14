@@ -5,6 +5,8 @@ from typing import Union,Tuple,Sequence,overload,List
 from GoodToolPython.mybaseclasses.tools import is_sequence_with_specified_type
 from  GoodToolPython.mybaseclasses.todoexception import ToDoException
 from copy import copy,deepcopy
+import warnings
+
 
 
 @overload
@@ -157,34 +159,7 @@ class FlatDataModel:
     def save(self,fullname,sheetname=None):
         #保存到excel文件中
         wb=Workbook()
-        if sheetname is None:
-            sheet=wb[wb.sheetnames[0]]#默认第一张簿
-        else:
-            #创建
-            assert isinstance(sheetname,str),'sheetname类型必须为str'
-            sheet=wb.create_sheet(sheetname)
-
-        #写入标题行
-        for col in range(1,1+len(self.vn)):
-            sheet.cell(row=1,column=col).value=self.vn[col-1]
-
-        row_rd=2
-        col_rd=1#下一个可以写入的位置
-        #写入注释行
-        for rowin in self.caption:
-            for cellin in rowin:
-                sheet.cell(row=row_rd,column=col_rd).value=cellin
-                col_rd+=1
-            row_rd+=1
-            col_rd=1
-
-        #写入数据
-        for unit in self:
-            for v in unit:
-                sheet.cell(row=row_rd,column=col_rd).value=v
-                col_rd+=1
-            row_rd += 1
-            col_rd = 1
+        self.__add_to_workbook(wb,'Sheet')
 
         #保存文件
         wb.save(fullname)
@@ -197,6 +172,13 @@ class FlatDataModel:
              classify_names:Union[str,List[str]],
              statistics_func:List[List],
              flag_write_statistics_func=False)->FlatDataModel:
+        """
+        分类汇总
+        :param classify_names:
+        :param statistics_func: 列表组成的列表 二级嵌套列表 子列表形如[字段名,统计函数]或[字段名,统计函数,新字段名]
+        :param flag_write_statistics_func:
+        :return:
+        """
         #参数预处理
         if isinstance(classify_names,str):
             classify_names=[classify_names]
@@ -263,15 +245,61 @@ class FlatDataModel:
         #处理vn
         return_model.vn=classify_names+[line[2] for line in statistics_func]
 
-        return_model.save('t1.xlsx')
+        return return_model
 
+
+    def append_to_file(self,fullname,sheetname):
+        workbook = load_workbook(fullname, data_only=True)
+        self.__add_to_workbook(workbook,sheetname)
+        workbook.save(fullname)
+
+
+    def __add_to_workbook(self,wb,sheetname):
+        """
+        将自身以sheet的形式添加到wb中，
+        :param wb:
+        :return:
+        """
+        assert isinstance(wb,Workbook),'wb为workbook对象'
+        if sheetname in wb.sheetnames:
+            # raise Exception("该工作簿已存在")
+            warnings.warn('原有工作簿被删除')
+            wb.remove(wb[sheetname])
+            sheet = wb.create_sheet(sheetname)
+        else:
+            # 创建
+            assert isinstance(sheetname, str), 'sheetname类型必须为str'
+            sheet = wb.create_sheet(sheetname)
+
+        # 写入标题行
+        for col in range(1, 1 + len(self.vn)):
+            sheet.cell(row=1, column=col).value = self.vn[col - 1]
+
+        row_rd = 2
+        col_rd = 1  # 下一个可以写入的位置
+        # 写入注释行
+        for rowin in self.caption:
+            for cellin in rowin:
+                sheet.cell(row=row_rd, column=col_rd).value = cellin
+                col_rd += 1
+            row_rd += 1
+            col_rd = 1
+
+        # 写入数据
+        for unit in self:
+            for v in unit:
+                sheet.cell(row=row_rd, column=col_rd).value = v
+                col_rd += 1
+            row_rd += 1
+            col_rd = 1
 
 
 
 
 
 if __name__ == '__main__':
-    model=FlatDataModel.load_from_file(fullname="F:\我的文档\python_file\\14个人工波RP50和2000固定.xlsx",
+    fullname="F:\我的文档\python_file\\14个人工波RP50和2000固定.xlsx"
+    model=FlatDataModel.load_from_file(fullname=fullname,
                                        row_variable_name=1,
                                        row_caption=2)
     u=model[0]
@@ -281,7 +309,7 @@ if __name__ == '__main__':
     #                             ['P1底剪力',len,'个数']])
     model.flhz(classify_names=['工况名','拉杆刚度'],
                statistics_func=[['P1底剪力',max],
-                                ])
+                                ]).append_to_file(fullname,'flhz')
 
 
 
