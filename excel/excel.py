@@ -1,12 +1,13 @@
+import warnings
+from copy import deepcopy
+from typing import Union, Sequence, overload, List
+
+import win32com
 from openpyxl import *
 from openpyxl.cell.cell import Cell
-from openpyxl.worksheet.worksheet import Worksheet
-from typing import Union,Tuple,Sequence,overload,List
-from GoodToolPython.mybaseclasses.tools import is_sequence_with_specified_type
-from  GoodToolPython.mybaseclasses.todoexception import ToDoException
-from copy import copy,deepcopy
-import warnings
+from win32com.client import constants as c  # 旨在直接使用VBA常数
 
+from GoodToolPython.mybaseclasses.tools import is_sequence_with_specified_type
 
 
 @overload
@@ -18,33 +19,34 @@ class DataUnit:
     """
     数据单元 指一行
     """
+
     @staticmethod
-    def make(vn:Sequence[str],row:Sequence[Cell],model:FlatDataModel):
-        self=DataUnit()
-        assert is_sequence_with_specified_type(row,Cell),'row必须是Cell组成的列表'
+    def make(vn: Sequence[str], row: Sequence[Cell], model: FlatDataModel):
+        self = DataUnit()
+        assert is_sequence_with_specified_type(row, Cell), 'row必须是Cell组成的列表'
         assert is_sequence_with_specified_type(vn, str), 'vn必须是str组成的序列'
-        assert isinstance(model,FlatDataModel),'model必须是FlatDataModel对象'
-        assert len(vn)==len(row),'vn与row必须大小一致'
-        self.data={} # type: Union[int,str,float]#以字典的形式保存所有变量
-        for name,value in zip(vn,row):
-            self.data[name]=value.value
-        self.model=model#type:FlatDataModel   #保存模型
+        assert isinstance(model, FlatDataModel), 'model必须是FlatDataModel对象'
+        assert len(vn) == len(row), 'vn与row必须大小一致'
+        self.data = {}  # type: Union[int,str,float]#以字典的形式保存所有变量
+        for name, value in zip(vn, row):
+            self.data[name] = value.value
+        self.model = model  # type:FlatDataModel   #保存模型
         return self
 
-    def __init__(self,model=None):
-        self.data={} # type: Union[int,str,float]#以字典的形式保存所有变量
+    def __init__(self, model=None):
+        self.data = {}  # type: Union[int,str,float]#以字典的形式保存所有变量
         if model is not None:
-            assert isinstance(model,FlatDataModel),'参数错误'
+            assert isinstance(model, FlatDataModel), '参数错误'
         self.model = model  # type:FlatDataModel   #保存模型
 
     def __len__(self):
-        #返回变量的个数
+        # 返回变量的个数
         return len(self.data.keys())
 
     def __getitem__(self, item):
-        if is_sequence_with_specified_type(item,str):
-            #返回多个变量值
-            r=[]
+        if is_sequence_with_specified_type(item, str):
+            # 返回多个变量值
+            r = []
             for name in item:
                 r.append(self.data[name])
             return r
@@ -52,15 +54,15 @@ class DataUnit:
             return self.data.__getitem__(item)
 
     def __iter__(self):
-        #迭代器 依次返回该单元的所有变量值
-        self.__iter_id=0
+        # 迭代器 依次返回该单元的所有变量值
+        self.__iter_id = 0
         return self
 
     def __next__(self):
-        id=self.__iter_id
+        id = self.__iter_id
         if id == len(self):
             raise StopIteration
-        self.__iter_id+=1
+        self.__iter_id += 1
         return self.data[self.model.vn[id]]
 
 
@@ -71,7 +73,8 @@ class FlatDataModel:
     """
 
     @staticmethod
-    def load_from_file(fullname, sheetname=None, row_variable_name=0, row_caption=None, row_data_start=None)->FlatDataModel:
+    def load_from_file(fullname, sheetname=None, row_variable_name=0, row_caption=None,
+                       row_data_start=None) -> FlatDataModel:
         """
         从excel'文件中载入平面数据模型
         :param fullname:
@@ -81,7 +84,7 @@ class FlatDataModel:
         :param row_data_start: 数据起始行 默认为变量名行下一行
         :return:
         """
-        self=FlatDataModel()
+        self = FlatDataModel()
         workbook = load_workbook(fullname, data_only=True)
         assert len(workbook.sheetnames) > 0, '此表无工作簿'
         if sheetname is None:
@@ -93,27 +96,27 @@ class FlatDataModel:
         rows = list(worksheet.rows)  # 将工作簿中所有数据转化为以行为单位的列表
 
         # 读变量名
-        self.vn = [cell.value for cell in rows[row_variable_name]]# type: List[str]
+        self.vn = [cell.value for cell in rows[row_variable_name]]  # type: List[str]
         assert is_sequence_with_specified_type(self.vn, str), '变量名读取失败'
 
         # 读注释行
         self.caption = []  # type:List[List[str]]
         if row_caption is not None:
-            if isinstance(row_caption,int):
-                row_caption=[row_caption]
+            if isinstance(row_caption, int):
+                row_caption = [row_caption]
             for row_id in row_caption:
-                tmp=[cell.value for cell in rows[row_id]]
+                tmp = [cell.value for cell in rows[row_id]]
                 self.caption.append(tmp)
 
         # 读数据
-        self.units=[]# type:list[DataUnit]
+        self.units = []  # type:list[DataUnit]
         if row_data_start is None:
             if row_caption is None:
-                row_data_start=row_variable_name+1
+                row_data_start = row_variable_name + 1
             else:
-                row_data_start=row_caption[-1]+1
+                row_data_start = row_caption[-1] + 1
         for row in rows[row_data_start:]:
-            unit = DataUnit.make(self.vn, row,self)
+            unit = DataUnit.make(self.vn, row, self)
             self.units.append(unit)
         return self
 
@@ -153,34 +156,34 @@ class FlatDataModel:
     #         self.units.append(unit)
 
     def __init__(self):
-        self.vn=[]#type:list[str]
-        self.units=[]#type:list[DataUnit]
-        self.caption=[]#type:list[list[str]]
+        self.vn = []  # type:list[str]
+        self.units = []  # type:list[DataUnit]
+        self.caption = []  # type:list[list[str]]
 
     def __len__(self):
-        #返回units的个数
+        # 返回units的个数
         return len(self.units)
 
-    def __getitem__(self, item)->Union[DataUnit,List[DataUnit]]:
-        #切片 返回对应的unit
+    def __getitem__(self, item) -> Union[DataUnit, List[DataUnit]]:
+        # 切片 返回对应的unit
         return self.units.__getitem__(item)
 
-    def save(self,fullname,sheetname=None):
-        #保存到excel文件中
-        wb=Workbook()
-        self.__add_to_workbook(wb,'Sheet')
+    def save(self, fullname, sheetname=None):
+        # 保存到excel文件中
+        wb = Workbook()
+        self.__add_to_workbook(wb, 'Sheet')
 
-        #保存文件
+        # 保存文件
         wb.save(fullname)
 
     def __iter__(self):
-        #依次返回每一个unit
+        # 依次返回每一个unit
         return self.units.__iter__()
 
     def flhz(self,
-             classify_names:Union[str,List[str]],
-             statistics_func:List[List],
-             flag_write_statistics_func=False)->FlatDataModel:
+             classify_names: Union[str, List[str]],
+             statistics_func: List[List],
+             flag_write_statistics_func=False) -> FlatDataModel:
         """
         分类汇总
         :param classify_names:
@@ -188,16 +191,16 @@ class FlatDataModel:
         :param flag_write_statistics_func:
         :return:
         """
-        #参数预处理
-        if isinstance(classify_names,str):
-            classify_names=[classify_names]
-        assert is_sequence_with_specified_type(classify_names,str),'is_sequence_with_specified_type参数错误'
-        assert isinstance(statistics_func,list),'statistics_func必须为list'
-        for i,line in enumerate(statistics_func):
-            assert isinstance(line,list) and \
-                    line[0] in self.vn and \
-                    callable(line[1]),'statistics_func中的元素必须为[str,函数,str]或者[str,函数]'
-            if len(line)==2:
+        # 参数预处理
+        if isinstance(classify_names, str):
+            classify_names = [classify_names]
+        assert is_sequence_with_specified_type(classify_names, str), 'is_sequence_with_specified_type参数错误'
+        assert isinstance(statistics_func, list), 'statistics_func必须为list'
+        for i, line in enumerate(statistics_func):
+            assert isinstance(line, list) and \
+                   line[0] in self.vn and \
+                   callable(line[1]), 'statistics_func中的元素必须为[str,函数,str]或者[str,函数]'
+            if len(line) == 2:
                 line.append(line[0])
         # assert isinstance(statistics_func,dict),'statistics_func必须为字典'
         #
@@ -209,67 +212,63 @@ class FlatDataModel:
         #     else:
         #         assert isinstance(val,list) and callable(val[0]) and isinstance(val[1],str),'值必须为[函数,str]'
 
+        model_copy = deepcopy(self)  # 复制
+        return_model = FlatDataModel()  # 返回值
+        # 把classify_names做成函数
 
+        # 排序
+        model_copy.units.sort(key=lambda x: x[classify_names])
 
-        model_copy=deepcopy(self)#复制
-        return_model=FlatDataModel()#返回值
-        #把classify_names做成函数
-
-        #排序
-        model_copy.units.sort(key=lambda x:x[classify_names])
-
-        #按classify_names分类
-        current_classify_value=model_copy[0][classify_names]
-        bunch=[]#type:list[DataUnit]
-        bunchs=[]#type:list[list[DataUnit]]
+        # 按classify_names分类
+        current_classify_value = model_copy[0][classify_names]
+        bunch = []  # type:list[DataUnit]
+        bunchs = []  # type:list[list[DataUnit]]
         for unit in model_copy:
-            this_classify_value=unit[classify_names]
-            if this_classify_value ==current_classify_value:
+            this_classify_value = unit[classify_names]
+            if this_classify_value == current_classify_value:
                 bunch.append(unit)
             else:
                 bunchs.append(bunch)
-                bunch=[unit]
-                current_classify_value=this_classify_value
-        if len(bunch)!=0:
+                bunch = [unit]
+                current_classify_value = this_classify_value
+        if len(bunch) != 0:
             bunchs.append(bunch)
 
-        #按变量名提取值
+        # 按变量名提取值
         for bunch in bunchs:
-            #对每一个bunch进行提值 统计 生成一个单元
-            unit=DataUnit(return_model)
-            #添加classify变量
+            # 对每一个bunch进行提值 统计 生成一个单元
+            unit = DataUnit(return_model)
+            # 添加classify变量
             for c_name in classify_names:
-                unit.data[c_name]=bunch[0][c_name]
-            #添加统计变量
+                unit.data[c_name] = bunch[0][c_name]
+            # 添加统计变量
             for line in statistics_func:
-            # for s_name in [x[0] for x in statistics_func]:
-                s_name=line[0]
-                func=line[1]
-                newname=line[2]
-                value_list=[x[s_name] for x in bunch]
-                statistics_value=func(value_list)
-                unit.data[newname]=statistics_value
+                # for s_name in [x[0] for x in statistics_func]:
+                s_name = line[0]
+                func = line[1]
+                newname = line[2]
+                value_list = [x[s_name] for x in bunch]
+                statistics_value = func(value_list)
+                unit.data[newname] = statistics_value
             return_model.units.append(unit)
 
-        #处理vn
-        return_model.vn=classify_names+[line[2] for line in statistics_func]
+        # 处理vn
+        return_model.vn = classify_names + [line[2] for line in statistics_func]
 
         return return_model
 
-
-    def append_to_file(self,fullname,sheetname):
+    def append_to_file(self, fullname, sheetname):
         workbook = load_workbook(fullname, data_only=True)
-        self.__add_to_workbook(workbook,sheetname)
+        self.__add_to_workbook(workbook, sheetname)
         workbook.save(fullname)
 
-
-    def __add_to_workbook(self,wb,sheetname):
+    def __add_to_workbook(self, wb, sheetname):
         """
         将自身以sheet的形式添加到wb中，
         :param wb:
         :return:
         """
-        assert isinstance(wb,Workbook),'wb为workbook对象'
+        assert isinstance(wb, Workbook), 'wb为workbook对象'
         if sheetname in wb.sheetnames:
             # raise Exception("该工作簿已存在")
             warnings.warn('原有工作簿被删除')
@@ -302,49 +301,46 @@ class FlatDataModel:
             row_rd += 1
             col_rd = 1
 
-
     def add_variables_from_other_model(self,
-                                       other:FlatDataModel,
-                                       link_variable:str,
-                                       add_variable:Union[str,List[str]]=None)->None:
-        #参数处理
-        assert isinstance(other,FlatDataModel),'other必须为FlatDataModel对象'
-        assert isinstance(link_variable,str) and \
-            link_variable in self.vn and \
-            link_variable in other.vn,\
+                                       other: FlatDataModel,
+                                       link_variable: str,
+                                       add_variable: Union[str, List[str]] = None) -> None:
+        # 参数处理
+        assert isinstance(other, FlatDataModel), 'other必须为FlatDataModel对象'
+        assert isinstance(link_variable, str) and \
+               link_variable in self.vn and \
+               link_variable in other.vn, \
             'link_variable必须是两个模型中均存在的变量名'
         if add_variable is None:
-            #默认添加全部, 除了连接变量
-            add_variable=[x for x in other.vn if x != link_variable]
-        elif isinstance(add_variable,str):
-            add_variable=[add_variable]
+            # 默认添加全部, 除了连接变量
+            add_variable = [x for x in other.vn if x != link_variable]
+        elif isinstance(add_variable, str):
+            add_variable = [add_variable]
         else:
-            assert is_sequence_with_specified_type(add_variable,str),'add_variable为字符串列表'
+            assert is_sequence_with_specified_type(add_variable, str), 'add_variable为字符串列表'
 
-        #开始添加
+        # 开始添加
         for unit in self:
-            link_variable_value=unit[link_variable]
-            expr=lambda x:x[link_variable].__eq__(link_variable_value)
-            cor_unit=other.find(expr)#找到此模型的unit对应的在另外一个unit
-            if cor_unit is None:#没找到
+            link_variable_value = unit[link_variable]
+            expr = lambda x: x[link_variable].__eq__(link_variable_value)
+            cor_unit = other.find(expr)  # 找到此模型的unit对应的在另外一个unit
+            if cor_unit is None:  # 没找到
                 raise Exception("另外一个模型中未找到对应的unit")
             for name in add_variable:
-                unit.data[name]=cor_unit[name]
+                unit.data[name] = cor_unit[name]
 
-        #处理数变量名
-        self.vn+=add_variable
+        # 处理数变量名
+        self.vn += add_variable
 
-
-
-    def find(self,epxr,flag_find_all=False)->Union[DataUnit,List[DataUnit]]:
+    def find(self, epxr, flag_find_all=False) -> Union[DataUnit, List[DataUnit]]:
         """
         查找满足epxr的unit
         :param epxr: 真假判断函数
         :param flag_find_all: 是否查找全部
         :return: 找不到的时候 返回None
         """
-        assert callable(epxr),'expr必须为函数'
-        r=[]
+        assert callable(epxr), 'expr必须为函数'
+        r = []
         for unit in self:
             if epxr(unit) is True:
                 if flag_find_all is False:
@@ -356,25 +352,51 @@ class FlatDataModel:
         else:
             return r
 
+    def show_in_excel(self):
+        """
+        在excel中显示 此方法不会阻塞
+        :return:
+        """
+        xl_app = win32com.client.gencache.EnsureDispatch("Excel.Application")  # 若想引用常数的话使用此法调用Excel
+        xl_app.Visible = False  # 是否显示Excel文件
+        wb = xl_app.Workbooks.Add()
+        sht = wb.Worksheets(1)
+        row_rd, col_rd = 1, 1  # 记录下一个写入的位置
+        for name in self.vn:
+            sht.Cells(row_rd, col_rd).Value = name
+            col_rd += 1
+        row_rd = 2
+        col_rd = 1
+        for rowin in self.caption:
+            for cellin in rowin:
+                sht.Cells(row_rd, col_rd).Value = cellin
+                col_rd += 1
+            row_rd += 1
+            col_rd = 1
+        for unit in self:
+            for v in unit:
+                sht.Cells(row_rd, col_rd).Value = v
+                col_rd += 1
+            row_rd += 1
+            col_rd = 1
+        xl_app.Visible = True
 
 
 if __name__ == '__main__':
-    fullname="F:\我的文档\python_file\\14个人工波RP50和2000固定.xlsx"
-    fullname1="D:\新建 Microsoft Excel 工作表.xlsx"
-    model=FlatDataModel.load_from_file(fullname=fullname,
-                                       row_variable_name=1,
-                                       row_caption=2)
-    u=model[0]
-    print(u['文件名','间距'])
-    model2=FlatDataModel.load_from_file(fullname=fullname1)
-    model.add_variables_from_other_model(model2,'工况名',['随机数1','随机数2'])
-    model.save('test.xlsx')
+    fullname = "F:\我的文档\python_file\\14个人工波RP50和2000固定.xlsx"
+    fullname1 = "D:\新建 Microsoft Excel 工作表.xlsx"
+    model = FlatDataModel.load_from_file(fullname=fullname,
+                                         row_variable_name=1,
+                                         row_caption=2)
+    u = model[0]
+    print(u['文件名', '间距'])
+    model2 = FlatDataModel.load_from_file(fullname=fullname1)
+    model.add_variables_from_other_model(model2, '工况名', ['随机数1', '随机数2'])
+    model.show_in_excel()
+
     # model.flhz(classify_names=['工况名','拉杆刚度'],
     #            statistics_func=[['P1底剪力',max,'p1底剪力'],
     #                             ['P1底剪力',len,'个数']])
     # model.flhz(classify_names=['工况名','拉杆刚度'],
     #            statistics_func=[['P1底剪力',max],
     #                             ]).append_to_file(fullname,'flhz')
-
-
-
