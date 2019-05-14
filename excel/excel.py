@@ -195,20 +195,28 @@ class FlatDataModel:
 
     def flhz(self,
              classify_names:Union[str,List[str]],
-             statistics_func:dict,
+             statistics_func:List[List],
              flag_write_statistics_func=False)->FlatDataModel:
         #参数预处理
         if isinstance(classify_names,str):
             classify_names=[classify_names]
         assert is_sequence_with_specified_type(classify_names,str),'is_sequence_with_specified_type参数错误'
-        assert isinstance(statistics_func,dict),'statistics_func必须为字典'
-        for s_name,val in statistics_func.items():
-            assert s_name in self.vn,'键必须为变量名'
-            if callable(val):
-                # val=[val,s_name]
-                statistics_func[s_name]=[val,s_name]
-            else:
-                assert isinstance(val,list) and callable(val[0]) and isinstance(val[1],str),'值必须为[函数,str]'
+        assert isinstance(statistics_func,list),'statistics_func必须为list'
+        for i,line in enumerate(statistics_func):
+            assert isinstance(line,list) and \
+                    line[0] in self.vn and \
+                    callable(line[1]),'statistics_func中的元素必须为[str,函数,str]或者[str,函数]'
+            if len(line)==2:
+                line.append(line[0])
+        # assert isinstance(statistics_func,dict),'statistics_func必须为字典'
+        #
+        # for s_name,val in statistics_func.items():
+        #     assert s_name in self.vn,'键必须为变量名'
+        #     if callable(val):
+        #         # val=[val,s_name]
+        #         statistics_func[s_name]=[val,s_name]
+        #     else:
+        #         assert isinstance(val,list) and callable(val[0]) and isinstance(val[1],str),'值必须为[函数,str]'
 
 
 
@@ -242,14 +250,18 @@ class FlatDataModel:
             for c_name in classify_names:
                 unit.data[c_name]=bunch[0][c_name]
             #添加统计变量
-            for s_name in statistics_func.keys():
+            for line in statistics_func:
+            # for s_name in [x[0] for x in statistics_func]:
+                s_name=line[0]
+                func=line[1]
+                newname=line[2]
                 value_list=[x[s_name] for x in bunch]
-                statistics_value=statistics_func[s_name][0](value_list)
-                unit.data[statistics_func[s_name][1]]=statistics_value
+                statistics_value=func(value_list)
+                unit.data[newname]=statistics_value
             return_model.units.append(unit)
 
         #处理vn
-        return_model.vn=classify_names+[v[1] for v in statistics_func.values()]
+        return_model.vn=classify_names+[line[2] for line in statistics_func]
 
         return_model.save('t1.xlsx')
 
@@ -264,9 +276,12 @@ if __name__ == '__main__':
                                        row_caption=2)
     u=model[0]
     print(u['文件名','间距'])
+    # model.flhz(classify_names=['工况名','拉杆刚度'],
+    #            statistics_func=[['P1底剪力',max,'p1底剪力'],
+    #                             ['P1底剪力',len,'个数']])
     model.flhz(classify_names=['工况名','拉杆刚度'],
-               statistics_func={'P1底剪力':[max,'p1底剪力'],
-                                'P1底剪力':[len,'个数']})
+               statistics_func=[['P1底剪力',max],
+                                ])
 
 
 
