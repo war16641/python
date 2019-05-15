@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Union, Sequence, overload, List
+from typing import Union, Sequence, overload, List,Generic,TypeVar
 
 import win32com
 from openpyxl import *
@@ -9,10 +9,12 @@ from win32com.client import constants as c  # 旨在直接使用VBA常数
 
 from GoodToolPython.mybaseclasses.tools import is_sequence_with_specified_type
 
+# T_Model=TypeVar('T_Model')
 
-@overload
-class FlatDataModel:
-    pass
+
+# @overload
+# class FlatDataModel:
+#     pass
 
 
 class DataUnit:
@@ -21,7 +23,7 @@ class DataUnit:
     """
 
     @staticmethod
-    def make(vn: Sequence[str], row: Sequence[Cell], model: FlatDataModel):
+    def make(vn: Sequence[str], row: Sequence[Cell], model: 'FlatDataModel'):
         self = DataUnit()
         assert is_sequence_with_specified_type(row, Cell), 'row必须是Cell组成的列表'
         assert is_sequence_with_specified_type(vn, str), 'vn必须是str组成的序列'
@@ -74,7 +76,7 @@ class FlatDataModel:
 
     @staticmethod
     def load_from_file(fullname, sheetname=None, row_variable_name=0, row_caption=None,
-                       row_data_start=None) -> FlatDataModel:
+                       row_data_start=None) -> 'FlatDataModel':
         """
         从excel'文件中载入平面数据模型
         :param fullname:
@@ -183,7 +185,7 @@ class FlatDataModel:
     def flhz(self,
              classify_names: Union[str, List[str]],
              statistics_func: List[List],
-             flag_write_statistics_func=False) -> FlatDataModel:
+             flag_write_statistics_func=False) -> 'FlatDataModel':
         """
         分类汇总
         :param classify_names:
@@ -302,7 +304,7 @@ class FlatDataModel:
             col_rd = 1
 
     def add_variables_from_other_model(self,
-                                       other: FlatDataModel,
+                                       other: 'FlatDataModel',
                                        link_variable: str,
                                        add_variable: Union[str, List[str]] = None) -> None:
         # 参数处理
@@ -383,15 +385,11 @@ class FlatDataModel:
 
 
 if __name__ == '__main__':
-    fullname = "F:\我的文档\python_file\\14个人工波RP50和2000固定.xlsx"
+    fullname = "F:\X撑1\matlab\两万\\adsf_ - 副本.xlsx"
     fullname1 = "D:\新建 Microsoft Excel 工作表.xlsx"
-    model = FlatDataModel.load_from_file(fullname=fullname,
-                                         row_variable_name=1,
-                                         row_caption=2)
+    model = FlatDataModel.load_from_file(fullname=fullname)
     u = model[0]
     print(u['文件名', '间距'])
-    model2 = FlatDataModel.load_from_file(fullname=fullname1)
-    model.add_variables_from_other_model(model2, '工况名', ['随机数1', '随机数2'])
     model.show_in_excel()
 
     # model.flhz(classify_names=['工况名','拉杆刚度'],
