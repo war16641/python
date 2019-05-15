@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Union, Sequence, overload, List,Generic,TypeVar
+from typing import Union, Sequence, overload, List,Generic,TypeVar,Optional
 
 import win32com
 from openpyxl import *
@@ -73,6 +73,20 @@ class FlatDataModel:
     平面数据模型 excel文件中的数据 一行代表一个数据单元
     所有的序号都是从0数起
     """
+
+    @staticmethod
+    @overload
+    def load_from_file(fullname)-> 'FlatDataModel':
+        pass
+
+    @staticmethod
+    @overload
+    def load_from_file(fullname,
+                       sheetname:str=None,
+                       row_variable_name:int=0,
+                       row_caption:List[int]=None,
+                       row_data_start:int=None)-> 'FlatDataModel':
+        pass
 
     @staticmethod
     def load_from_file(fullname, sheetname=None, row_variable_name=0, row_caption=None,
@@ -391,7 +405,7 @@ if __name__ == '__main__':
     u = model[0]
     print(u['文件名', '间距'])
     model.show_in_excel()
-
+    FlatDataModel.load_from_file()
     # model.flhz(classify_names=['工况名','拉杆刚度'],
     #            statistics_func=[['P1底剪力',max,'p1底剪力'],
     #                             ['P1底剪力',len,'个数']])

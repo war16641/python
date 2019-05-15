@@ -410,7 +410,7 @@ class Tensor:
                 raise Exception("参数错误。双索引支持二阶张量。")
 
     @staticmethod
-    def zeros(order=0, ccs=global_ccs):
+    def zeros(order=0, ccs=global_ccs)->'Tensor':
         """
         生成0元素张量
         :param order:指定阶数 不能大于2
@@ -468,7 +468,7 @@ class Tensor:
         else:
             raise Exception("未知错误")
 
-    def __add__(self, other):
+    def __add__(self, other)->'Tensor':
         assert isinstance(other, Tensor)
         assert self.order == other.order, '阶数不同不能加减'
         r = deepcopy(self)
@@ -477,7 +477,7 @@ class Tensor:
         r.component = r.component + item.component
         return r
 
-    def __sub__(self, other):
+    def __sub__(self, other)->'Tensor':
         assert isinstance(other, Tensor)
         assert self.order == other.order, '阶数不同不能加减'
         r = deepcopy(self)
@@ -495,7 +495,7 @@ class Tensor:
             raise Exception("参数错误")
 
     @staticmethod
-    def kronecker(ccs=global_ccs):
+    def kronecker(ccs=global_ccs)->'Tensor':
         """
         2阶kronecker张量
         :param ccs: 默认是世界坐标系
@@ -507,7 +507,7 @@ class Tensor:
                       [0, 0, 1]])
         return Tensor(component=A, ccs=ccs)
 
-    def contraction(self, other, arg1: str = '.'):
+    def contraction(self, other, arg1: str = '.')->'Tensor':
         """
         张量的缩并 这里只实现了点积 双点积
         计算的方式 使用kronecker张量实现
@@ -543,7 +543,7 @@ class Tensor:
         else:
             raise Exception("参数错误")
 
-    def __mul__(self, other):
+    def __mul__(self, other)->'Tensor':
         """
         * 用作张量的点积 调用contraction函数
         :param other: 另一个张量
@@ -553,7 +553,7 @@ class Tensor:
         assert isinstance(other, Tensor), '点积运算的对象必须为张量'
         return self.contraction(other)
 
-    def __pow__(self, power, modulo=None):
+    def __pow__(self, power, modulo=None)->'Tensor':
         """
         ** 用作双点积 调用contraction函数
         :param power:另一个张量
