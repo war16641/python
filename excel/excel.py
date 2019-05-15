@@ -397,6 +397,11 @@ class FlatDataModel:
             col_rd = 1
         xl_app.Visible = True
 
+    def __str__(self):
+        s1='%d个变量'%len(self.vn)
+        s2=self.vn.__str__()
+        s3='%d个数据单元'%len(self.units)
+        return "%s\n%s\n%s"%(s1,s2,s3)
 
 if __name__ == '__main__':
     fullname = "F:\X撑1\matlab\两万\\adsf_ - 副本.xlsx"
@@ -404,8 +409,7 @@ if __name__ == '__main__':
     model = FlatDataModel.load_from_file(fullname=fullname)
     u = model[0]
     print(u['文件名', '间距'])
-    model.show_in_excel()
-    FlatDataModel.load_from_file()
+    print(model)
     # model.flhz(classify_names=['工况名','拉杆刚度'],
     #            statistics_func=[['P1底剪力',max,'p1底剪力'],
     #                             ['P1底剪力',len,'个数']])
