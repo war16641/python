@@ -4,7 +4,7 @@ from copy import deepcopy
 from GoodToolPython.mybaseclasses.tools import is_vector_like,format_vector
 import matplotlib.pyplot as plt
 from myfile import read_file
-
+from math import pi
 
 Vector=TypeVar('Vector',list,np.ndarray)
 
@@ -93,6 +93,11 @@ class XYData:
         self.data=data
 
     def psd(self,flag_logy=True):
+        """
+        求频谱图 还不太准确
+        :param flag_logy:
+        :return:
+        """
         time=self.data[:,0]
         signal=self.data[:,1]
         freqs = np.fft.fftfreq(time.size, time[1]-time[0])
@@ -110,8 +115,7 @@ class XYData:
         plt.show()
 
 
-
-if __name__ == '__main__':
+def test1():
     A=np.array([[1, 1],[2, 1],[3 ,2]])
     xy=XYData('数据集',A)
     print(xy)
@@ -139,4 +143,28 @@ if __name__ == '__main__':
     xy=XYData(name='kobe',xy=ori)
     # xy.plot()
     # xy.plot()
+    # xy.psd(False)
+
+def test_fft():
+    fs=600
+    time=np.arange(0.,1.5,1/fs)
+    y=np.sin(2*pi*100*time)+np.sin(2*pi*45*time)
+    N=time.size
+    df=fs/(N-1)
+    f=np.arange(0,N)*df
+    Y=np.fft.fft(y)/N*2
+    am=abs(Y)
+    plt.figure()
+    plt.plot(f, am)
+    plt.show()
+
+def test_fft2():
+    fs = 600
+    time = np.arange(0., 1.5, 1 / fs)
+    y = np.sin(2 * pi * 100 * time) + np.sin(2 * pi * 45 * time)
+    xy=XYData(name='sin',x=time,y=y)
     xy.psd(False)
+
+if __name__ == '__main__':
+    test_fft2()
+
