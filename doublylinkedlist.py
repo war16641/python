@@ -14,6 +14,22 @@ class Node(SelfDelete):
         self.data = data  # 数据
         self.list = list  # type:DoublyLinkedList #所属双向链表
 
+class _Iterator:
+    def __init__(self,lst,flag_reversed):
+        self.lst=lst
+        if flag_reversed is False:
+            self.direction=lambda  x:x.next
+        else:
+            self.direction = lambda x: x.previous
+    def __iter__(self):
+        self.next_node=self.direction(lst.header)
+        return self
+    def __next__(self)->Node:
+        if lst.header == self.next_node:
+            raise StopIteration
+        tmp=self.next_node
+        self.next_node=self.direction(tmp)
+        return tmp
 
 class DoublyLinkedList:
     def __init__(self):
@@ -73,14 +89,13 @@ class DoublyLinkedList:
 
     def __iter__(self):
         #迭代器 从第一个节点开始迭代 不含头部
-        self.__next_node = self.header.next  # 迭代用的变量
-        return self
+        return self.iterator()
+        # tmp=_Iterator(self,False)
+        # tmp.__iter__()
+        # return tmp
 
-    def __next__(self) -> Node:
-        if self.__next_node == self.header:
-            raise StopIteration
-        self.__next_node = self.__next_node.next
-        return self.__next_node.previous
+
+
 
     def delete_node(self, node: Node):
         assert isinstance(node, Node), '必须为节点对象'
@@ -132,6 +147,11 @@ class DoublyLinkedList:
                 it=it.previous
             return it
 
+    def iterator(self,flag_reversed=False):
+        tmp=_Iterator(self,flag_reversed)
+        tmp.__iter__()
+        return tmp
+
 if __name__ == '__main__':
     lst = DoublyLinkedList()
     lst.print()
@@ -162,3 +182,8 @@ if __name__ == '__main__':
     assert lst.last_node.data == '3'
     assert lst[-1].data == '3'
     assert lst[-2].data == '1.5'
+
+    for n in lst.iterator(True):
+        print(n.data)
+    assert n.data=='1'
+    
