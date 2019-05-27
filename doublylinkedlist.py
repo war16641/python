@@ -8,28 +8,33 @@ class Node(SelfDelete):
     为了防止节点不知道自己被删除 继承了selfdelete类
     使用时 不可在双向列表外实例化
     """
+
     def __init__(self, data=None, previous=None, next=None, list=None):
         self.previous = previous  # type:Node
         self.next = next  # type:Node
         self.data = data  # 数据
         self.list = list  # type:DoublyLinkedList #所属双向链表
 
+
 class _Iterator:
-    def __init__(self,lst,flag_reversed):
-        self.lst=lst
+    def __init__(self, lst, flag_reversed):
+        self.lst = lst
         if flag_reversed is False:
-            self.direction=lambda  x:x.next
+            self.direction = lambda x: x.next
         else:
             self.direction = lambda x: x.previous
+
     def __iter__(self):
-        self.next_node=self.direction(lst.header)
+        self.next_node = self.direction(lst.header)
         return self
-    def __next__(self)->Node:
+
+    def __next__(self) -> Node:
         if lst.header == self.next_node:
             raise StopIteration
-        tmp=self.next_node
-        self.next_node=self.direction(tmp)
+        tmp = self.next_node
+        self.next_node = self.direction(tmp)
         return tmp
+
 
 class DoublyLinkedList:
     def __init__(self):
@@ -79,7 +84,11 @@ class DoublyLinkedList:
         return '长度:%d' % self._length
 
     def print(self, expr=None) -> None:
-        #详细打印列表信息 默认直接输出data
+        """
+        #详细打印列表信息
+        :param expr: 打印的变量名 默认为data
+        :return:
+        """
         if expr is None:
             expr = lambda x: x.data
         assert callable(expr)
@@ -88,14 +97,15 @@ class DoublyLinkedList:
             print(expr(n))
 
     def __iter__(self):
+        """
         #迭代器 从第一个节点开始迭代 不含头部
+        调用iterator实现
+        :return:
+        """
         return self.iterator()
         # tmp=_Iterator(self,False)
         # tmp.__iter__()
         # return tmp
-
-
-
 
     def delete_node(self, node: Node):
         assert isinstance(node, Node), '必须为节点对象'
@@ -107,7 +117,7 @@ class DoublyLinkedList:
         self._length -= 1
 
     def find_by_data(self, data) -> Node:
-        #通过数据 查找节点 返回第一个满足data相等的节点 没找到返回none
+        # 通过数据 查找节点 返回第一个满足data相等的节点 没找到返回none
         for n in self:
             if n.data == data:
                 return n
@@ -116,41 +126,52 @@ class DoublyLinkedList:
     def __len__(self):
         return self._length
 
-
     @property
-    def last_node(self)->Node:
-        #最后节点
-        if self._length==0:
+    def last_node(self) -> Node:
+        # 最后节点
+        if self._length == 0:
             return None
         return self.header.previous
+
     @property
-    def first_node(self)->Node:
-        #第一个节点 不是头部
-        if self._length==0:
+    def first_node(self) -> Node:
+        # 第一个节点 不是头部
+        if self._length == 0:
             return None
         return self.header.next
-    def __getitem__(self, item)->Node:
-        #通过索引获取节点 支持负数索引
-        assert isinstance(item,int),'只支持数字索引'
-        if item>=0:#自然数时 正向索引
-            if item>self._length-1:
-                raise Exception("索引超出范围")
-            it=self.header
-            for i in range(0,item+1):
-                it=it.next
-            return it
-        else:#负数
-            if -1*item>self._length:
+
+    def __getitem__(self, item) -> Node:
+        # 通过索引获取节点 支持负数索引
+        assert isinstance(item, int), '只支持数字索引'
+        if item >= 0:  # 自然数时 正向索引
+            if item > self._length - 1:
                 raise Exception("索引超出范围")
             it = self.header
-            for i in range(-1,item-1,-1):
-                it=it.previous
+            for i in range(0, item + 1):
+                it = it.next
+            return it
+        else:  # 负数
+            if -1 * item > self._length:
+                raise Exception("索引超出范围")
+            it = self.header
+            for i in range(-1, item - 1, -1):
+                it = it.previous
             return it
 
-    def iterator(self,flag_reversed=False):
-        tmp=_Iterator(self,flag_reversed)
+    def iterator(self, flag_reversed=False):
+        """
+        遍历节点
+        不含头部
+        :param flag_reversed: true代表反方向遍历
+        :return:
+        """
+        tmp = _Iterator(self, flag_reversed)
         tmp.__iter__()
         return tmp
+    def append(self,data):
+        #在末尾添加 使用insert方法实现
+        self.insert(data=data)
+
 
 if __name__ == '__main__':
     lst = DoublyLinkedList()
@@ -158,7 +179,7 @@ if __name__ == '__main__':
     lst.insert('1')
     lst.print(expr=lambda x: x.data)
     assert len(lst) == 1
-    assert lst[0].data=='1'
+    assert lst[0].data == '1'
     assert lst[-1].data == '1'
     t1 = lst.insert('2')
     lst.insert('3')
@@ -185,5 +206,6 @@ if __name__ == '__main__':
 
     for n in lst.iterator(True):
         print(n.data)
-    assert n.data=='1'
-    
+    assert n.data == '1'
+    lst.append('4')
+    assert lst[-1].data=='4'
