@@ -116,7 +116,7 @@ class Tree(Generic[T_Tree]):
         self.wx_app = wx.App()
         pass
 
-    def make_root_node(self, data) -> T_Node:
+    def make_root_node(self, data) -> 'Node':
         """
         生成根节点
         #返回生成的节点
@@ -326,5 +326,5 @@ if __name__ == '__main__':
     assert len(tree.get_leafs_below()) == 6
     assert n2.degree == 0
     assert n2 in tree.get_leafs_below()
-    
+
     # 测试结束
