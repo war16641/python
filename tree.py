@@ -47,7 +47,7 @@ class Node(Generic[T_Node],SelfDelete):
     def degree(self):  # 节点的度
         return len(self.child_nodes)
 
-    def add_child(self, data) -> T_Node:
+    def add_child(self, data) -> 'Node':
         """
         添加子节点
         :param data: 是子节点的数据 不是node类
