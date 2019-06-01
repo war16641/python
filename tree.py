@@ -59,7 +59,7 @@ class Node(Generic[T_Node],SelfDelete):
         self.child_nodes.append(cd)
         return cd
 
-    def get_siblings(self, ) -> List[T_Node]:
+    def get_siblings(self, ) -> List['Node']:
         """
         返回siblings
         :return: 没有就返回[]
@@ -326,4 +326,5 @@ if __name__ == '__main__':
     assert len(tree.get_leafs_below()) == 6
     assert n2.degree == 0
     assert n2 in tree.get_leafs_below()
+    
     # 测试结束
