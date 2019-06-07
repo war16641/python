@@ -47,7 +47,7 @@ class Node(Generic[T_Node],SelfDelete):
     def degree(self):  # 节点的度
         return len(self.child_nodes)
 
-    def add_child(self, data) -> T_Node:
+    def add_child(self, data) -> 'Node':
         """
         添加子节点
         :param data: 是子节点的数据 不是node类
@@ -59,7 +59,7 @@ class Node(Generic[T_Node],SelfDelete):
         self.child_nodes.append(cd)
         return cd
 
-    def get_siblings(self, ) -> List[T_Node]:
+    def get_siblings(self, ) -> List['Node']:
         """
         返回siblings
         :return: 没有就返回[]
@@ -116,7 +116,7 @@ class Tree(Generic[T_Tree]):
         self.wx_app = wx.App()
         pass
 
-    def make_root_node(self, data) -> T_Node:
+    def make_root_node(self, data) -> 'Node':
         """
         生成根节点
         #返回生成的节点
@@ -326,4 +326,5 @@ if __name__ == '__main__':
     assert len(tree.get_leafs_below()) == 6
     assert n2.degree == 0
     assert n2 in tree.get_leafs_below()
+
     # 测试结束
