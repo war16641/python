@@ -178,6 +178,8 @@ if __name__ == '__main__':
     assert rn.left_node.data=='01'
     assert rn.right_node.data=='02'
     n1=rn.add_child(data='01a',ndpos=BinaryNodePosition.LEFT)
+    left=BinaryNodePosition.LEFT
+    print(rn[left])
     assert rn[BinaryNodePosition.LEFT].data=='01a'
     assert rn.degree==2
     n1.add_child(data='01b',ndpos=BinaryNodePosition.RIGHT)
