@@ -104,22 +104,43 @@ class Hero:
 
         self.ad=0
         self.ap=0
-        self.level=1
+        self._level=1
+        self._hp=0#代表总的生命值
 
+    @property
+    def level(self):
+        return self._level
+
+    @level.setter
+    def level(self,v):
+        assert v>=1 and v<=18
+        self._level=v
+        # self.hp=self.health_seq[v-1]#更改生命值
+    @property
+    def hp(self):
+        if self._hp==0:#如果没有设置总的生命值 就返回裸生命值
+            return self.health_seq[self._level-1]
+        assert self._hp>=self.health_seq[self._level-1],'生命值不能低于裸装生命值'
+        return self._hp
+    @hp.setter
+    def hp(self,v):
+        assert v >= self.health_seq[self._level - 1], '生命值不能低于裸装生命值'
+        self._hp=v
     def query_damage_for_one_ability(self,ability_str):
         ability_level=self.strategy.query(level=self.level,ability_str=ability_str)
         co_ad, co_ap, co_hp, rare_damage=self.abilities[ability_str].query(level=ability_level)
 
-        rare_hp=self.health_seq[self.level-1]
+        # rare_hp=self.health_seq[self.level-1]
         #暂时使用下面的属性值
         ad=self.ad
         ap=self.ap
-        hp=rare_hp
+        hp=self.hp
 
         low_damage=co_ad[0]*ad+co_ap[0]*ap+co_hp[0]*hp+rare_damage[0]
         high_damage=co_ad[1]*ad+co_ap[1]*ap+co_hp[1]*hp+rare_damage[1]
         return low_damage,high_damage
 
+    
     def print(self,magic_armor=0,ad=0,ap=0,hp=0):
         self.ad=ad
         self.ap=ap
