@@ -15,11 +15,11 @@ from GoodToolPython.myfile import is_number
 # text = pytesseract.image_to_string(Image.open("D:\\t4_py.bmp"))
 # print(text)
 
-def snap_screen():
-    time.sleep(3)
+def snap_screen(wait_time=3,bbox=(640, 732, 668, 744,)):
+    time.sleep(wait_time)
     # im = ImageGrab.grab(bbox=(640, 732, 661, 744,))
     # im = ImageGrab.grab(bbox=(640, 732, 671, 744,))
-    im = ImageGrab.grab(bbox=(640, 732, 668, 744,))
+    im = ImageGrab.grab(bbox)
     return im
 
 def do_with_image(im,threshold = 68):
@@ -66,6 +66,57 @@ def separate_image(im):
     for st in (0,7,14,21,):
         lst.append(im.crop((st,0,st+7,12)))
     return lst
+def auto_separate_image(im):
+    """
+
+    :param im: 灰度图像
+    :return:
+    """
+    mt=np.asarray(im)/255.0
+    width=mt.shape[1]
+    flag_find=False#是否发现切割对象
+    a=0
+    b=0
+    im_sep_lst=[]
+    for i in range(width):
+        col=mt[:,i]
+        print(mt[:,i])
+        he=np.sum(col)
+        if he>=1:#发现图像
+            if flag_find==False:
+                a=i
+                flag_find=True
+            else:
+                pass
+        else:#未发现图像
+            if flag_find==True:
+                b=i
+                flag_find=False
+                #切割图片
+                width_ind=b-a
+                if width_ind ==5:
+                    #左右各加宽1
+                    im_sep=im.crop((a-1,0,b+1,12))
+                    im_sep.show()
+                elif width_ind==6:
+                    #右边加宽
+                    im_sep = im.crop((a , 0, b + 1, 12))
+                    im_sep.show()
+                elif width_ind==3:
+                    #斜杆 左右加宽2
+                    im_sep = im.crop((a-2, 0, b + 2, 12))
+                    im_sep.show()
+                else:
+                    raise Exception("错误的宽度")
+                im_sep_lst.append(im_sep)
+            else:
+                pass
+    return im_sep_lst
+            
+        
+                
+            
+            
 if __name__ == '__main__':
     pathname="d:\\auto.bmp"
     im=snap_screen()
