@@ -31,6 +31,7 @@ class StaticTextExampleFrame(wx.Frame):
         #指定字体的静态文本的font
         text = wx.StaticText(panel, wx.ID_ANY,"设置文本font", (20,100))
         font=wx.Font(18,wx.DECORATIVE,wx.ITALIC,wx.NORMAL)
+        # font = wx.Font(18,wx.NORMAL)
         text.SetFont(font)
 
         #设置多行文本

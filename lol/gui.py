@@ -133,7 +133,9 @@ class MyFrame(wx.Frame):
 
 
 
-
+    def quzheng(self,lst):
+        lst[0]=int(lst[0])
+        lst[1]=int(lst[1])
 
     def HandleEvt(self,evt):
         self.SetLabel('收到消息，更新界面中...')
@@ -144,6 +146,11 @@ class MyFrame(wx.Frame):
 
         damage0_after, damage1_after, damage2_after, damage3_after, damage4_after=xxg.combo0(armor_ad=armor_ad,
                                                                                              armor_ap=armor_ap)
+        self.quzheng(damage0_after)
+        self.quzheng(damage1_after)
+        self.quzheng(damage2_after)
+        self.quzheng(damage3_after)
+        self.quzheng(damage4_after)
         self.ability_a.SetLabel(damage0_after.__str__())
         self.ability_q.SetLabel(damage1_after.__str__())
         self.ability_w.SetLabel(damage2_after.__str__())
@@ -153,6 +160,9 @@ class MyFrame(wx.Frame):
         c1=xxg.combo1(magic_armor=armor_ap)
         c2 = xxg.combo2(magic_armor=armor_ap)
         c3 = xxg.combo3(magic_armor=armor_ap)
+        self.quzheng(c1)
+        self.quzheng(c2)
+        self.quzheng(c3)
         self.combo_1.SetLabel(c1.__str__())
         self.combo_2.SetLabel(c2.__str__())
         self.combo_3.SetLabel(c3.__str__())

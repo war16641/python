@@ -75,7 +75,7 @@ for a,b,c in itertools.permutations('qwe',3):
 
 
 class Ability:
-    def __init__(self,name,max_level,co_ad,co_ap,co_hp,rare_damage):
+    def __init__(self,name,max_level,co_ad,co_ap,co_hp,rare_damage,co_all=None):
         assert isinstance(name,str)
         assert max_level in (3,5,)
         self.name,self.max_level=name,max_level
@@ -83,6 +83,12 @@ class Ability:
         assert is_sequence_with_specified_type(rare_damage,list)
         self.rare_damage=rare_damage
         assert max_level==len(rare_damage),'最高等级和裸伤害内列表个数一致'
+
+        if co_all is None:#伤害系数 有的技能说明是造成双倍伤害之类的话
+            self.co_all=[1.0,1.0]
+        else:
+            self.co_all=co_all
+
 
     def query(self,level):
         #返回指定技能等级下三个系数和裸伤害的范围
@@ -136,7 +142,7 @@ class Hero:
         #技能的处理
         ability_level=self.strategy.query(level=self.level,ability_str=ability_str)
         co_ad, co_ap, co_hp, rare_damage=self.abilities[ability_str].query(level=ability_level)
-
+        co_all=self.abilities[ability_str].co_all
         # rare_hp=self.health_seq[self.level-1]
         #暂时使用下面的属性值
         ad=self.ad
@@ -145,7 +151,7 @@ class Hero:
 
         low_damage=co_ad[0]*ad+co_ap[0]*ap+co_hp[0]*hp+rare_damage[0]
         high_damage=co_ad[1]*ad+co_ap[1]*ap+co_hp[1]*hp+rare_damage[1]
-        return low_damage,high_damage
+        return low_damage*co_all[0],high_damage*co_all[1]
 
     
     def print(self,magic_armor=0,ad=0,ap=0,hp=0):
@@ -226,8 +232,9 @@ def get_xxg():
                         co_ap=[0.6, 0.6],
                         co_hp=[0, 0],
                         rare_damage=[
-                            [80, 148], [100, 185], [120, 222], [140, 259], [160, 296]
-                        ])
+                            [80, 80], [100, 100], [120, 120], [140, 140], [160, 160]],#[80, 148], [100, 185], [120, 222], [140, 259], [160, 296]],
+                        co_all=[1,1.85]
+                        )
     ability_w = Ability('w', 5,
                         co_ad=[0, 0],
                         co_ap=[0.0, 0.0],
@@ -247,8 +254,8 @@ def get_xxg():
                         co_ap=[0.7, 0.7],
                         co_hp=[0, 0],
                         rare_damage=[
-                            [150, 150], [250, 250], [350, 350]
-                        ])
+                            [150, 150], [250, 250], [350, 350],],
+                        co_all=[1.1,1.1])
     xxg = Hero('xixuegui', health_seq, ud_dict['qew'], [ability_q, ability_w, ability_e, ability_r])
     return xxg
 if __name__ == '__main__':

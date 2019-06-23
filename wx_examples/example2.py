@@ -13,7 +13,7 @@ def ticking(mf):
         while not mf.flag:
             time.sleep(1)
         ct+=1
-        evt = MyTestEvent(myEVT_MY_TEST, mf.button2.GetId())  # 5 创建自定义事件对象
+        evt = MyTestEvent(myEVT_MY_TEST,-1)  # 5 创建自定义事件对象
         evt.SetEventArgs("test event"+str(ct))  # 6添加数据到事件
         mf.GetEventHandler().ProcessEvent(evt)  # 7 处理事件
 
