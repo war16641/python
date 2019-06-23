@@ -124,9 +124,16 @@ class Hero:
         return self._hp
     @hp.setter
     def hp(self,v):
-        assert v >= self.health_seq[self._level - 1], '生命值不能低于裸装生命值'
+        if v==0:
+            return
+        assert v >= self.health_seq[int(self._level) - 1], '生命值不能低于裸装生命值'
         self._hp=v
     def query_damage_for_one_ability(self,ability_str):
+        #平a的处理
+        if ability_str=='a':
+            return self.ad,self.ad
+
+        #技能的处理
         ability_level=self.strategy.query(level=self.level,ability_str=ability_str)
         co_ad, co_ap, co_hp, rare_damage=self.abilities[ability_str].query(level=ability_level)
 
@@ -144,6 +151,7 @@ class Hero:
     def print(self,magic_armor=0,ad=0,ap=0,hp=0):
         self.ad=ad
         self.ap=ap
+        self.hp=hp
 
         print('裸装伤害,在ad=%d,ap=%d,敌方魔抗=%d下：'%(ad,ap,magic_armor))
         coeff_after_armor=1-magic_armor/(magic_armor+100.)
@@ -159,32 +167,74 @@ class Hero:
                 print('%s技能%d-%d,'%(istr,damage[0]*coeff_after_armor,damage[1]*coeff_after_armor),end='')
             print('。合计%d-%d'%(damage_total[0]*coeff_after_armor,damage_total[1]*coeff_after_armor))
 
+    def combo0(self, armor_ad=40,armor_ap=30):
+        """平a+基本技能伤害"""
+        coeff_after_ap = 1 - armor_ap / (armor_ap + 100.)
+        coeff_after_ad = 1 - armor_ad / (armor_ad + 100.)
+        damage0=self.query_damage_for_one_ability('a')
+        damage1 = self.query_damage_for_one_ability('q')
+        damage2 = self.query_damage_for_one_ability('w')
+        damage3 = self.query_damage_for_one_ability('e')
+        damage4 = self.query_damage_for_one_ability('r')
+        damage0_after=[x*coeff_after_ad for x in damage0]
+        damage1_after=[x*coeff_after_ap for x in damage1]
+        damage2_after = [x * coeff_after_ap for x in damage2]
+        damage3_after = [x * coeff_after_ap for x in damage3]
+        damage4_after = [x * coeff_after_ap for x in damage4]
+        return damage0_after,damage1_after,damage2_after,damage3_after,damage4_after
+    def combo1(self,magic_armor=30):
+        """qe"""
+        coeff_after_armor=1-magic_armor/(magic_armor+100.)
+        damage1 = self.query_damage_for_one_ability('q')
+        damage2 = self.query_damage_for_one_ability('e')
+        damage_total=map(lambda a,b:a+b,damage1,damage2)
+        damage_total_after_armor=[x*coeff_after_armor for x in damage_total]
+        # print(damage_total_after_armor)
+        return damage_total_after_armor
+    def combo2(self,magic_armor=30):
+        """qer"""
+        coeff_after_armor=1-magic_armor/(magic_armor+100.)
+        damage1 = self.query_damage_for_one_ability('q')
+        damage2 = self.query_damage_for_one_ability('e')
+        damage3 = self.query_damage_for_one_ability('r')
+        damage_total=map(lambda a,b,c:a+b+c,damage1,damage2,damage3)
+        damage_total_after_armor=[x*coeff_after_armor for x in damage_total]
+        # print(damage_total_after_armor)
+        return damage_total_after_armor
+    def combo3(self,magic_armor=30):
+        """qerq
+        q是平常q加暴怒q"""
+        coeff_after_armor = 1 - magic_armor / (magic_armor + 100.)
+        damage1 = self.query_damage_for_one_ability('q')
+        damage2 = self.query_damage_for_one_ability('w')
+        damage3 = self.query_damage_for_one_ability('e')
+        damage4 = self.query_damage_for_one_ability('r')
+        damage1_after=[x*coeff_after_armor for x in damage1]
+        damage2_after = [x * coeff_after_armor for x in damage2]
+        damage3_after = [x * coeff_after_armor for x in damage3]
+        damage4_after = [x * coeff_after_armor for x in damage4]
+        return [damage1_after[0]+damage1_after[1]+damage3_after[0]+damage4_after[1],damage1_after[0]+damage1_after[1]+damage3_after[1]+damage4_after[1]]
 
+def get_xxg():
+    """返回一个吸血鬼"""
+    health_seq = [552, 626, 703, 783, 867, 954, 1044, 1138, 1235, 1335, 1439, 1546, 1657, 1770, 1888, 2008, 2132,
+                  2260]  # 吸血鬼裸装生命值
+    assert len(health_seq) == 18
 
-
-
-if __name__ == '__main__':
-    ud=UpgradeDistribution(strategy='qew')
-    # ud.print()
-    assert ud.query(6,'r')==1
-
-    health_seq=[552,626,703,783,867,954,1044,1138,1235,1335,1439,1546,1657,1770,1888,2008,2132,2260]#吸血鬼裸装生命值
-    assert len(health_seq)==18
-
-    ability_q=Ability('q',5,
-                      co_ad=[0,0],
-                      co_ap=[0.6,0.6],
-                      co_hp=[0,0],
-                      rare_damage=[
-                          [80,148],[100,185],[120,222],[140,259],[160,296]
-                      ])
-    ability_w=Ability('w',5,
-                      co_ad=[0,0],
-                      co_ap=[0.0,0.0],
-                      co_hp=[0,0],
-                      rare_damage=[
-                          [0,0],[0,0],[0,0],[0,0],[0,0]
-                      ])
+    ability_q = Ability('q', 5,
+                        co_ad=[0, 0],
+                        co_ap=[0.6, 0.6],
+                        co_hp=[0, 0],
+                        rare_damage=[
+                            [80, 148], [100, 185], [120, 222], [140, 259], [160, 296]
+                        ])
+    ability_w = Ability('w', 5,
+                        co_ad=[0, 0],
+                        co_ap=[0.0, 0.0],
+                        co_hp=[0, 0],
+                        rare_damage=[
+                            [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]
+                        ])
     ability_e = Ability('e', 5,
                         co_ad=[0, 0],
                         co_ap=[0.35, 0.8],
@@ -192,13 +242,23 @@ if __name__ == '__main__':
                         rare_damage=[
                             [30, 60], [45, 90], [60, 120], [75, 150], [90, 180]
                         ])
-    ability_r= Ability('r', 3,
+    ability_r = Ability('r', 3,
                         co_ad=[0, 0],
                         co_ap=[0.7, 0.7],
                         co_hp=[0, 0],
                         rare_damage=[
                             [150, 150], [250, 250], [350, 350]
                         ])
-    xxg=Hero('xixuegui',health_seq,ud_dict['qew'],[ability_q,ability_w,ability_e,ability_r])
-    xxg.print(magic_armor=30,ap=13)
+    xxg = Hero('xixuegui', health_seq, ud_dict['qew'], [ability_q, ability_w, ability_e, ability_r])
+    return xxg
+if __name__ == '__main__':
+    ud=UpgradeDistribution(strategy='qew')
+    # ud.print()
+    assert ud.query(6,'r')==1
 
+    xxg=get_xxg()
+    # xxg.print(magic_armor=30,ap=40)
+    xxg.level=5
+    xxg.ap=40
+    print(xxg.combo1())
+    print(xxg.combo2())
