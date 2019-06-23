@@ -153,13 +153,14 @@ class MyKNN:
                 continue
             else:
                 stat_mean[i]=stat_sum[i]/stat_count[i]
-        print(stat_mean)
+        print("各结果平均值：")
+        for i in range(len(stat_mean)):
+            print("\t%s\t%f"%(chars[i],stat_mean[i]))
+        # print(stat_mean)
         if stat_mean.count(1.0)>=2:
             raise Exception("出现了两个相似度为1的数字")
         #以最高的值作为预测结果
         max_s=max(stat_mean)
-        print("平均相似度 ：")
-        print(stat_mean)
         # assert max_s>min_similarity,"最好的匹配结果低于预定的最低相似度，预测失败"
         if max_s<min_similarity:
             raise OCR_FAIL("最好的匹配结果低于预定的最低相似度的要求，预测失败")
