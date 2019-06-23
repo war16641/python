@@ -15,7 +15,7 @@ class StaticTextExampleFrame(wx.Frame):
 
         #为文本指定前景色和背景色
         self.te2 = wx.StaticText(panel, wx.ID_ANY, "指定文本前景和背景色", (100, 30))
-        self.te2.SetForegroundColour("White")
+        self.te2.SetForegroundColour("Green")
         self.te2.SetBackgroundColour("Black")
 
         #指定居中对齐
