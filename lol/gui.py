@@ -1,8 +1,6 @@
-"""
-自定义事件 多线程
-开启线程后 标题每一秒都会变化
-按下暂停 继续 会中断 恢复线程的执行
-"""
+import sys
+sys.path.append("F:\我的文档\python_file")
+sys.path.append("F:\我的文档\python_file\GoodToolPython")
 import wx,time
 import threading
 from GoodToolPython.lol.knn import *

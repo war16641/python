@@ -67,7 +67,7 @@ class SampleManager(Singleton):
                         i.save(save_path + "/" + str(count) + ".bmp")
 
 class _DataPoint:
-    def __init__(self,image,characteristic,classification):
+    def __init__(self,image,characteristic,classification,filename=""):
         """
 
         :param image: 图片
@@ -77,6 +77,7 @@ class _DataPoint:
         self.image=image
         self.characteristic=characteristic#type:np.ndarray
         self.classification=classification
+        self.filename=filename
 class _DistanceToDataPoint:
     def __init__(self,point,similarity):
         self.point=point
@@ -96,7 +97,7 @@ class MyKNN:
             im=Image.open(ph)
             characteristic=np.asarray(im)/255.0
             _, tmpfilename = os.path.split(ph)
-            self.data_points.append(_DataPoint(im,characteristic,tmpfilename[0]))
+            self.data_points.append(_DataPoint(im,characteristic,tmpfilename[0],tmpfilename))
 
     @staticmethod
     def smc(p1,p2)->float:
@@ -131,7 +132,7 @@ class MyKNN:
                         f00+=1
         return (f00+f11)/(f00+f01+f10+f11)
 
-    def predict(self,im,min_similarity=0.85 ):
+    def predict(self,im,min_similarity=0.85 ,inspection=False):
         length=len(self.data_points)
         distance_lst=[]
         im_crt=np.asarray(im)/255.0
@@ -139,7 +140,7 @@ class MyKNN:
             s=self.smc(pt.characteristic,im_crt)
             distance_lst.append(_DistanceToDataPoint(pt,s))
         distance_lst.sort(key=lambda x:x.similarity,reverse=True)
-        valid_distance_lst=distance_lst[0:4]#只取前五个分析
+        valid_distance_lst=distance_lst[0:5]#只取前五个分析
         stat_sum=[0,0,0,0,0,0,0,0,0,0,0]#统计相似度的和
         stat_count=[0,0,0,0,0,0,0,0,0,0,0]#统计出现的次数
         chars=['0','1','2','3','4','5','6','7','8','9','f']
@@ -164,7 +165,10 @@ class MyKNN:
         # assert max_s>min_similarity,"最好的匹配结果低于预定的最低相似度，预测失败"
         if max_s<min_similarity:
             raise OCR_FAIL("最好的匹配结果低于预定的最低相似度的要求，预测失败")
-        return chars[stat_mean.index(max_s)]
+        if inspection is False:
+            return chars[stat_mean.index(max_s)]
+        else:
+            return chars[stat_mean.index(max_s)],valid_distance_lst
 
 def ocr_script(im,knn):
     """
@@ -232,6 +236,39 @@ def detect_enemy(knn):
     armor_ap=ocr_script3(im,knn)
     return hp,armor_ad,armor_ap
 
+
+def test_knn():
+    """
+    测试knn
+    在test文件夹下面有一些人工归类的图片 这些图片并未放置在calssified文件夹下 作为测试所用
+    :return:
+    """
+    test_path="D:/knn/test"
+    picture_list=[]
+    collect_all_filenames(test_path,".",picture_list)
+    knn=MyKNN()
+    total_num=len(picture_list)
+    right_num=0
+    wrong_num=0
+    fail_num=0
+    for pic in picture_list:
+        im=Image.open(pic)
+        _,filename=os.path.split(pic)
+        target=filename[0]
+        try:
+            tmp=knn.predict(im)
+            if tmp==target:
+                right_num+=1
+            else:
+                wrong_num+=1
+        except OCR_FAIL:
+            fail_num+=1
+    print("测试knn完毕")
+    print("测试路径:%s"%test_path)
+    print("成功识别:%d,错误识别：%d,识别失败:%d"%(right_num,wrong_num,fail_num))
+
+
+
 if __name__ == '__main__':
     # knn=MyKNN()
     # im=Image.open("d:/v1.bmp")
@@ -251,11 +288,14 @@ if __name__ == '__main__':
     # knn.predict(im=knn.data_points[14].image)
 
 
-    man=SampleManager()
-    # man.record_images()
-    man.classify_samples()
+    # man=SampleManager()
+    # # man.record_images()
+    # man.classify_samples()
 
 
     # knn=MyKNN()
     # print(detect_my_hero(knn))
+
+    #测试
+    test_knn()
 
