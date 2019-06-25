@@ -114,19 +114,28 @@ class MyFrame(wx.Frame):
 
 
 gui_pointer=None
-def create_gui():
+def _create_gui():
     global gui_pointer
     app = wx.App()
     gui_pointer = MyFrame()
     gui_pointer.Show(True)
     app.MainLoop()
 
-
+def start_gui_for_knn():
+    """
+    启动gui进程 并返回gui的对象
+    :return:
+    """
+    global gui_pointer
+    if gui_pointer is None:
+        t = threading.Thread(target=_create_gui)
+        t.start()
+        return gui_pointer
+    else:
+        raise Exception("gui已经启动")
 
 if __name__ == '__main__':
-    print(gui_pointer)
-    t=threading.Thread(target=create_gui)
-    t.start()
+    gui_pointer=start_gui_for_knn()
     time.sleep(3)
     im=Image.open("D:/knn/unclassified/9274.bmp")
     evt = MyTestEvent(myEVT_MY_TEST, -1)  # 5 创建自定义事件对象
