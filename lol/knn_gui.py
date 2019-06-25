@@ -3,7 +3,7 @@ import wx,time
 import threading
 from PIL import Image
 
-
+lock = threading.RLock() # 创建锁
 def ticking(mf):
     ct=1
     while True:
@@ -31,7 +31,11 @@ myEVT_MY_TEST = wx.NewEventType()  # 2 创建一个事件类型
 EVT_MY_TEST = wx.PyEventBinder(myEVT_MY_TEST)  # 3 创建一个绑定器对象
 
 
-class MyFrame(wx.Frame):
+class ResultBuffer:
+    def __init__(self):
+        self.result='??'
+
+class GUI_for_KNN(wx.Frame):
     def __init__(self):
         wx.Frame.__init__(self, None, -1, "My Frame", size=(600, 600), pos=(300, 300))
         panel = wx.Panel(self, -1)
@@ -85,7 +89,7 @@ class MyFrame(wx.Frame):
         """
         核心函数 knn的predict可视化
         :param im:
-        :return:
+        :return:返回识别的结果 如果识别失败 返回？
         """
         bmp = wx.Bitmap(self.get_wx_from_pil(im))
         self.picture_box.SetBitmap(bmp)
@@ -100,25 +104,38 @@ class MyFrame(wx.Frame):
                 im_tmp=valid_distance_lst[i].point.image
                 bmp = wx.Bitmap(self.get_wx_from_pil(im_tmp))
                 self.pic_boxes[i].SetBitmap(bmp)
+            return result
         except OCR_FAIL:
             self.result_box.SetLabel("识别失败")
-
+            return '?'
 
 
 
 
     def HandleEvt(self,evt):
-        # self.SetLabel(evt.GetEventArgs())
-        self.predict_and_visualize(evt.GetEventArgs())
+        """
 
+        :param evt: 如果要返回结果 evt的GetEventArgs()是[image,ResultBuffer]。不返回结果的话 就是Image
+        :return:
+        """
+        args=evt.GetEventArgs()
+        if isinstance(args,Image.Image):
+            self.predict_and_visualize(args)
+        elif isinstance(args,list):
+            tmp=self.predict_and_visualize(args[0])
+            args[1].result=tmp
+        else:
+            raise Exception("参数错误")
 
 
 gui_pointer=None
 def _create_gui():
+    lock.acquire()
     global gui_pointer
     app = wx.App()
-    gui_pointer = MyFrame()
+    gui_pointer = GUI_for_KNN()
     gui_pointer.Show(True)
+    lock.release()
     app.MainLoop()
 
 def start_gui_for_knn():
@@ -130,17 +147,35 @@ def start_gui_for_knn():
     if gui_pointer is None:
         t = threading.Thread(target=_create_gui)
         t.start()
-        return gui_pointer
+        while True:
+            if gui_pointer is None:
+                time.sleep(0.5)
+            else:
+                return gui_pointer
     else:
         raise Exception("gui已经启动")
 
+def make_gui_predict(im,gui_pointer):
+    """
+    让gui识别图像im 并返回结果 当识别失败时rasie ocr_fail
+    :param im:
+    :return:
+    """
+    # lock.acquire()
+    bf = ResultBuffer()
+    evt = MyTestEvent(myEVT_MY_TEST, -1)  # 5 创建自定义事件对象
+    evt.SetEventArgs([im,bf])  # 6添加数据到事件
+    gui_pointer.GetEventHandler().ProcessEvent(evt) # 7 处理事件
+    # lock.release()
+    if bf.result == "?":
+        raise OCR_FAIL("识别失败")
+    else:
+        return bf.result
+
 if __name__ == '__main__':
     gui_pointer=start_gui_for_knn()
-    time.sleep(3)
     im=Image.open("D:/knn/unclassified/9274.bmp")
-    evt = MyTestEvent(myEVT_MY_TEST, -1)  # 5 创建自定义事件对象
-    evt.SetEventArgs(im)  # 6添加数据到事件
-    gui_pointer.GetEventHandler().ProcessEvent(evt)  # 7 处理事件
+    print(make_gui_predict(im,gui_pointer))
     while True:
         time.sleep(2)
         print(gui_pointer)
