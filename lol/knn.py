@@ -1,11 +1,24 @@
 from GoodToolPython.mybaseclasses.singleton import Singleton
-from GoodToolPython.myfile import collect_all_filenames
+from GoodToolPython.myfile import collect_all_filenames,del_file
 from GoodToolPython.lol.snapscreen import *
 from PIL import Image
 import random
 import numpy as np
 import os
+from itertools import combinations
 import time
+
+def open_image_file(fullname):
+    """
+    从文件中生成Image文件 这个函数为了解除Image。open(fullname)导致的文件占用问题
+    :param fullname:
+    :return: PIL。Image对象
+    """
+    fp = open(fullname, 'rb')
+    img = Image.open(fp) # 这里改为文件句柄
+    im=img.convert("L")
+    fp.close()
+    return im
 class SampleManager(Singleton):
     def init(self):
         pass
@@ -94,7 +107,8 @@ class MyKNN:
         #载入图像 生成数据点
         self.data_points=[]
         for ph in all_samples_pathname:
-            im=Image.open(ph)
+            # im=Image.open(ph)
+            im=open_image_file(ph)
             characteristic=np.asarray(im)/255.0
             _, tmpfilename = os.path.split(ph)
             self.data_points.append(_DataPoint(im,characteristic,tmpfilename[0],tmpfilename))
@@ -173,6 +187,19 @@ class MyKNN:
             return chars[stat_mean.index(max_s)]
         else:
             return chars[stat_mean.index(max_s)],valid_distance_lst
+
+    def check_for_repetition(self):
+        """
+        检查重复的 已经识别的图像
+        :return:
+        """
+        lst=[]
+        for d1,d2 in combinations(self.data_points,2):
+            if self.smc(d1,d2)==1.0:
+                lst.append(d1)
+        for i in lst:
+            print("删除：d:/knn/classified/%s"%i.filename)
+            del_file("d:/knn/classified/"+i.filename)
 
 def ocr_script(im,knn):
     """
@@ -302,4 +329,7 @@ if __name__ == '__main__':
 
     #测试
     test_knn()
+
+    # #删除重复图片
+    # MyKNN().check_for_repetition()
 
