@@ -122,6 +122,7 @@ class GUI_for_KNN(wx.Frame):
         if isinstance(args,Image.Image):
             self.predict_and_visualize(args)
         elif isinstance(args,list):
+            # time.sleep(2)
             tmp=self.predict_and_visualize(args[0])
             args[1].result=tmp
         else:
@@ -175,6 +176,7 @@ def make_gui_predict(im,gui_pointer):
 if __name__ == '__main__':
     gui_pointer=start_gui_for_knn()
     im=Image.open("D:/knn/unclassified/9274.bmp")
+    print("识别结果：")
     print(make_gui_predict(im,gui_pointer))
     while True:
         time.sleep(2)

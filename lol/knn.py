@@ -132,7 +132,7 @@ class MyKNN:
                         f00+=1
         return (f00+f11)/(f00+f01+f10+f11)
 
-    def predict(self,im,min_similarity=0.85 ,inspection=False):
+    def predict(self,im,min_similarity=0.85 ,inspection=False,print_info=False):
         length=len(self.data_points)
         distance_lst=[]
         im_crt=np.asarray(im)/255.0
@@ -144,8 +144,11 @@ class MyKNN:
         stat_sum=[0,0,0,0,0,0,0,0,0,0,0]#统计相似度的和
         stat_count=[0,0,0,0,0,0,0,0,0,0,0]#统计出现的次数
         chars=['0','1','2','3','4','5','6','7','8','9','f']
+        if print_info is True:
+            print("有效距离列表：")
         for d in valid_distance_lst:
-            print("%s,%f" %(d.point.classification,d.similarity))
+            if print_info is True:
+                print("%s,%f" %(d.point.classification,d.similarity))
             stat_sum[chars.index(d.point.classification)]+=d.similarity
             stat_count[chars.index(d.point.classification)]+=1
         stat_mean=[0,0,0,0,0,0,0,0,0,0,0]
@@ -154,9 +157,10 @@ class MyKNN:
                 continue
             else:
                 stat_mean[i]=stat_sum[i]/stat_count[i]
-        print("各结果平均值：")
-        for i in range(len(stat_mean)):
-            print("\t%s\t%f"%(chars[i],stat_mean[i]))
+        if print_info is True:
+            print("各结果平均值：")
+            for i in range(len(stat_mean)):
+                print("\t%s\t%f"%(chars[i],stat_mean[i]))
         # print(stat_mean)
         if stat_mean.count(1.0)>=2:
             raise Exception("出现了两个相似度为1的数字")
