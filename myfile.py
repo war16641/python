@@ -41,16 +41,21 @@ def retype_file(fullname: str, newtype: str) -> None:
         print("警告：新文件名已存在，更改文件类型失败。(" + __file__ + " " + sys._getframe().f_code.co_name + ")")
 
 
-def del_file(fullname: str) -> None:
+def del_file(fullname: str) -> bool:
     """
     删除文件
     :param fullname:
-    :return:
+    :return:成功删除返回true
     """
     if not os.path.isfile(fullname):
         print("警告：文件不存在，取消删除文件操作。(" + __file__ + " " + sys._getframe().f_code.co_name + ")")
-        return
-    os.remove(fullname)
+        return False
+    try:
+        os.remove(fullname)
+        return True
+    except Exception as e:
+        print(e)
+        return False
 
 
 def search_directory(directory: str, rex: str, func: callable, *args, **kwargs) -> None:
