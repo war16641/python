@@ -196,6 +196,8 @@ class MyKNN:
         lst=[]
         for d1,d2 in combinations(self.data_points,2):
             if self.smc(d1,d2)==1.0:
+                if d1 in lst or d2 in lst:
+                    continue
                 lst.append(d1)
         for i in lst:
             print("删除：d:/knn/classified/%s"%i.filename)
