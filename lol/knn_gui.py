@@ -2,7 +2,7 @@ from GoodToolPython.lol.knn import MyKNN,OCR_FAIL
 import wx,time
 import threading
 from PIL import Image
-
+import PIL.ImageOps
 lock = threading.RLock() # 创建锁
 def ticking(mf):
     ct=1
@@ -175,7 +175,9 @@ def make_gui_predict(im,gui_pointer):
 
 if __name__ == '__main__':
     gui_pointer=start_gui_for_knn()
-    im=Image.open("D:/knn/unclassified/9274.bmp")
+    # im=Image.open("D:/knn/unclassified/9274.bmp")
+    im=Image.open("e:/d2_py.bmp")
+    im=PIL.ImageOps.invert(im)
     print("识别结果：")
     print(make_gui_predict(im,gui_pointer))
     while True:

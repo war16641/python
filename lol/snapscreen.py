@@ -1,7 +1,7 @@
 import time
 import numpy as np
 from PIL import ImageGrab
-import pytesseract
+# import pytesseract
 from PIL import Image
 import random
 from GoodToolPython.myfile import is_number
@@ -28,7 +28,10 @@ def snap_screen(wait_time=3,bbox=(640, 732, 668, 744,)):
     time.sleep(wait_time)
     # im = ImageGrab.grab(bbox=(640, 732, 661, 744,))
     # im = ImageGrab.grab(bbox=(640, 732, 671, 744,))
-    im = ImageGrab.grab(bbox)
+    if bbox=='full':
+        im=ImageGrab.grab()
+    else:
+        im = ImageGrab.grab(bbox)
     return im
 
 def do_with_image(im,threshold = 68):
@@ -82,16 +85,17 @@ def do_with_image2(im,threshold = 68):
     return t2
 
 def ocr_until_success(im):
-    pytesseract.pytesseract.tesseract_cmd = "D:\Program Files\Tesseract-OCR\\tesseract.exe"
-    attempt_throshold=[50,51,55,60,65,70, 75, 80 ,85]
-    attempt_throshold=np.arange(50,80,2)
-    for t in attempt_throshold:
-        im1=do_with_image(im,t)
-        string= pytesseract.image_to_string(im1)
-        flag,number=is_number(string)
-        if flag==True:
-            return number
-    return 0
+    raise Exception("已经舍弃了")
+    # pytesseract.pytesseract.tesseract_cmd = "D:\Program Files\Tesseract-OCR\\tesseract.exe"
+    # attempt_throshold=[50,51,55,60,65,70, 75, 80 ,85]
+    # attempt_throshold=np.arange(50,80,2)
+    # for t in attempt_throshold:
+    #     im1=do_with_image(im,t)
+    #     string= pytesseract.image_to_string(im1)
+    #     flag,number=is_number(string)
+    #     if flag==True:
+    #         return number
+    # return 0
 
 class Separate_Image_Error(Exception):
     pass
@@ -222,7 +226,18 @@ def auto_separate_image(im):
             else:
                 pass
     return im_sep_lst
-            
+
+def reverse_color(im):
+    """
+    反色
+    :param im: 灰度图
+    :return: 灰度图
+    """
+    assert im.mode=='L','必须为灰度图'
+    for i in range(im.height):
+        for j in range(im.width):
+            im[i, j] = 255 - im[i, j]
+    pass
 def sampling(bbox):
     #实时采集并分割
     #返回截屏图片
@@ -245,6 +260,6 @@ if __name__ == '__main__':
     im=do_with_image(im)
     im.save("d:\\a2.bmp")
     # im.save(pathname)
-    pytesseract.pytesseract.tesseract_cmd = "D:\Program Files\Tesseract-OCR\\tesseract.exe"
-    text = pytesseract.image_to_string(im)
-    print(text)
+    # pytesseract.pytesseract.tesseract_cmd = "D:\Program Files\Tesseract-OCR\\tesseract.exe"
+    # text = pytesseract.image_to_string(im)
+    # print(text)

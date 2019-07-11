@@ -146,7 +146,7 @@ class MyKNN:
                         f00+=1
         return (f00+f11)/(f00+f01+f10+f11)
 
-    def predict(self,im,min_similarity=0.85 ,inspection=False,print_info=False):
+    def predict(self,im,min_similarity=0.1 ,inspection=False,print_info=False,valid_distance_num=9):
         length=len(self.data_points)
         distance_lst=[]
         im_crt=np.asarray(im)/255.0
@@ -154,7 +154,7 @@ class MyKNN:
             s=self.smc(pt.characteristic,im_crt)
             distance_lst.append(_DistanceToDataPoint(pt,s))
         distance_lst.sort(key=lambda x:x.similarity,reverse=True)
-        valid_distance_lst=distance_lst[0:5]#只取前五个分析
+        valid_distance_lst=distance_lst[0:valid_distance_num]#只取前五个分析
         stat_sum=[0,0,0,0,0,0,0,0,0,0,0]#统计相似度的和
         stat_count=[0,0,0,0,0,0,0,0,0,0,0]#统计出现的次数
         chars=['0','1','2','3','4','5','6','7','8','9','f']
@@ -330,8 +330,12 @@ if __name__ == '__main__':
     # print(detect_my_hero(knn))
 
     #测试
-    test_knn()
+    # test_knn()
 
     # #删除重复图片
     # MyKNN().check_for_repetition()
+
+    #预测图片
+    knn=MyKNN()
+    knn.predict(Image.open("e:/d2_py.bmp"))
 
