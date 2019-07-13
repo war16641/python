@@ -146,7 +146,15 @@ class MyKNN:
                         f00+=1
         return (f00+f11)/(f00+f01+f10+f11)
 
-    def predict(self,im,min_similarity=0.1 ,inspection=False,print_info=False,valid_distance_num=9):
+    def predict(self,im,min_similarity=0.8 ,inspection=False,print_info=False,valid_distance_num=9):
+        #图片处理
+        if im.mode!='L':
+            im=im.convert("L")#化为灰度图
+        width = im.width
+        height = im.height
+        if width!=7 or height!=12:#化为标注尺寸
+            im=im.resize((7,12))
+
         length=len(self.data_points)
         distance_lst=[]
         im_crt=np.asarray(im)/255.0
