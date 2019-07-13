@@ -75,11 +75,13 @@ for a,b,c in itertools.permutations('qwe',3):
 
 
 class Ability:
-    def __init__(self,name,max_level,co_ad,co_ap,co_hp,rare_damage,co_all=None):
+    def __init__(self,name,max_level,co_ad,co_ap,co_hp,rare_damage,co_mp=None,co_all=None):
         assert isinstance(name,str)
         assert max_level in (3,5,)
+        if co_mp is None:
+            co_mp=[0,0]
         self.name,self.max_level=name,max_level
-        self.co_ad,self.co_ap,self.co_hp=co_ad,co_ap,co_hp
+        self.co_ad,self.co_ap,self.co_hp,self.co_mp=co_ad,co_ap,co_hp,co_mp
         assert is_sequence_with_specified_type(rare_damage,list)
         self.rare_damage=rare_damage
         assert max_level==len(rare_damage),'最高等级和裸伤害内列表个数一致'
