@@ -17,8 +17,9 @@ def calculate_actual_damage(damage:List[float],unit:'Unit'):
     """
     计算出发伤害经过物抗魔抗后 单位实际遭受的伤害 实际伤害
     :param damage: 3个数组成的列表 依次是物理 魔法 真实的出发伤害
-    :param unit: 被攻击者的
-    :return: 总伤害,3个数组成的列表
+                    也可以是三个列表组成的列表 子列表的长度相同
+    :param unit: 被攻击者
+    :return: 总伤害,3个数组成的列表（伤害细节）
             3个数组成的列表：对应的实际伤害
     """
     assert isinstance(damage,list) and len(damage)==3
@@ -259,6 +260,12 @@ class Hero(Unit):
 
 
     def attack_with_one_ability(self,ability_str='q',defender:Unit=None):
+        """
+        使用单个技能对目标造成的实际伤害
+        :param ability_str: 技能名
+        :param defender:
+        :return: 总伤害，伤害细节
+        """
         if defender is None:
             defender=Unit.get_sandbag()
         assert isinstance(defender,Unit)
@@ -274,6 +281,12 @@ class Hero(Unit):
         return actual_damage
 
     def attack(self,combo:str,defender:Unit=None):
+        """
+        使用连招进行攻击 计算实际伤害
+        :param combo: 连招名
+        :param defender:
+        :return: 总伤害的范围
+        """
         if defender is None:
             defender=Unit.get_sandbag()
         assert isinstance(defender,Unit)
