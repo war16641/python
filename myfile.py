@@ -283,7 +283,7 @@ def read_file(pathname,omit_lines='auto',style='separator',column_expected=0,sep
     mat=np.array(data_list)
     return mat
 
-def collect_all_filenames(directory,rex,lst):
+def collect_all_filenames(directory,rex,lst,print_info=False):
     """
     将所有文件的路径名收集到lst中
     :param directory:
@@ -294,16 +294,20 @@ def collect_all_filenames(directory,rex,lst):
     assert os.path.exists(directory)
     for filename in os.listdir(directory):
         curent_full_name = os.path.join(directory, filename)
-        print(curent_full_name, end='')
+        if print_info is True:
+            print(curent_full_name, end='')
         if os.path.isfile(curent_full_name):  # 文件
             flag = len(re.findall(rex, filename)) > 0
             if flag is True:
-                print("->命中")
+                if print_info is True:
+                    print("->命中")
                 lst.append(curent_full_name)
             else:
-                print("->未命中")
+                if print_info is True:
+                    print("->未命中")
         else:  # 文件夹
-            print("->文件夹")
+            if print_info is True:
+                print("->文件夹")
             collect_all_filenames(directory=curent_full_name,
                              rex=rex,
                                   lst=lst)

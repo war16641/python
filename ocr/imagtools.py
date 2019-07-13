@@ -99,7 +99,7 @@ def split_image(im):
             m = np.hstack((tmp, m, tmp))  # 添加宽度到1.4左右的比例
         height1 = m.shape[0]
         width1 = m.shape[1]
-        print("%d,%d:%f" % (height1, width1, height1 / width1))
+        # print("%d,%d:%f" % (height1, width1, height1 / width1))
 
         #生成图片
         tmp = Image.fromarray(m)

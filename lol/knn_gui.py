@@ -94,7 +94,7 @@ class GUI_for_KNN(wx.Frame):
         bmp = wx.Bitmap(self.get_wx_from_pil(im))
         self.picture_box.SetBitmap(bmp)
         try:
-            result,valid_distance_lst=self.knn.predict(im,inspection=True)
+            result,valid_distance_lst=self.knn.predict(im,inspection=True,print_info=False)
             self.result_box.SetLabel(result)
             for i in range(len(valid_distance_lst)):
                 if i>9:
