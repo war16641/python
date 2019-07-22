@@ -24,6 +24,13 @@ class DataUnit:
 
     @staticmethod
     def make(vn: Sequence[str], row: Sequence[Cell], model: 'FlatDataModel'):
+        """
+        这个函数用于从excel文件中生成数据单元
+        :param vn:
+        :param row:
+        :param model:
+        :return:
+        """
         self = DataUnit()
         assert is_sequence_with_specified_type(row, Cell), 'row必须是Cell组成的列表'
         assert is_sequence_with_specified_type(vn, str), 'vn必须是str组成的序列'
