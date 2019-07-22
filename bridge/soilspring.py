@@ -34,44 +34,47 @@ class SoilInfo:
                 return self.levels[i].scale_factor
         raise Exception("超过土层最大深度")
 
-    def calc_springs(self,b1,pts):
+    def calc_springs(self,b1,pts)->FlatDataModel:
         """
         计算土弹簧
         :param b1: 桩的计算宽度 规范中有
         :param pts: 土弹簧点深度列表
         :return:
         """
+        def script(dz):
+            nonlocal last_stiff,last_z,b1,pts,fm,z
+            scale_factor = self.judge_scale_factor(z)
+            this_stiff = last_stiff + scale_factor * b1 * dz * (z - last_z)
+            last_z = z
+            last_stiff = this_stiff
+            u=DataUnit(fm)
+            u.data['深度']=z
+            u.data['土弹簧刚度'] = this_stiff
+            u.data['该点土层比例系数'] = scale_factor
+            fm.units.append(u)
+            # stiffs.append(this_stiff)
+            pass
         assert is_vector_like(pts),'pts必须是向量'
         pts=format_vector(pts)
         assert isinstance(b1,(int,float))
         last_stiff=0.
         last_z=0.
-        stiffs=[]
+        fm=FlatDataModel()
+        fm.vn=['深度','土弹簧刚度','该点土层比例系数']
         for i,z in enumerate(pts):
             if i==0:#第一个点
                 dz=(pts[1]-z)*0.5#认为第一个单元的长度是第1节点到第1节点与第2节点的中点的距离
-                scale_factor=self.judge_scale_factor(z)
-                this_stiff=last_stiff+scale_factor*b1*dz*(z-last_z)
-                last_z=z
-                last_stiff=this_stiff
-                stiffs.append(this_stiff)
+                script(dz)
                 continue
             if i==len(pts)-1:#最后一个点
                 dz=(pts[i]-pts[i-1])*0.5#最后一个单元的长度是最后一个节点到最后一个中点的距离
-                scale_factor = self.judge_scale_factor(z)
-                this_stiff = last_stiff + scale_factor * b1 * dz * (z - last_z)
-                last_z = z
-                last_stiff = this_stiff
-                stiffs.append(this_stiff)
+                script(dz)
                 continue
 
             dz=(pts[i+1]+pts[i])/2.0-(pts[i-1]+pts[i])/2.0#中间单元的长度认为是最近的两个中点的差值
-            scale_factor = self.judge_scale_factor(z)
-            this_stiff = last_stiff + scale_factor * b1 * dz * (z - last_z)
-            last_z = z
-            last_stiff = this_stiff
-            stiffs.append(this_stiff)
-        return stiffs
+            script(dz)
+
+        return fm
 if __name__ == '__main__':
     si=SoilInfo()
     si.levels.append(Level(thickness=29.15,scale_factor=5000))
@@ -79,12 +82,4 @@ if __name__ == '__main__':
     pts=np.linspace(2.3,42.3,41)
     # print(pts)
     t=si.calc_springs(b1=1.98,pts=pts)
-    # print(t)
-    fm=FlatDataModel()
-    fm.vn=['深度','土弹簧刚度']
-    for i in range(len(pts)):
-        u=DataUnit(fm)
-        u.data['深度']=pts[i]
-        u.data['土弹簧刚度']=t[i]
-        fm.units.append(u)
-    fm.show_in_excel()
+    t.show_in_excel()
