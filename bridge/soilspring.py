@@ -3,9 +3,11 @@
 已知土层分层信息 计算一个桩在土体内的土弹簧 水平刚度
 """
 import numpy as np
+import os
+import win32com.client
 
 from GoodToolPython.excel.excel import DataUnit, FlatDataModel
-
+from GoodToolPython.mybaseclasses.tools import is_sequence_with_specified_type
 
 class Level:
     """一层土"""
@@ -35,7 +37,19 @@ class Pile:
         self.__z_pts = np.linspace(self.start_z, self.end_z, self.num_of_segments + 1)
         return self.__z_pts.__iter__()
 
-
+    def create_pile(self,SapModel,section_name,si,prefix):
+        prefix+="_"
+        prefix_pt=prefix+"pt_"
+        prefix_ele=prefix+"ele_"
+        for i,z in enumerate(self):#创建节点和单元
+            SapModel.PointObj.AddCartesian(self.x,self.y,z,'',prefix_pt+str(i))
+            if i>=1:#从第二个建立单元
+                SapModel.FrameObj.AddByPoint(prefix_pt+str(i-1), prefix_pt+str(i), '', section_name, prefix_ele+str(i-1))
+        fm=si.calc_springs(self)
+        stiffs=fm['土弹簧刚度']
+        for i in range(self.num_of_segments+1):#添加土弹簧刚度
+            k=[stiffs[i],stiffs[i],0,0,0,0]
+            SapModel.PointObj.SetSpring(prefix_pt+str(i), k, 0,False, True)
 class SoilInfo:
     """土体分层信息
     坐标系以土顶层标高为起点 向上为正"""
@@ -108,6 +122,53 @@ class SoilInfo:
         return fm
 
 
+
+def create_sap_model(si:SoilInfo,piles):
+    assert isinstance(si,SoilInfo)
+    assert is_sequence_with_specified_type(piles,Pile),'piles是pile对象序列'
+    pile_counter=0
+    # si = SoilInfo()
+    # si.levels.append(Level(thickness=29.15, scale_factor=5000))
+    # si.levels.append(Level(thickness=40, scale_factor=1e4))
+    # pts = np.linspace(0, 40, 41)
+    # pile = Pile(calc_width=1.98, start_z=0, end_z=40, num_of_segments=40)
+
+
+
+    # create Sap2000 object
+    SapObject = win32com.client.Dispatch("Sap2000v16.SapObject")
+
+    # start Sap2000 application
+    SapObject.ApplicationStart()
+
+    # create SapModel object
+    SapModel = SapObject.SapModel
+
+    # initialize model
+    SapModel.InitializeNewModel()
+
+    # create new blank model
+    ret = SapModel.File.NewBlank()
+
+    # switch to kN m units
+    ret = SapModel.SetPresentUnits(6)
+
+    # define material property
+    MATERIAL_CONCRETE = 2
+    ret = SapModel.PropMaterial.SetMaterial('C50', MATERIAL_CONCRETE)
+    ret = SapModel.PropMaterial.SetMPIsotropic('C50', 34.5e6, 0.2, 0.0000055)
+    ret = SapModel.PropMaterial.SetWeightAndMass('C50', 2, 2.55)
+
+    #property添加截面
+    ret = SapModel.PropFrame.SetCircle('pile', 'C50', 1.2)
+
+    #调用pile的函数
+    for pile in piles:
+        pile.create_pile(SapModel=SapModel,section_name='pile',si=si,prefix='py_pile_'+str(pile_counter))
+        pile_counter+=1
+
+
+
 def test2():
     si = SoilInfo()
     si.levels.append(Level(thickness=29.15, scale_factor=5000))
@@ -148,10 +209,15 @@ def test1():
     assert abs(stiffs[-1] - 536085) < 0.1
     # print(stiffs)
 
-
+def test3():
+    si = SoilInfo()
+    si.levels.append(Level(thickness=29.15, scale_factor=5000))
+    si.levels.append(Level(thickness=40, scale_factor=1e4))
+    pile = Pile(calc_width=1.98, start_z=-2.3, end_z=-42.3, num_of_segments=40)
+    create_sap_model(si,[pile])
 if __name__ == '__main__':
-    test2()
-    test1()
+    test3()
+    # test1()
     # si = SoilInfo()
     # si.levels.append(Level(thickness=29.15, scale_factor=5000))
     # si.levels.append(Level(thickness=40, scale_factor=1e4))
