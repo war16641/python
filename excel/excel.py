@@ -443,6 +443,52 @@ class FlatDataModel:
         s3='%d个数据单元'%len(self.units)
         return "%s\n%s\n%s"%(s1,s2,s3)
 
+    def to_list(self):
+        """
+        将所有数据转化为2维列表并返回 一行代表一个数据点
+        :return:
+        """
+        return [[x2 for x2 in x1] for x1 in self.units]
+        pass
+
+    def __delete_variable(self,nm):
+        assert nm in self.vn, '变量名不存在'
+        for u in self:
+            del u.data[nm]
+        self.vn.remove(nm)
+
+    def delete_variable(self,variable_name:Union[str,List[str]])->None:
+        """
+        删除某些字段名
+        :param variable_name: 字符串或字符串列表
+        :return:
+        """
+        if isinstance(variable_name,str):
+            variable_name=[variable_name]
+        assert is_sequence_with_specified_type(variable_name,str),'必须为字符串或字符串列表'
+        for nm in variable_name:
+            self.__delete_variable(nm)
+
+
+
+    def narrow(self,vn_lst:List[str],reserve=True)->'FlatDataModel':
+        """
+        瘦身为一个新的平面数据模型
+        不会改变自身 而是复制一个新的数据模型进行操作
+        :param vn_lst: 变量名字符串列表
+        :param reserve: 指定是要保留的 还是要删除的
+        :return:
+        """
+        fdm=deepcopy(self)
+        if True==reserve:#处理要删除的变量名
+            nms_del=deepcopy(self.vn)
+            for i in vn_lst:
+                nms_del.remove(i)
+        else:
+            nms_del=vn_lst
+        fdm.delete_variable(nms_del)#删除
+        return fdm
+
 def test_load_from_list():
     vnlst=['姓名','性别','年龄']
     datalst=[['迈克尔','男',1],['丹妮','女',3]]
@@ -452,6 +498,11 @@ def test_load_from_list():
     assert len(fdm.vn)==3
     assert fdm.units[0]['年龄']==1
     assert fdm.units[1]['性别']=='女'
+    print(fdm.to_list())
+    fdm1=fdm.narrow(['姓名','年龄'])
+    print(fdm1)
+
+
 if __name__ == '__main__':
     test_load_from_list()
     # fullname = "test1.xlsx"
