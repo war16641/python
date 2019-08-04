@@ -203,7 +203,7 @@ def test1():
     pile = Pile(calc_width=1.98, start_z=-2.3, end_z=-42.3, num_of_segments=40)
     t = si.calc_springs(pile=pile)
     stiffs = t['土弹簧刚度']
-    # t.show_in_excel()
+    t.show_in_excel()
     assert stiffs[0] == 11385
     assert stiffs[1] == 21285
     assert abs(stiffs[-1] - 536085) < 0.1
@@ -216,7 +216,30 @@ def test3():
     pile = Pile(calc_width=1.98, start_z=-2.3, end_z=-42.3, num_of_segments=40)
     create_sap_model(si,[pile])
 if __name__ == '__main__':
-    test3()
+    si = SoilInfo()
+    si.levels.append(Level(thickness=0.53, scale_factor=7000))
+    si.levels.append(Level(thickness=1.2, scale_factor=1e4))
+    si.levels.append(Level(thickness=1.4, scale_factor=5000))
+    si.levels.append(Level(thickness=1.2, scale_factor=1e4))
+    si.levels.append(Level(thickness=4.9, scale_factor=8e3))
+    si.levels.append(Level(thickness=2.7, scale_factor=1e4))
+    si.levels.append(Level(thickness=1.6, scale_factor=7500))
+    si.levels.append(Level(thickness=2.8, scale_factor=1e4))
+    si.levels.append(Level(thickness=6.2, scale_factor=7500))
+    si.levels.append(Level(thickness=1.2, scale_factor=1.5e4))
+    si.levels.append(Level(thickness=2, scale_factor=7000))
+    si.levels.append(Level(thickness=4.4, scale_factor=7500))
+    si.levels.append(Level(thickness=1.4, scale_factor=7000))
+    si.levels.append(Level(thickness=1.6, scale_factor=7500))
+    si.levels.append(Level(thickness=70, scale_factor=7500))
+    si.ground_level=-8
+    pile = Pile(calc_width=1.9, start_z=-13.5, end_z=-53.5, num_of_segments=40)
+    t = si.calc_springs(pile=pile)
+    t.show_in_excel()
+
+
+
+    # test1()
     # test1()
     # si = SoilInfo()
     # si.levels.append(Level(thickness=29.15, scale_factor=5000))

@@ -82,6 +82,28 @@ class FlatDataModel:
     """
 
     @staticmethod
+    def load_from_list(vn_lst,data_lst)->'FlatDataModel':
+        """
+        从列表中生成
+        :param vn_lst: 变量名列表
+        :param data_lst: 数据列表 2维列表 每一个内层列表代表一个数据点
+        :return:
+        """
+        assert is_sequence_with_specified_type(vn_lst,str),'必须为str列表'
+        assert is_sequence_with_specified_type(data_lst,list),'必须为列表组成的列表'
+        fdm=FlatDataModel()
+        fdm.vn=vn_lst
+
+        for row in data_lst:
+            u = DataUnit(fdm)
+            assert len(row)==len(vn_lst),'数据与变量个数必须一致'
+            for nm,v in zip(vn_lst,row):
+                u.data[nm]=v
+            fdm.units.append(u)
+        return fdm
+
+
+    @staticmethod
     @overload
     def load_from_file(fullname)-> 'FlatDataModel':
         pass
@@ -421,14 +443,26 @@ class FlatDataModel:
         s3='%d个数据单元'%len(self.units)
         return "%s\n%s\n%s"%(s1,s2,s3)
 
+def test_load_from_list():
+    vnlst=['姓名','性别','年龄']
+    datalst=[['迈克尔','男',1],['丹妮','女',3]]
+    fdm=FlatDataModel.load_from_list(vnlst,datalst)
+    print(fdm)
+    assert len(fdm.units)==2
+    assert len(fdm.vn)==3
+    assert fdm.units[0]['年龄']==1
+    assert fdm.units[1]['性别']=='女'
 if __name__ == '__main__':
-    fullname = "test1.xlsx"
-    # fullname1 = "D:\新建 Microsoft Excel 工作表.xlsx"
-    model = FlatDataModel.load_from_file(fullname=fullname)
-    u = model[0]
-    print(u['文件名', '间距'])
-    print(model)
-    print(model['文件名'])
+    test_load_from_list()
+    # fullname = "test1.xlsx"
+    # # fullname1 = "D:\新建 Microsoft Excel 工作表.xlsx"
+    # model = FlatDataModel.load_from_file(fullname=fullname)
+    # u = model[0]
+    # print(u['文件名', '间距'])
+    # print(model)
+    # print(model['文件名'])
+
+
     # model.flhz(classify_names=['工况名','拉杆刚度'],
     #            statistics_func=[['P1底剪力',max,'p1底剪力'],
     #                             ['P1底剪力',len,'个数']])
