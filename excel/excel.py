@@ -443,12 +443,15 @@ class FlatDataModel:
         s3='%d个数据单元'%len(self.units)
         return "%s\n%s\n%s"%(s1,s2,s3)
 
-    def to_list(self):
+    def to_list(self,write_variable_names=False):
         """
         将所有数据转化为2维列表并返回 一行代表一个数据点
         :return:
         """
-        return [[x2 for x2 in x1] for x1 in self.units]
+        t= [[x2 for x2 in x1] for x1 in self.units]
+        if write_variable_names is True:
+            t.insert(0,deepcopy(self.vn))
+        return t
         pass
 
     def __delete_variable(self,nm):
