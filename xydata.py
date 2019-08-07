@@ -1,12 +1,14 @@
 import numpy as np
 from typing import overload,TypeVar
 from copy import deepcopy
-from GoodToolPython.mybaseclasses.tools import is_vector_like,format_vector
+from GoodToolPython.mybaseclasses.tools import is_vector_like,format_vector,is_matrix_like,format_matrix
 import matplotlib.pyplot as plt
 from myfile import read_file
 from math import pi
 from nose.tools import assert_raises
 Vector=TypeVar('Vector',list,np.ndarray)
+from myfile import read_file
+
 
 class XYData:
 
@@ -28,7 +30,7 @@ class XYData:
         self.name = name  # type:str
         if xy is not None:
             #第一种初始化方式
-            assert isinstance(xy,np.ndarray),'xy必须为数组'
+            xy=format_matrix(xy,'ndarray')
             assert xy.shape[1]==2,'xy必须为双列'
             self.data=deepcopy(xy)#type:np.ndarray
         elif x is not None and y is not None:
@@ -115,7 +117,7 @@ class XYData:
         plt.show()
 
     @property
-    def x(self):
+    def x(self)->np.ndarray:
         """x"""
         return self.data[:,0]
     @x.setter
@@ -126,7 +128,7 @@ class XYData:
 
 
     @property
-    def y(self):
+    def y(self)->np.ndarray:
         """y"""
         return self.data[:,1]
     @y.setter
@@ -142,6 +144,8 @@ class XYData:
         return self.data.__getitem__(*args,**kwargs)
     def __setitem__(self,*args,**kwargs):
         self.data.__setitem__(*args,**kwargs)
+
+
 
 def test1():
     A=np.array([[1, 1],[2, 1],[3 ,2]])
@@ -167,7 +171,7 @@ def test1():
     xy.interpolation(2)
     xy.print_in_detail()
 
-    ori=read_file("F:\X撑1\地震波\Kobe.txt")
+    ori=read_file(r"E:\市政院\施工招标上部出图-王博-20190706\22号\BC社区双层拱桥抗震\地震波-用\E2-(4).Txt")
     xy=XYData(name='kobe',xy=ori)
     # xy.plot()
     # xy.plot()
@@ -209,6 +213,11 @@ def test3():
     assert xy[1,1]==2.1
     xy[1,1]=10
     assert xy[1, 1] == 10
+
+
+    xy=XYData(name='f',xy=read_file(r"E:\市政院\施工招标上部出图-王博-20190706\22号\BC社区双层拱桥抗震\地震波-用\E2-(4).Txt"))
+    print(xy)
 if __name__ == '__main__':
     test3()
+    test1()
 

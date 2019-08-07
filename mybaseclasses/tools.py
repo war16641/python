@@ -168,6 +168,62 @@ def format_vector(vector_like,tp='oneD')->Union[list,np.ndarray]:
             elif tp == 'row_vector':
                 return vector_like.reshape((1, vector_like.size))
 
+def is_matrix_like(x):
+    """
+    判断x是不是矩阵
+
+    无论是list还是array，要求每一个维度上的长度大于1
+    :param x:
+    :return:
+    """
+    if isinstance(x,list):
+        if len(x)==1:
+            return False#要求必须大于1
+        for v in x:
+            if not isinstance(v,list):
+                return False
+            if len(v)<2:
+                return False
+        return True
+    elif isinstance(x,np.ndarray):
+        if len(x.shape)==2:
+            #还要求每一个维度的值大于1
+            for v in x.shape:
+                if v<2:
+                    return False
+            return True
+        else:
+            return False
+    else:
+        return False
+def format_matrix(x,tp):
+    """
+    将矩阵x转化为指定的格式
+    :param x:
+    :param tp: 'list' 'ndarray'
+            list:转换为二维列表
+            ndarray:转换为array
+    :return:
+    """
+    assert is_matrix_like(x),'x必须为矩阵'
+    if isinstance(x,np.ndarray):#ndarray
+        if tp=='list':#转换为二维列表
+            return [[v for v in row] for row in x]
+        elif tp=='ndarray':
+            return x
+        else:
+            raise Exception("无效参数")
+    elif isinstance(x,list):#是
+        if tp=='list':#转换为二维列表
+            return x
+        elif tp=='ndarray':
+            return np.array(x)
+        else:
+            raise Exception("无效参数")
+    else:
+        raise Exception("无效参数")
+
+
 # 以下为测试函数 名称为test_开头
 def test_is_sequence_with_specified_type():
     assert not is_sequence_with_specified_type(1, Vector3D)
@@ -231,9 +287,34 @@ def test_format_vector():
     assert (format_vector(A4, 'oneD') == A2).all()
     assert (format_vector(A4, 'column_vector') == A3).all()
     assert (format_vector(A4, 'row_vector') == A4).all()
+
+def test_format_matrix():
+    a=[1,2,3]
+    b=[[1],[2],[3]]
+    c = [[1],1.1, [2], [3]]
+    assert is_matrix_like(a) is False
+    assert is_matrix_like(b) is False
+    assert is_matrix_like(c) is False
+
+    a1=np.array(a)
+    b1 = np.array(b)
+    c1 = np.array(c)
+    assert is_matrix_like(a1) is False
+    assert is_matrix_like(b1) is False
+    assert is_matrix_like(c1) is False
+
+    b=[[1,3],[2,1],[3,1.1]]
+    assert is_matrix_like(b) is True
+
+    b1 = np.array(b)
+    assert is_matrix_like(b1) is True
+
+    assert isinstance(format_matrix(b,'ndarray'),np.ndarray)
+    assert isinstance(format_matrix(b1, 'list'), list)
 if __name__ == '__main__':
-    test_is_sequence_with_specified_type()
-    test_factorial()
-    # Benchmark.run1()
-    test_is_vector_like()
-    test_format_vector()
+    test_format_matrix()
+    # test_is_sequence_with_specified_type()
+    # test_factorial()
+    # # Benchmark.run1()
+    # test_is_vector_like()
+    # test_format_vector()
