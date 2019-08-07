@@ -145,7 +145,9 @@ class XYData:
     def __setitem__(self,*args,**kwargs):
         self.data.__setitem__(*args,**kwargs)
 
-
+    def to_list(self):
+        """转换为二维list"""
+        return format_matrix(self.data,'list')
 
 def test1():
     A=np.array([[1, 1],[2, 1],[3 ,2]])
