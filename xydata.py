@@ -5,7 +5,7 @@ from GoodToolPython.mybaseclasses.tools import is_vector_like,format_vector
 import matplotlib.pyplot as plt
 from myfile import read_file
 from math import pi
-
+from nose.tools import assert_raises
 Vector=TypeVar('Vector',list,np.ndarray)
 
 class XYData:
@@ -114,6 +114,34 @@ class XYData:
             f.axes[0].set_yscale('log')
         plt.show()
 
+    @property
+    def x(self):
+        """x"""
+        return self.data[:,0]
+    @x.setter
+    def x(self,v):
+        assert is_vector_like(v),'v必须为类数列'
+        assert len(v)==len(self),'大小不一致'
+        self.data[:,0]=v
+
+
+    @property
+    def y(self):
+        """y"""
+        return self.data[:,1]
+    @y.setter
+    def y(self,v):
+        assert is_vector_like(v),'v必须为类数列'
+        assert len(v)==len(self),'大小不一致'
+        self.data[:,1]=v
+
+    def __getitem__(self, *args,**kwargs):
+        """重写类的【】索引"""
+        # print('获取')
+        # print(*args)
+        return self.data.__getitem__(*args,**kwargs)
+    def __setitem__(self,*args,**kwargs):
+        self.data.__setitem__(*args,**kwargs)
 
 def test1():
     A=np.array([[1, 1],[2, 1],[3 ,2]])
@@ -165,6 +193,22 @@ def test_fft2():
     xy=XYData(name='sin',x=time,y=y)
     xy.psd(False)
 
+def test3():
+    xy=XYData(name='yi',x=[1,2 ,3],y=[1.1,2.1,3.1])
+    xy.print_in_detail()
+    print(xy.x)
+    xy.x=[1,1,1]
+    assert xy.data[1, 0] == 1
+    xy.print_in_detail()
+    x=xy.x
+    print(x)
+    xy.print_in_detail()
+    x[1]=3
+    xy.print_in_detail()
+    assert xy.data[1,0]==3
+    assert xy[1,1]==2.1
+    xy[1,1]=10
+    assert xy[1, 1] == 10
 if __name__ == '__main__':
-    test_fft2()
+    test3()
 

@@ -42,7 +42,7 @@ def 计算钢束伸长量(fdm: FlatDataModel, 张拉控制应力=1395, 弹模=1.
     :param 弹模:
     :param 偏差系数:
     :param 摩擦系数:
-    :return:
+    :return: fdm_last, l1,l2 包含计算过程的数据平面 ，前半伸长量，后半伸长量
     """
 
     def calc_stree2(x):
@@ -108,13 +108,13 @@ def 计算钢束伸长量(fdm: FlatDataModel, 张拉控制应力=1395, 弹模=1.
         else:  # 合理 退出循环
             break
     # 快要结束
-    l = l1 + l2  # 合计伸长量
+    # l = l1 + l2  # 合计伸长量
     # 将两个fdm合为一个
     fdm_last = deepcopy(fdm1_)
     t = deepcopy(fdm2_.units)
     t.reverse()
     fdm_last.units.extend(t)
-    return fdm_last, l
+    return fdm_last, l1,l2
     # print(x)
     # print(n_expected)
     # print(l1+l2)
@@ -147,10 +147,12 @@ def test2():
             [6, 1.858, 10.65, 10], [7, 0.736, 0, 0], [8, 1.748, 10.01, 10], [9, 6.965, 0, 0], [10, 1.351, 7.74, 10],
             [11, 1.55, 0, 0], ]
     fdm = FlatDataModel.load_from_list(['编号', '孔道长度x/m', 'θ/°', '曲率半径/m'], data)
-    f, l = 计算钢束伸长量(fdm)
+    f, l1,l2= 计算钢束伸长量(fdm)
+    l=l1+l2
     print(f)
     # f.show_in_excel()
     print(l)
+    assert 217<l<218
 
 
 if __name__ == '__main__':
