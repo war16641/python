@@ -8,7 +8,7 @@ from math import pi
 from nose.tools import assert_raises
 Vector=TypeVar('Vector',list,np.ndarray)
 from myfile import read_file
-
+from mybaseclasses.tools import linear_interpolation
 
 class XYData:
 
@@ -149,6 +149,24 @@ class XYData:
         """转换为二维list"""
         return format_matrix(self.data,'list')
 
+    def get_similar_value(self,x:float)->float:
+        """
+        获取在x处的值 如果没有x 按最近的两个点线性插值
+        x必须在在范围内
+        :param x:
+        :return:
+        """
+        assert x>=self.x[0] and x<=self.x[-1],"x必须在在范围内"
+        tol=1e-10
+        if abs(x-self.x[0])<tol:
+            return self.y[0]
+        if abs(x-self.x[-1])<tol:
+            return self.y[-1]
+        for i in range(len(self)):
+            if self.x[i]>x:
+                return linear_interpolation(x,self[i-1:i+1,:])
+        raise Exception("错误：不应该执行到这儿")
+
 def test1():
     A=np.array([[1, 1],[2, 1],[3 ,2]])
     xy=XYData('数据集',A)
@@ -216,10 +234,10 @@ def test3():
     xy[1,1]=10
     assert xy[1, 1] == 10
 
-
-    xy=XYData(name='f',xy=read_file(r"E:\市政院\施工招标上部出图-王博-20190706\22号\BC社区双层拱桥抗震\地震波-用\E2-(4).Txt"))
-    print(xy)
+def test4():
+    xy = XYData(name='yi', x=[1, 2, 3], y=[1.1, 2.1, 3.1])
+    assert abs(xy.get_similar_value(1.5)-1.6)<1e-8
 if __name__ == '__main__':
-    test3()
-    test1()
+    test4()
+    # test1()
 

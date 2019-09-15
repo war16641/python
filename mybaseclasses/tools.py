@@ -224,6 +224,25 @@ def format_matrix(x,tp):
         raise Exception("无效参数")
 
 
+def linear_interpolation(goal,dt):
+    """
+    线性插值
+    :param goal:
+    :param dt: 二维列表时 [[x1,y1],[x2,y2]]  array时 和list类似
+    :return:
+    """
+    if isinstance(dt,list):#dt是二维列表
+        a=dt[0]
+        b=dt[1]
+        return (b[1]-a[1])/(b[0]-a[0])*(goal-a[0])+a[1]
+    elif isinstance(dt,np.ndarray):#是数组
+        assert dt.shape==(2,2),"必须是2*2数组"
+        return (dt[1,1]-dt[0,1])/(dt[1,0]-dt[0,0])*(goal-dt[0,0])+dt[0,1]
+    else:
+        raise Exception("参数错误")
+
+
+
 # 以下为测试函数 名称为test_开头
 def test_is_sequence_with_specified_type():
     assert not is_sequence_with_specified_type(1, Vector3D)
@@ -311,8 +330,15 @@ def test_format_matrix():
 
     assert isinstance(format_matrix(b,'ndarray'),np.ndarray)
     assert isinstance(format_matrix(b1, 'list'), list)
+
+def test_linear_interpolation():
+    dt=[[1.,0.],[2.,1.0]]
+    assert abs(linear_interpolation(1.8,dt)-0.8)<1e-10
+    dt = [[2., 1.], [3., 11.0]]
+    assert abs(linear_interpolation(2.8, np.array(dt)) - 9) < 1e-10
+
 if __name__ == '__main__':
-    test_format_matrix()
+    test_linear_interpolation()
     # test_is_sequence_with_specified_type()
     # test_factorial()
     # # Benchmark.run1()
