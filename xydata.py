@@ -9,6 +9,8 @@ from nose.tools import assert_raises
 Vector=TypeVar('Vector',list,np.ndarray)
 from myfile import read_file
 from mybaseclasses.tools import linear_interpolation
+import unittest
+
 
 class XYData:
 
@@ -139,9 +141,14 @@ class XYData:
 
     def __getitem__(self, *args,**kwargs):
         """重写类的【】索引"""
-        # print('获取')
-        # print(*args)
-        return self.data.__getitem__(*args,**kwargs)
+        if len(args)==1:#如果是单索引 且是 数字 返回在这附近的值
+            id=args[0]
+            if isinstance(id,(float,int)):
+                return self.get_similar_value(id)
+            else:
+                return self.data.__getitem__(*args, **kwargs)
+        else:
+            return self.data.__getitem__(*args,**kwargs)
     def __setitem__(self,*args,**kwargs):
         self.data.__setitem__(*args,**kwargs)
 
@@ -237,7 +244,59 @@ def test3():
 def test4():
     xy = XYData(name='yi', x=[1, 2, 3], y=[1.1, 2.1, 3.1])
     assert abs(xy.get_similar_value(1.5)-1.6)<1e-8
-if __name__ == '__main__':
-    test4()
-    # test1()
 
+class TestCase(unittest.TestCase):
+    def test1(self):
+        A = np.array([[1, 1], [2, 1], [3, 2]])
+        xy = XYData('数据集', A)
+        print(xy)
+        xy.print_in_detail()
+
+        x = [1, 2, 3]
+        y = [1, 1, 2]
+        xy = XYData('第二种', x=x, y=y)
+        xy.print_in_detail()
+
+        x = np.array([1, 2, 3])
+        y = np.array([1, 1, 2])
+        xy = XYData('第二种', x=x, y=y)
+        xy.print_in_detail()
+
+        x = np.array([1, 2, 3])
+        y = np.array([1, 1, 2])
+        x = x.reshape((1, 3))
+        xy = XYData('第二种', x=x, y=y)
+        xy.print_in_detail()
+        xy.interpolation(2)
+        xy.print_in_detail()
+
+    def test2(self):
+        xy = XYData(name='yi', x=[1, 2, 3], y=[1.1, 2.1, 3.1])
+        # assert abs(xy.get_similar_value(1.5) - 1.6) < 1e-8
+        self.assertAlmostEqual(abs(xy.get_similar_value(1.5) - 1.6) ,0)
+
+    def test3(self):
+        xy = XYData(name='yi', x=[1, 2, 3], y=[1.1, 2.1, 3.1])
+        xy.print_in_detail()
+        print(xy.x)
+        xy.x = [1, 1, 1]
+        assert xy.data[1, 0] == 1
+        xy.print_in_detail()
+        x = xy.x
+        print(x)
+        xy.print_in_detail()
+        x[1] = 3
+        xy.print_in_detail()
+        assert xy.data[1, 0] == 3
+        assert xy[1, 1] == 2.1
+        xy[1, 1] = 10
+        assert xy[1, 1] == 10
+        self.assertEqual(xy[1,1],10.0)
+if __name__ == '__main__':
+    # unittest.main()
+
+    x = [1, 2, 3]
+    y = [1, 1, 2]
+    xy = XYData('第二种', x=x, y=y)
+    a=xy[3]
+    print(a)
