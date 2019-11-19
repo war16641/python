@@ -354,6 +354,7 @@ def copy_file(fullname,to_path,new_name='',create_folder=False):
     if new_name == "":
         new_name=tmpfilename
     shutil.copyfile(fullname,os.path.join(to_path,new_name))
+    return True #成功返回true
 
 
 if __name__ == '__main__':
