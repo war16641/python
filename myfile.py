@@ -2,6 +2,7 @@
 import os
 import sys
 import re
+import shutil
 from enum import Enum, unique
 import numpy as np
 
@@ -337,14 +338,32 @@ def collect_all_filenames(directory,rex,lst,print_info=False):
     #         line = f.readline()
 
 
+def copy_file(fullname,to_path,new_name='',create_folder=False):
+    # if not os.path.isfile(fullname):
+    #     print("警告：文件不存在，取消删除文件操作。")
+    #     return False
+    assert os.path.isfile(fullname),'文件%s不存在'%fullname
+    if not os.path.isdir(to_path):
+        if create_folder is True:
+            os.makedirs(to_path) #创建文件夹
+        else:
+            print("目标文件夹不存在且不允许创建，文件复制操作取消。")
+            return False
+    #开始复制
+    _, tmpfilename = os.path.split(fullname)
+    if new_name == "":
+        new_name=tmpfilename
+    shutil.copyfile(fullname,os.path.join(to_path,new_name))
+
 
 if __name__ == '__main__':
-    mat=read_file("F:\\的t1.txt",column_expected=3,separator=',',omit_lines=1)
-    assert mat.shape==(3,3)
-    mat=read_file("F:\的t1 - 副本.txt",style='fixedwidth',width=5)
-    assert mat.shape==(2,3)
-    mat = read_file("F:\的t1 - 副本.txt", style='matrix', width=5)
-    assert mat.shape==(6,1)
-    mat = read_file("F:\编辑3.txt", style='matrix', width=5)
-    print(mat)
+    # mat=read_file("F:\\的t1.txt",column_expected=3,separator=',',omit_lines=1)
+    # assert mat.shape==(3,3)
+    # mat=read_file("F:\的t1 - 副本.txt",style='fixedwidth',width=5)
+    # assert mat.shape==(2,3)
+    # mat = read_file("F:\的t1 - 副本.txt", style='matrix', width=5)
+    # assert mat.shape==(6,1)
+    # mat = read_file("F:\编辑3.txt", style='matrix', width=5)
+    # print(mat)
+    copy_file("D:\last.bmp","e:\\2",new_name='',create_folder=True)
 
