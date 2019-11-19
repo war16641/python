@@ -339,9 +339,14 @@ def collect_all_filenames(directory,rex,lst,print_info=False):
 
 
 def copy_file(fullname,to_path,new_name='',create_folder=False):
-    # if not os.path.isfile(fullname):
-    #     print("警告：文件不存在，取消删除文件操作。")
-    #     return False
+    """
+    复制文件
+    :param fullname: 源文件
+    :param to_path: 目标文件夹
+    :param new_name: 新文件名 可以空
+    :param create_folder: 当目标文件夹不存在时 是否创建
+    :return: 成功返回true
+    """
     assert os.path.isfile(fullname),'文件%s不存在'%fullname
     if not os.path.isdir(to_path):
         if create_folder is True:
