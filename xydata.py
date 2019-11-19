@@ -250,30 +250,31 @@ class TestCase(unittest.TestCase):
         A = np.array([[1, 1], [2, 1], [3, 2]])
         xy = XYData('数据集', A)
         print(xy)
-        xy.print_in_detail()
+        # xy.print_in_detail()
 
         x = [1, 2, 3]
         y = [1, 1, 2]
         xy = XYData('第二种', x=x, y=y)
-        xy.print_in_detail()
+        # xy.print_in_detail()
 
         x = np.array([1, 2, 3])
         y = np.array([1, 1, 2])
         xy = XYData('第二种', x=x, y=y)
-        xy.print_in_detail()
+        # xy.print_in_detail()
 
         x = np.array([1, 2, 3])
         y = np.array([1, 1, 2])
         x = x.reshape((1, 3))
         xy = XYData('第二种', x=x, y=y)
-        xy.print_in_detail()
+        # xy.print_in_detail()
         xy.interpolation(2)
-        xy.print_in_detail()
+        # xy.print_in_detail()
 
     def test2(self):
         xy = XYData(name='yi', x=[1, 2, 3], y=[1.1, 2.1, 3.1])
         # assert abs(xy.get_similar_value(1.5) - 1.6) < 1e-8
         self.assertAlmostEqual(abs(xy.get_similar_value(1.5) - 1.6) ,0)
+        self.assertAlmostEqual(xy[1.5],1.6)
 
     def test3(self):
         xy = XYData(name='yi', x=[1, 2, 3], y=[1.1, 2.1, 3.1])
@@ -293,10 +294,10 @@ class TestCase(unittest.TestCase):
         assert xy[1, 1] == 10
         self.assertEqual(xy[1,1],10.0)
 if __name__ == '__main__':
-    # unittest.main()
-
-    x = [1, 2, 3]
-    y = [1, 1, 2]
-    xy = XYData('第二种', x=x, y=y)
-    a=xy[3]
-    print(a)
+    unittest.main()
+    #
+    # x = [1, 2, 3]
+    # y = [1, 1, 2]
+    # xy = XYData('第二种', x=x, y=y)
+    # a=xy[3]
+    # print(a)

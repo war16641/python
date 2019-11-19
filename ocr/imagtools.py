@@ -5,10 +5,45 @@ from PIL import Image
 import random
 import GoodToolPython.lol.knn_gui as kg
 
-def split_image(im):
+
+bbox_ap=(1465,953,1500,971)
+
+def snap_screen(wait_time=3,bbox=(640, 732, 668, 744,)):
+    time.sleep(wait_time)
+    # im = ImageGrab.grab(bbox=(640, 732, 661, 744,))
+    # im = ImageGrab.grab(bbox=(640, 732, 671, 744,))
+    if bbox=='full':
+        im=ImageGrab.grab()
+    else:
+        im = ImageGrab.grab(bbox)
+    return im
+
+
+def throw_green(im):
+    """
+    扔掉绿色信息
+    :param im:
+    :return:
+    """
+    width, height = im.size
+    source = im.split()
+    R, G, B = 0, 1, 2
+    mtr = np.array(source[G])
+    r = source[R]
+    tmp = Image.new("RGB", (width, height,), "black")  # 用纯黑图片的绿色通道信息覆盖原图片的红色通道信息
+    tmp_r, tmp_g, tmp_b = tmp.split()
+    t1 = Image.merge('RGB', [source[R], tmp_g, source[B]])
+    # 阈值转化 转化为2值图像
+    t2 = t1.convert("L")
+    return t2
+
+
+def split_image(im,threshold_value=50,expected_width=12):
     """
     分割图片
     :param im:pil图片
+    threshold_value=50#二值图的界限值 大于的是白色 小于的为黑色
+    :param expected_width:期望单个数字宽度 如果分割出来的宽度大于此值2倍，就认为是两个数字了
     :return:列表【pil.图片】 并且处理了四周的留白
     """
     # assert im.mode=='L','image必须为灰度图'
@@ -18,7 +53,7 @@ def split_image(im):
     width = mt0.shape[1]
     height = mt0.shape[0]
 
-    threshold_value=100#二值图的界限值 大于的是白色 小于的为黑色
+
     mt_bn=mt0.copy()#二值图矩阵
     mt_bn[mt0<=threshold_value]=0
     mt_bn[mt0>threshold_value]=255
@@ -115,9 +150,14 @@ def split_image(im):
     pass
 
 if __name__ == '__main__':
-    im=Image.open("e:/d3.bmp")
+    # im=Image.open("d:/snap.bmp")
+    # lst=split_image(throw_green(im))
+    # for i in lst:
+    #     i.show()
+    im=snap_screen(bbox=bbox_ap)
+    im=throw_green(im)
+    im.show()
+    im.save("d:\\snap.bmp")
     lst=split_image(im)
-    gp=kg.start_gui_for_knn()
-    for im in lst:
-        kg.make_gui_predict(im,gp)
-        time.sleep(4)
+    for i in lst:
+        i.show()

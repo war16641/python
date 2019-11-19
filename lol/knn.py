@@ -84,7 +84,7 @@ class _DataPoint:
         """
 
         :param image: 图片
-        :param characteristic:特征值
+        :param characteristic:特征值 2值矩阵
         :param classification: 类别
         """
         self.image=image
@@ -311,9 +311,10 @@ def test_knn():
 
 
 if __name__ == '__main__':
-    # knn=MyKNN()
-    # im=Image.open("d:/v1.bmp")
-    # print(ocr_script2(im,knn))
+    #识别图片
+    knn=MyKNN()
+    im=Image.open("d:/er.bmp")
+    print(knn.predict(im))
 
     # knn=MyKNN()
     # # im=snap_screen(bbox=bbox_level)
@@ -343,7 +344,7 @@ if __name__ == '__main__':
     # #删除重复图片
     # MyKNN().check_for_repetition()
 
-    #预测图片
-    knn=MyKNN()
-    knn.predict(Image.open("e:/d2_py.bmp"))
+    # #预测图片
+    # knn=MyKNN()
+    # knn.predict(Image.open("e:/d2_py.bmp"))
 
