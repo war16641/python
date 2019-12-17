@@ -25,7 +25,7 @@ def __计算钢束伸长量_子脚本(fdm: FlatDataModel, 张拉控制应力=139
         u.data['伸长量/mm'] = u.data['平均应力/Mpa'] / 弹模 * u.data['孔道长度x/m'] * 1000
     # fdm.show_in_excel()
     fdm1 = deepcopy(fdm)
-    fdm1 = fdm1.narrow(fdm1.vn[4:])
+    # fdm1 = fdm1.narrow(fdm1.vn[4:])
     t = fdm['伸长量/mm']
     l = sum(t)  # 累计伸长量
     return fdm, fdm1, l
@@ -37,7 +37,7 @@ def 计算钢束伸长量(fdm: FlatDataModel, 张拉控制应力=1395, 弹模=1.
 
     主要是计算不动点在哪儿
     算法类似于牛顿拉普森算法。先变化一点点，算出斜率。然后利用此斜率估计不动点，直到达到容许误差
-    :param fdm: 钢束的平面数据模型 四个列
+    :param fdm: 钢束的平面数据模型 四个列 '编号', '孔道长度x/m', 'θ/°', '曲率半径/m'
     :param 张拉控制应力:
     :param 弹模:
     :param 偏差系数:
@@ -53,7 +53,7 @@ def 计算钢束伸长量(fdm: FlatDataModel, 张拉控制应力=1395, 弹模=1.
         fdm1.units[-1].data['孔道长度x/m'] = x
         if fdm1.units[-1].data['曲率半径/m'] != 0:
             fdm1.units[-1].data['θ/°'] = fdm1.units[-1].data['孔道长度x/m'] / fdm1.units[-1].data['曲率半径/m'] / 3.14159 * 180
-        fdm1_, t, l1 = __计算钢束伸长量_子脚本(fdm1)
+        fdm1_, t, l1 = __计算钢束伸长量_子脚本(fdm1,张拉控制应力=张拉控制应力,弹模=弹模,偏差系数=偏差系数,摩擦系数=摩擦系数)
         stress1 = t.units[-1].data['终点应力/Mpa']
 
         fdm2 = deepcopy(fdm)
@@ -157,3 +157,10 @@ def test2():
 
 if __name__ == '__main__':
     test2()
+    # fdm=FlatDataModel.load_from_file(r"C:\Users\niyinhao\Desktop\13n1.xlsx")
+    # print(fdm)
+    # f, l1, l2 = 计算钢束伸长量(fdm, 张拉控制应力=1395, 弹模=1.95e5, 偏差系数=0.0015, 摩擦系数=0.15)
+    # l = l1 + l2
+    # print(f)
+    # print(l)
+    # f.show_in_excel()
