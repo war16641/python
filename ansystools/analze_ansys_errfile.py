@@ -5,7 +5,6 @@ from typing import List,Union
 import re
 import time
 import hashlib
-md5=hashlib.md5() #用来标识msg的字段
 
 def get_re_expression(st: str):
     """
@@ -168,25 +167,6 @@ known_infotype.append(InfoType(name='unkown msg',
 #     return info_type_stat
 
 
-def compare_info_type_stat(old: Union[List[int],str], new: Union[List[int],str]):
-    """
-    比较消息infotype统计次数的编号
-    """
-    if isinstance(old,str) and isinstance(new,str):#可以是两个err文件路径
-        t1=classify_msg_array(make_msg_array(old))
-        t2=classify_msg_array(make_msg_array(new))
-        compare_info_type_stat(t1,t2)
-    elif isinstance(old,list) and isinstance(new,list):#可以是两个list【int】
-        diff = list(map(lambda x: x[0] - x[1], zip(new, old)))
-        print("差异如下：\n_______________________________________________")
-        print_info_type_stat(diff)
-        # for i in range(len(known_infotype)):
-        #     print("%s: %d" % (known_infotype[i].name, diff[i]))
-        print("_______________________________________________\n差异结束。")
-    else:
-        raise Exception("未知参数类型。")
-
-
 class Message:
     """
     ansys err文件中的一条消息
@@ -210,8 +190,11 @@ class Message:
         desciption = msg[r.span(0)[1]:]
         self.description = desciption.replace("\n", "")  # 去除换行符
         self.infotype_id=0 #标识本msg的infotype索引 在judge_info_type赋值
+        md5 = hashlib.md5()  # 用来标识msg的字段
         md5.update(self.description.encode("utf-8"))
         self.md5=md5.hexdigest() #用description的md5码作为消息的特征标识
+        self.sequence=-1 #标识在AnsysErrorMessageManager.msg_array中位置
+
 
     def __eq__(self, other):
         """
@@ -243,6 +226,7 @@ class AnsysErrorMessageManager:
             return
         self._classify_infotype()
         self._update_unknown_msg_array()
+        self._make_dict()
 
     def _classify_infotype(self):
         """
@@ -278,6 +262,15 @@ class AnsysErrorMessageManager:
         """
         for i in self.msg_array:
             self.msgs[i.md5]=i
+
+    def set_sequence(self):
+        """
+        设定msg.sequence
+        @return:
+        """
+        for s,i in enumerate(self.msg_array):
+            i.sequence=s
+
     def print_stat(self):
         """
         打印类型统计信息
@@ -359,9 +352,15 @@ class AnsysErrorMessageManager:
 
 
 if __name__ == '__main__':
-    t1=AnsysErrorMessageManager.load_from_file(r"E:\ansys_work\job.err")
+    t1=AnsysErrorMessageManager.load_from_file(r"E:\ansys_work\1.err")
+    t2 = AnsysErrorMessageManager.load_from_file(r"E:\ansys_work\2.err")
     t1.print_msgs()
-
+    t2.print_msgs()
+    t=t2-t1
+    t.print_msgs()
+    # t1.print_msgs()
+    # for x in t1.msgs.keys():
+    #     print(t1.msgs[x].description)
     # t=AnsysErrorMessageManager(r"E:\sjgj_cst_g.err")
     # t.print_stat()
     # t.print_unknown_msg()
