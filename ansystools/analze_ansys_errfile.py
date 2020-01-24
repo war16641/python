@@ -1,9 +1,11 @@
 """
 分析ansys错误文件 识别各个消息 统计各个消息类型
 """
-from typing import List
+from typing import List,Union
 import re
-
+import time
+import hashlib
+md5=hashlib.md5() #用来标识msg的字段
 
 def get_re_expression(st: str):
     """
@@ -46,28 +48,6 @@ def get_re_expression(st: str):
     print(st)
     return st
 
-
-class Message:
-    """
-    ansys err文件中的一条消息
-    将原生消息处理 分为：头 时间 描述
-    """
-    pattern_header = re.compile(r"\*\*\*.+\*\*\*")
-    pattern_time = re.compile(r"TIME= \d+:\d+:\d+")
-
-    def __init__(self, msg: str):
-        r = Message.pattern_header.findall(msg)
-        if len(r) == 1:
-            self.header = r[0][4:-4]
-        else:
-            raise Exception("无效的msg。无法识别头。")
-        r = Message.pattern_time.search(msg)
-        if r is not None:
-            self.time = r.group(0)[6:]
-        else:
-            raise Exception("无效的msg。无法识别时间。")
-        desciption = msg[r.span(0)[1]:]
-        self.description = desciption.replace("\n", "")  # 去除换行符
 
 
 # 已知消息类型
@@ -123,76 +103,271 @@ known_infotype.append(InfoType(name='unkown msg',
                                pattern=r".+",
                                description="未知消息类型 patter是一定能匹配上 这个infotype一定要放在最后"))
 
+#
+# def judge_info_type(msg: Message) -> InfoType:
+#     for it in known_infotype:
+#         p = re.compile(it.pattern)
+#         r = p.search(msg.description)
+#         if r is not None:
+#             msg.infotype_id=it
+#             return it
+#     # return None #代表未知类型
+#
+#
+# def make_msg_array(path: str) -> List[Message]:
+#     """
+#     通过文件 生成Message列表
+#     """
+#     pattern = re.compile(r"\*\*\*.+\*\*\*")  # 查找数字
+#     msg = ""
+#     rcd_flag = 0
+#     msg_array_raw = []  # 分隔好的单个消息str 放入这个数组中
+#     with open(path) as f:
+#         for line in f:
+#             result = pattern.findall(line)
+#             if len(result) != 0:  # 有头
+#                 if len(msg) != 0:
+#                     msg_array_raw.append(msg)
+#                     msg = ""
+#                 msg += line
+#                 if rcd_flag == 0:
+#                     rcd_flag = 1
+#
+#             else:  # 没有头
+#                 if rcd_flag == 1:
+#                     msg += line
+#     msg_array_raw.append(msg)
+#     msg_array = []  # message列表
+#     for i in msg_array_raw:
+#         msg_array.append(Message(i))  # 将消息str转化为message对象
+#     return msg_array
+#
+#
+# def print_info_type_stat(info_type_stat:List[int]):
+#     """
+#     打印类型统计信息
+#
+#     """
+#     for i in range(len(known_infotype)):
+#         print("\t%s:\t\t%d" % (known_infotype[i].name, info_type_stat[i]))
+#
+# def classify_msg_array(ma: List[Message],print_flag=True) -> List[int]:
+#     """
+#     对message_array按infotype分类
+#     统计各个infotype出现的次数
+#     """
+#     info_type_stat = [0] * len(known_infotype)  # 统计各个infotype出现的次数
+#     for m in ma:
+#         t = judge_info_type(m)
+#         info_type_stat[t.id] += 1
+#         # 可以打印未知类型的消息
+#         if t.id == len(known_infotype) - 1:
+#             print(m.description)
+#     if print_flag is True:
+#         print_info_type_stat(info_type_stat)
+#     return info_type_stat
 
-def judge_info_type(msg: Message) -> InfoType:
-    for it in known_infotype:
-        p = re.compile(it.pattern)
-        r = p.search(msg.description)
-        if r is not None:
-            return it
-    # return None #代表未知类型
 
-
-def make_msg_array(path: str) -> List[Message]:
-    """
-    通过文件 生成Message列表
-    """
-    pattern = re.compile(r"\*\*\*.+\*\*\*")  # 查找数字
-    msg = ""
-    rcd_flag = 0
-    msg_array_raw = []  # 分隔好的单个消息str 放入这个数组中
-    with open(path) as f:
-        for line in f:
-            result = pattern.findall(line)
-            if len(result) != 0:  # 有头
-                if len(msg) != 0:
-                    msg_array_raw.append(msg)
-                    msg = ""
-                msg += line
-                if rcd_flag == 0:
-                    rcd_flag = 1
-
-            else:  # 没有头
-                if rcd_flag == 1:
-                    msg += line
-    msg_array_raw.append(msg)
-    msg_array = []  # message列表
-    for i in msg_array_raw:
-        msg_array.append(Message(i))  # 将消息str转化为message对象
-    return msg_array
-
-
-def classify_msg_array(ma: List[Message]) -> List[int]:
-    """
-    对message_array按infotype分类
-    统计各个infotype出现的次数
-    """
-    info_type_stat = [0] * len(known_infotype)  # 统计各个infotype出现的次数
-    for m in ma:
-        t = judge_info_type(m)
-        info_type_stat[t.id] += 1
-        # 可以打印未知类型的消息
-        if t.id == len(known_infotype) - 1:
-            print(m.description)
-    for i in range(len(known_infotype)):
-        print("%s    :      %d" % (known_infotype[i].name, info_type_stat[i]))
-    return info_type_stat
-
-
-def compare_info_type_stat(old: List[int], new: List[int]):
+def compare_info_type_stat(old: Union[List[int],str], new: Union[List[int],str]):
     """
     比较消息infotype统计次数的编号
     """
-    diff = list(map(lambda x: x[0] - x[1], zip(new, old)))
-    print("差异如下：\n_______________________________________________")
-    for i in range(len(known_infotype)):
-        print("%s    :      %d" % (known_infotype[i].name, diff[i]))
-    print("差异结束。\n_______________________________________________")
+    if isinstance(old,str) and isinstance(new,str):#可以是两个err文件路径
+        t1=classify_msg_array(make_msg_array(old))
+        t2=classify_msg_array(make_msg_array(new))
+        compare_info_type_stat(t1,t2)
+    elif isinstance(old,list) and isinstance(new,list):#可以是两个list【int】
+        diff = list(map(lambda x: x[0] - x[1], zip(new, old)))
+        print("差异如下：\n_______________________________________________")
+        print_info_type_stat(diff)
+        # for i in range(len(known_infotype)):
+        #     print("%s: %d" % (known_infotype[i].name, diff[i]))
+        print("_______________________________________________\n差异结束。")
+    else:
+        raise Exception("未知参数类型。")
+
+
+class Message:
+    """
+    ansys err文件中的一条消息
+    将原生消息处理 分为：头 时间 描述
+    """
+    pattern_header = re.compile(r"\*\*\*.+\*\*\*")
+    pattern_time = re.compile(r"TIME= \d+:\d+:\d+")
+
+    def __init__(self, msg: str):
+        r = Message.pattern_header.findall(msg)
+        if len(r) == 1:
+            self.header = r[0][4:-4]
+        else:
+            raise Exception("无效的msg。无法识别头。")
+        r = Message.pattern_time.search(msg)
+        if r is not None:
+            self.time = r.group(0)[6:]
+            self.time=time.strptime(self.time.strip(),"%H:%M:%S")
+        else:
+            raise Exception("无效的msg。无法识别时间。")
+        desciption = msg[r.span(0)[1]:]
+        self.description = desciption.replace("\n", "")  # 去除换行符
+        self.infotype_id=0 #标识本msg的infotype索引 在judge_info_type赋值
+        md5.update(self.description.encode("utf-8"))
+        self.md5=md5.hexdigest() #用description的md5码作为消息的特征标识
+
+    def __eq__(self, other):
+        """
+        通过md5码判断相等
+        @param other:
+        @return:
+        """
+        if not isinstance(other,Message):
+            return False
+        if self.md5==other.md5:
+            return True
+        else:
+            return False
+class AnsysErrorMessageManager:
+
+    def __init__(self,msg_array=None):
+        self.msg_array=msg_array #type:List[Message] #存放所有消息
+        self.unknown_msg_array=None #type:List[Message] #存放未识别消息
+        self.info_type_stat=None #type:List[int] #存放类型统计信息
+        self.msgs={} #key是md5码 value是msg
+
+        self.refresh()
+
+    def refresh(self):
+        """
+        重新分类消息类型 并整理未知消息
+        """
+        if self.msg_array is None:
+            return
+        self._classify_infotype()
+        self._update_unknown_msg_array()
+
+    def _classify_infotype(self):
+        """
+        对message_array按infotype分类
+        统计各个infotype出现的次数
+        """
+        def judge_info_type(msg: Message) -> InfoType:
+            for it in known_infotype:
+                p = re.compile(it.pattern)
+                r = p.search(msg.description)
+                if r is not None:
+                    msg.infotype_id = it.id
+                    return it
+        info_type_stat = [0] * len(known_infotype)  # 统计各个infotype出现的次数
+        for m in self.msg_array:
+            t = judge_info_type(m)
+            info_type_stat[t.id] += 1
+            # 可以打印未知类型的消息
+            # if t.id == len(known_infotype) - 1:
+            #     print(m.description)
+        self.info_type_stat= info_type_stat
+
+    def _update_unknown_msg_array(self):
+        """
+        更新未识别消息
+        """
+        t = self.msg_array
+        self.unknown_msg_array = list(filter(lambda x: x.infotype_id == len(known_infotype) - 1, t))
+
+    def _make_dict(self):
+        """
+        通过msg_array生成字典
+        """
+        for i in self.msg_array:
+            self.msgs[i.md5]=i
+    def print_stat(self):
+        """
+        打印类型统计信息
+
+        """
+        if len(self.msg_array)==0:
+            print("无消息。")
+            return
+        print("打印统计信息：\n_______________________________________________")
+        for i in range(len(known_infotype)):
+            print("\t%s:\t\t%d" % (known_infotype[i].name, self.info_type_stat[i]))
+        print("_______________________________________________\n打印统计信息结束。")
+    def print_unknown_msg(self):
+        """
+        打印未识别的消息
+        """
+        if len(self.msg_array)==0:
+            print("无消息。")
+            return
+        print("打印未识别信息：\n_______________________________________________")
+        for i in self.unknown_msg_array:
+            print("%s" % (i.description))
+        print("_______________________________________________\n打印未识别信息结束。")
+
+    def print_msgs(self):
+        """
+        打印所有消息
+        @return:
+        """
+        print("打印所有信息：\n_______________________________________________")
+        for i in self.msg_array:
+            print(i.description)
+        print("_______________________________________________\n打印所有信息结束。")
+
+    @staticmethod
+    def load_from_file(path):
+        pass
+        """
+        从文件中载入
+        并分解为message
+        """
+        pattern = re.compile(r"\*\*\*.+\*\*\*")  # 查找数字
+        msg = ""
+        rcd_flag = 0
+        msg_array_raw = []  # 分隔好的单个消息str 放入这个数组中
+        with open(path) as f:
+            for line in f:
+                result = pattern.findall(line)
+                if len(result) != 0:  # 有头
+                    if len(msg) != 0:
+                        msg_array_raw.append(msg)
+                        msg = ""
+                    msg += line
+                    if rcd_flag == 0:
+                        rcd_flag = 1
+
+                else:  # 没有头
+                    if rcd_flag == 1:
+                        msg += line
+        msg_array_raw.append(msg)
+
+        msg_array = []  # message列表
+        for i in msg_array_raw:
+            msg_array.append(Message(i))  # 将消息str转化为message对象
+        return AnsysErrorMessageManager(msg_array=msg_array)
+
+    def __sub__(self, other):
+        """
+        定义减法
+        返回self比other多出的消息
+        @param other:
+        @return:
+        """
+        if isinstance(other,AnsysErrorMessageManager):
+            t=[self.msgs[x] for x in self.msgs.keys() if x not in other.msgs.keys()]
+            return AnsysErrorMessageManager(t)
+        else:
+            raise Exception("参数类型错误。")
 
 
 if __name__ == '__main__':
-    t = make_msg_array(r"E:\sjgj_cst_g.err")
-    t1 = classify_msg_array(t)
+    t1=AnsysErrorMessageManager.load_from_file(r"E:\ansys_work\job.err")
+    t1.print_msgs()
+
+    # t=AnsysErrorMessageManager(r"E:\sjgj_cst_g.err")
+    # t.print_stat()
+    # t.print_unknown_msg()
+    # t = make_msg_array(r"E:\sjgj_cst_g.err")
+    # t1 = classify_msg_array(t)
     # t = make_msg_array(r"E:\ansys_work\job.err")
-    # t2 = classify_msg_array(t)
+    # t2 = classify_msg_array(t,False)
     # compare_info_type_stat(t1,t2)
+    # compare_info_type_stat(r"E:\sjgj_cst_g.err", r"E:\ansys_work\job.err")
