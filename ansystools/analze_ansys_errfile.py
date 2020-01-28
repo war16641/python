@@ -175,7 +175,7 @@ class Message:
     pattern_header = re.compile(r"\*\*\*.+\*\*\*")
     pattern_time = re.compile(r"TIME= \d+:\d+:\d+")
 
-    def __init__(self, msg: str):
+    def __init__(self, msg: str,sequence=-1):
         r = Message.pattern_header.findall(msg)
         if len(r) == 1:
             self.header = r[0][4:-4]
@@ -193,7 +193,7 @@ class Message:
         md5 = hashlib.md5()  # 用来标识msg的字段
         md5.update(self.description.encode("utf-8"))
         self.md5=md5.hexdigest() #用description的md5码作为消息的特征标识
-        self.sequence=-1 #标识在AnsysErrorMessageManager.msg_array中位置
+        self.sequence=sequence #标识在AnsysErrorMessageManager.msg_array中位置
 
 
     def __eq__(self, other):
@@ -333,8 +333,9 @@ class AnsysErrorMessageManager:
         msg_array_raw.append(msg)
 
         msg_array = []  # message列表
-        for i in msg_array_raw:
-            msg_array.append(Message(i))  # 将消息str转化为message对象
+        for s,i in enumerate(msg_array_raw):
+            t=Message(i,sequence=s)
+            msg_array.append(t)  # 将消息str转化为message对象
         return AnsysErrorMessageManager(msg_array=msg_array)
 
     def __sub__(self, other):
@@ -352,12 +353,12 @@ class AnsysErrorMessageManager:
 
 
 if __name__ == '__main__':
-    t1=AnsysErrorMessageManager.load_from_file(r"E:\ansys_work\1.err")
-    t2 = AnsysErrorMessageManager.load_from_file(r"E:\ansys_work\2.err")
+    t1=AnsysErrorMessageManager.load_from_file(r"E:\ansys_work\gg.err")
+    # t2 = AnsysErrorMessageManager.load_from_file(r"E:\ansys_work\2.err")
     t1.print_msgs()
-    t2.print_msgs()
-    t=t2-t1
-    t.print_msgs()
+    # t2.print_msgs()
+    # t=t2-t1
+    # t.print_msgs()
     # t1.print_msgs()
     # for x in t1.msgs.keys():
     #     print(t1.msgs[x].description)
