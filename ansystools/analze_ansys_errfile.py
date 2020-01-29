@@ -6,6 +6,9 @@ import re
 import time
 import hashlib
 
+from excel.excel import FlatDataModel
+
+
 def get_re_expression(st: str):
     """
     通过字符串获得其re的pattern
@@ -52,6 +55,7 @@ def get_re_expression(st: str):
 # 已知消息类型
 class InfoType:
     id_counter = 0  # 标识此infotype在known_infotype的位置
+    known_infotype = []
 
     def __init__(self, name: str, pattern: str, description: str):
         self.name = name
@@ -61,48 +65,62 @@ class InfoType:
         InfoType.id_counter += 1
 
 
-known_infotype = []
-known_infotype.append(InfoType(name='ceintf warning 不重要',
-                               pattern=r"Node\s+\d+\s+does\s+not\s+lie\s+on\s+or\s+near\s+the\s+selected\s+elements.\s+\s+The\s+CEINTF\s+operation\s+produced\s+no\s+results\s+for\s+this\s+node",
-                               description="不重要"))
-known_infotype.append(InfoType(name='divide by zero',
-                               pattern=r"Attempt\s+to\s+divide\s+by\s+zero\s+in\s+parameter\s+expression",
-                               description="除以0错误"))
-known_infotype.append(InfoType(name='ceintf warning2 重要',
-                               pattern=r"Constraint\s+equation\s+\d+\s+has\s+specified\s+degree\s+of\s+freedom\s+\(dof\)\s+constraint\s+at\s+all\s+nodes/dof.\s+Constraint\s+equation\s+deleted",
-                               description="该ce指定了所有节点，ce被删除.这个错误必须要消除"))
-known_infotype.append(InfoType(name='link180定义歧义',
-                               pattern=r"Element\s+\d+\s+\(LINK180\)\s+accesses\s+both\s+real\s+constant\s+set\s+\d+\s+and\s+section\s+ID\s+\d+",
-                               description="link180定义时同时指定了real constant和section ID，建议移除实常数"))
-known_infotype.append(InfoType(name='ce方程中含未激活的自由度',
-                               pattern=r"Term\s+\d+\s+\(node\s+\d+\s+ROT[XYZ]\)\s+on\s+CE\s+number\s+\d+\s+is\s+not\s+active\s+on\s+any\s+element\.\s+This\s+term\s+is\s+ignored\.",
-                               description="大多数情况下由cerig命令产生，大多数情况下是转动自由度未激活"))
-known_infotype.append(InfoType(name='ce方程中含未激活的自由度2',
-                               pattern=r"The\s+first\s+term\s+of\s+constraint\s+equation\s+number\s+\d+\s+refers\s+to\s+degree\s+of\s+freedom\s+ROT[XYZ]\s+at\s+node\s+\d+\.\s+This\s+degree\s+of\s+freedom\s+is\s+not\s+active,\s+so\s+therefore,\s+this\s+constraint\s+equation\s+is\s+ignored\.",
-                               description="大多数情况下由cerig命令产生，大多数情况下是转动自由度未激活"))
 
-known_infotype.append(InfoType(name='combin14两个节点不重合',
-                               pattern=r"Nodes\s+I\s+and\s+J\s+of\s+element\s+\d+\s+\(\s+COMBIN\d+\s+\)\s+are\s+not\s+coincident\.",
-                               description="不重要"))
-known_infotype.append(InfoType(name='有命令未执行 重要',
-                               pattern=r"is\s+not\s+a\s+recognized\s+POST\d+\s+command,\s+abbreviation,\s+or\s+macro\.\s+This\s+command\s+will\s+be\s+ignored\.",
-                               description="大多数情况下是未进入PREP7或SOL"))
-known_infotype.append(InfoType(name='有组合未定义 重要',
-                               pattern=r"Component\s+\S+\s+is\s+not\s+defined\.",
-                               description="有组合未定义，但却引用了这个组合"))
-known_infotype.append(InfoType(name='系数比例异常 不重要',
-                               pattern=r"Coefficient\s+ratio\s+exceeds\s+\d+\.\d+e\d+\s+-\s+Check\s+results\.",
-                               description="刚度矩阵主对角元素相差过大，导致数值计算不准。这个没办法解决，忽略"))
-known_infotype.append(InfoType(name='单元形状畸形  不重要',
-                               pattern=r"Previous\s+testing\s+revealed\s+that\s+\d+\s+of\s+the\s+\d+\s+selected\s+elements\s+violate\s+shape\s+warning\s+limits\.\s+To\s+review\s+warning\s+messages,\s+please\s+see\s+the\s+output\s+or\s+error\s+file,\s+or\s+issue\s+the\s+CHECK\s+command\.",
-                               description="单元形状畸形 畸形比例小于5%可以忽略"))
-
-# 下面这个infotype一定要放到最后
-known_infotype.append(InfoType(name='unkown msg',
-                               pattern=r".+",
-                               description="未知消息类型 patter是一定能匹配上 这个infotype一定要放在最后"))
-
+# InfoType.known_infotype.append(InfoType(name='ceintf warning 不重要',
+#                                pattern=r"Node\s+\d+\s+does\s+not\s+lie\s+on\s+or\s+near\s+the\s+selected\s+elements.\s+\s+The\s+CEINTF\s+operation\s+produced\s+no\s+results\s+for\s+this\s+node",
+#                                description="不重要"))
+# InfoType.known_infotype.append(InfoType(name='divide by zero',
+#                                pattern=r"Attempt\s+to\s+divide\s+by\s+zero\s+in\s+parameter\s+expression",
+#                                description="除以0错误"))
+# InfoType.known_infotype.append(InfoType(name='ceintf warning2 重要',
+#                                pattern=r"Constraint\s+equation\s+\d+\s+has\s+specified\s+degree\s+of\s+freedom\s+\(dof\)\s+constraint\s+at\s+all\s+nodes/dof.\s+Constraint\s+equation\s+deleted",
+#                                description="该ce指定了所有节点，ce被删除.这个错误必须要消除"))
+# InfoType.known_infotype.append(InfoType(name='link180定义歧义',
+#                                pattern=r"Element\s+\d+\s+\(LINK180\)\s+accesses\s+both\s+real\s+constant\s+set\s+\d+\s+and\s+section\s+ID\s+\d+",
+#                                description="link180定义时同时指定了real constant和section ID，建议移除实常数"))
+# InfoType.known_infotype.append(InfoType(name='ce方程中含未激活的自由度',
+#                                pattern=r"Term\s+\d+\s+\(node\s+\d+\s+ROT[XYZ]\)\s+on\s+CE\s+number\s+\d+\s+is\s+not\s+active\s+on\s+any\s+element\.\s+This\s+term\s+is\s+ignored\.",
+#                                description="大多数情况下由cerig命令产生，大多数情况下是转动自由度未激活"))
+# InfoType.known_infotype.append(InfoType(name='ce方程中含未激活的自由度2',
+#                                pattern=r"The\s+first\s+term\s+of\s+constraint\s+equation\s+number\s+\d+\s+refers\s+to\s+degree\s+of\s+freedom\s+ROT[XYZ]\s+at\s+node\s+\d+\.\s+This\s+degree\s+of\s+freedom\s+is\s+not\s+active,\s+so\s+therefore,\s+this\s+constraint\s+equation\s+is\s+ignored\.",
+#                                description="大多数情况下由cerig命令产生，大多数情况下是转动自由度未激活"))
 #
+# InfoType.known_infotype.append(InfoType(name='combin14两个节点不重合',
+#                                pattern=r"Nodes\s+I\s+and\s+J\s+of\s+element\s+\d+\s+\(\s+COMBIN\d+\s+\)\s+are\s+not\s+coincident\.",
+#                                description="不重要"))
+# InfoType.known_infotype.append(InfoType(name='有命令未执行 重要',
+#                                pattern=r"is\s+not\s+a\s+recognized\s+POST\d+\s+command,\s+abbreviation,\s+or\s+macro\.\s+This\s+command\s+will\s+be\s+ignored\.",
+#                                description="大多数情况下是未进入PREP7或SOL"))
+# InfoType.known_infotype.append(InfoType(name='有组合未定义 重要',
+#                                pattern=r"Component\s+\S+\s+is\s+not\s+defined\.",
+#                                description="有组合未定义，但却引用了这个组合"))
+# InfoType.known_infotype.append(InfoType(name='系数比例异常 不重要',
+#                                pattern=r"Coefficient\s+ratio\s+exceeds\s+\d+\.\d+e\d+\s+-\s+Check\s+results\.",
+#                                description="刚度矩阵主对角元素相差过大，导致数值计算不准。这个没办法解决，忽略"))
+# InfoType.known_infotype.append(InfoType(name='单元形状畸形  不重要',
+#                                pattern=r"Previous\s+testing\s+revealed\s+that\s+\d+\s+of\s+the\s+\d+\s+selected\s+elements\s+violate\s+shape\s+warning\s+limits\.\s+To\s+review\s+warning\s+messages,\s+please\s+see\s+the\s+output\s+or\s+error\s+file,\s+or\s+issue\s+the\s+CHECK\s+command\.",
+#                                description="单元形状畸形 畸形比例小于5%可以忽略"))
+#
+# # 下面这个infotype一定要放到最后
+# InfoType.known_infotype.append(InfoType(name='unkown msg',
+#                                pattern=r".+",
+#                                description="未知消息类型 pattern是一定能匹配上 这个infotype一定要放在最后"))
+#
+
+def make_knowninfotype(path=r"E:\我的文档\python\GoodToolPython\ansystools\消息类型库.xlsx"):
+    """
+    从文件中载入已知消息类型
+    有默认值
+    @param path: 
+    @return: 
+    """
+    fdm=FlatDataModel.load_from_file(r"E:\我的文档\python\GoodToolPython\ansystools\消息类型库.xlsx")
+    InfoType.known_infotype=[InfoType(name= x.data['name'],
+                             pattern=x.data['pattern'],
+                             description=x.data['description']) for x in fdm]
+
+
+make_knowninfotype()
 # def judge_info_type(msg: Message) -> InfoType:
 #     for it in known_infotype:
 #         p = re.compile(it.pattern)
@@ -234,13 +252,13 @@ class AnsysErrorMessageManager:
         统计各个infotype出现的次数
         """
         def judge_info_type(msg: Message) -> InfoType:
-            for it in known_infotype:
+            for it in InfoType.known_infotype:
                 p = re.compile(it.pattern)
                 r = p.search(msg.description)
                 if r is not None:
                     msg.infotype_id = it.id
                     return it
-        info_type_stat = [0] * len(known_infotype)  # 统计各个infotype出现的次数
+        info_type_stat = [0] * len(InfoType.known_infotype)  # 统计各个infotype出现的次数
         for m in self.msg_array:
             t = judge_info_type(m)
             info_type_stat[t.id] += 1
@@ -254,7 +272,7 @@ class AnsysErrorMessageManager:
         更新未识别消息
         """
         t = self.msg_array
-        self.unknown_msg_array = list(filter(lambda x: x.infotype_id == len(known_infotype) - 1, t))
+        self.unknown_msg_array = list(filter(lambda x: x.infotype_id == len(InfoType.known_infotype) - 1, t))
 
     def _make_dict(self):
         """
@@ -280,8 +298,8 @@ class AnsysErrorMessageManager:
             print("无消息。")
             return
         print("打印统计信息：\n_______________________________________________")
-        for i in range(len(known_infotype)):
-            print("\t%s:\t\t%d" % (known_infotype[i].name, self.info_type_stat[i]))
+        for i in range(len(InfoType.known_infotype)):
+            print("\t%s:\t\t%d" % (InfoType.known_infotype[i].name, self.info_type_stat[i]))
         print("_______________________________________________\n打印统计信息结束。")
     def print_unknown_msg(self):
         """
@@ -353,9 +371,12 @@ class AnsysErrorMessageManager:
 
 
 if __name__ == '__main__':
-    t1=AnsysErrorMessageManager.load_from_file(r"E:\ansys_work\gg.err")
-    # t2 = AnsysErrorMessageManager.load_from_file(r"E:\ansys_work\2.err")
-    t1.print_msgs()
+    InfoType.known_infotype=[]
+    print(InfoType.known_infotype)
+    make_knowninfotype()
+    print(InfoType.known_infotype[0].name)
+    # t1=AnsysErrorMessageManager.load_from_file(r"E:\ansys_work\gg.err")
+    # t1.print_msgs()
     # t2.print_msgs()
     # t=t2-t1
     # t.print_msgs()

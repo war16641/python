@@ -15,12 +15,18 @@ class MyListbox(wx.ListBox):
 
     def Append(self, x):
         self.mydata.append(x)
-        super(MyListbox, self).Append(self.mymethod(x))
+        if isinstance(x,str):#如果硬要添加str
+            super(MyListbox, self).Append(x)
+        else:
+            super(MyListbox, self).Append(self.mymethod(x))
 
     def Clear(self):
         self.mydata.clear()
         super(MyListbox, self).Clear()
 
+    @property#返回选择的mydata数据
+    def selected_data(self):
+        return self.mydata[self.Selection]
 
 
 
