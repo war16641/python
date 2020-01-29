@@ -26,7 +26,15 @@ class MyListbox(wx.ListBox):
 
     @property#返回选择的mydata数据
     def selected_data(self):
+        if self.Selection==-1:
+            return None#没选择时返回none
         return self.mydata[self.Selection]
+
+    def MyRefresh(self):
+        #重新从mydata中载入信息
+        super(MyListbox, self).Clear()
+        for i in self.mydata:
+            super(MyListbox, self).Append(self.mymethod(i))
 
 
 
