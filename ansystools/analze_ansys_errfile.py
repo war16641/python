@@ -65,6 +65,27 @@ class InfoType:
         InfoType.id_counter += 1
 
 
+    @staticmethod
+    def append_infotype(x):
+        """
+        添加已知kowntype
+        x和最后一个infotype要更改
+        @param x:
+        @return:
+        """
+        x.id=InfoType.id_counter-2
+        InfoType.known_infotype[-1].id=InfoType.id_counter-1
+        InfoType.known_infotype.insert(len(InfoType.known_infotype)-1,x)
+
+    @staticmethod
+    def save(path=r"E:\我的文档\python\GoodToolPython\ansystools\消息类型库.xlsx"):
+        #保存
+        t=[]
+        for i in InfoType.known_infotype:
+            t.append([i.name,i.pattern,i.description])
+        fdm=FlatDataModel.load_from_list(['name','pattern','description'],t)
+        fdm.save(fullname=path)
+
 
 # InfoType.known_infotype.append(InfoType(name='ceintf warning 不重要',
 #                                pattern=r"Node\s+\d+\s+does\s+not\s+lie\s+on\s+or\s+near\s+the\s+selected\s+elements.\s+\s+The\s+CEINTF\s+operation\s+produced\s+no\s+results\s+for\s+this\s+node",
@@ -371,15 +392,12 @@ class AnsysErrorMessageManager:
 
 
 if __name__ == '__main__':
-    InfoType.known_infotype=[]
-    print(InfoType.known_infotype)
-    make_knowninfotype()
-    print(InfoType.known_infotype[0].name)
-    # t1=AnsysErrorMessageManager.load_from_file(r"E:\ansys_work\gg.err")
-    # t1.print_msgs()
-    # t2.print_msgs()
-    # t=t2-t1
-    # t.print_msgs()
+    t1=AnsysErrorMessageManager.load_from_file(r"E:\ansys_work\gg.err")
+    t2 = AnsysErrorMessageManager.load_from_file(r"E:\ansys_work\gg1.err")
+    t1.print_msgs()
+    t2.print_msgs()
+    t=t1-t2
+    t.print_msgs()
     # t1.print_msgs()
     # for x in t1.msgs.keys():
     #     print(t1.msgs[x].description)
