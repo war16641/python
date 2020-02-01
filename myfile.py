@@ -106,12 +106,15 @@ def is_number(s):
     except ValueError:
         flag=False
     return flag,number
-def get_numbers_from_line(line,additional_separator=''):
+def get_elements_from_line(line, additional_separator='', number_only=True):
     """
-    从字符串中得到所有的数
-    数之间以空白字符连接
+    从字符串中得到所有的元素
+    如果元素是数，会优先化为float，如果不能化为float就保留为str
+    数之间以空白字符或指定的分隔符连接
+    元素之间的空格会被抹除
     :param line:
     :arg additional_separator: 额外的分隔符
+    :arg number_only: 如果分割的结果里面 有非数字，true：用none代替； false：保留字符串
     :return: 数组成的列表 没有时返回空列表
     """
     numbers=[]
@@ -119,7 +122,13 @@ def get_numbers_from_line(line,additional_separator=''):
     for item in re.split('[\\s'+ additional_separator+']+', line):
         # print(item)
         flag,number=is_number(item)
-        numbers.append(number)
+        if not flag:
+            if number_only:
+                numbers.append(number)
+            else:
+                numbers.append(item)
+        else:
+            numbers.append(number)
         # if flag==True:
         #     numbers.append(number)
     return numbers
@@ -156,7 +165,7 @@ def read_file(pathname,omit_lines='auto',style='separator',column_expected=0,sep
                 tpe 行的类型
                 lst 提取到的数据列表 只有当tpe=valid时，才有用
         """
-        lst=get_numbers_from_line(line,separator)
+        lst=get_elements_from_line(line, separator)
         if len(lst)==0:#空行 或者 空白行
             tpe=TypeOfLine.Null
             return tpe,lst
@@ -333,7 +342,7 @@ def collect_all_filenames(directory,rex,lst,print_info=False):
     #             row += 1
     #             line = f.readline()
     #             continue
-    #         print(get_numbers_from_line(line))
+    #         print(get_elements_from_line(line))
     #         row += 1
     #         line = f.readline()
 
@@ -371,5 +380,8 @@ if __name__ == '__main__':
     # assert mat.shape==(6,1)
     # mat = read_file("F:\编辑3.txt", style='matrix', width=5)
     # print(mat)
-    copy_file("D:\last.bmp","e:\\2",new_name='',create_folder=True)
-
+    # copy_file("D:\last.bmp","e:\\2",new_name='',create_folder=True)
+    # st="SLIDINGBLOCK,0,22,250.000000,105.435608,0.000000,-9396.621094,-20758.029297"
+    st = "  SLIDINGBLOCK  ,  0  ,  22,250.000000  ,105.435608,0.000000,-9396.621094,-20758.029297"
+    ls=get_elements_from_line(st, additional_separator=',', number_only=False)
+    print(ls)
