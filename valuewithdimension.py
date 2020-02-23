@@ -1,6 +1,10 @@
 from copy import deepcopy
 from unittest import TestCase as tc
 import re
+
+from myfile import is_number
+
+
 class SmallDimension:
     """描述某一类量纲的单位和阶数"""
     def __init__(self,dim,unit):
@@ -110,7 +114,7 @@ class ValueWithDimension:
         assert isinstance(line,str)
         if '*' in line or '/' in line or '^' in line:
             lst = re.split('[*/^]', line)
-            args = [x for x in lst if not x.isdigit()]
+            args = [x for x in lst if not is_number(x)[0]]
         else:
             args = line.split(",")
 
@@ -370,6 +374,15 @@ if __name__=="__main__":
 
     print(a)
     print(b)
+    a = ValueWithDimension(1001, 'N*m^-1')
+    a.switch_dimension('kN')
+    assert abs(a.value-1.001)<1e-5
+    print(a.value)
+
+    a = ValueWithDimension(1001, 'N*m^-1')
+    a.switch_dimension('kN*m^-1')
+    assert abs(a.value - 1.001) < 1e-5
+    print(a.value)
 
     # 测试结束
 
