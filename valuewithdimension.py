@@ -307,10 +307,38 @@ class ValueWithDimension:
     @staticmethod
     def dimension_text_interpreter(text):
         """将单位字符串转化为可以识别的列表
+        返回偶数位的列表 【单位类型，阶数，。。。】
         a="mm*t^2"
         b="m^3*kg^1"
         print(ValueWithDimension.dimension_text_interpreter(a))
         print(ValueWithDimension.dimension_text_interpreter(b))"""
+        def script(text):
+            if "/" in text:#有/ 把它换成  *?^-1
+                p=re.compile(r"/[^/*]+")
+                r=p.search(text)
+                if r is not None:
+                    s1,s2=r.span(0)
+                    be=text[0:s1]
+                    af=text[s2:]
+                    tg=r.group(0)
+                    if "^" not in tg:#如果没有 ^
+                        tg=tg+"^1" #添加^
+                    # tg[0]="*"#把 / 换成 *
+                    tg=tg.replace("/","*")
+                    p=re.compile(r"-?\d+\.?\d*e?-?\d*?")#
+                    r=p.search(tg)#找到阶数
+                    od=r.group(0)
+                    od=-1*float(od)
+                    tg=tg[0:r.span(0)[0]]+str(od)#组合
+                    t=be+tg+af
+                    return script(t)
+                else:
+                    raise Exception("应该找得到")
+            else:
+                return text
+
+
+        text=script(text)
         id1=text.split("*")
         lst=[]
         for v in id1:
@@ -384,6 +412,19 @@ if __name__=="__main__":
     assert abs(a.value - 1.001) < 1e-5
     print(a.value)
 
+    a = ValueWithDimension(1001, 'N/m*s')
+    a.switch_dimension('kN*m^-1')
+    assert abs(a.value - 1.001) < 1e-5
+
+    a = ValueWithDimension(1001, 'N/m^2*s')
+    a.switch_dimension('kN*m^-1')
+    assert abs(a.value - 1.001) < 1e-5
+
+    a = ValueWithDimension(1001, 'N/m^2')
+    a.switch_dimension('kN*m^-1')
+    assert abs(a.value - 1.001) < 1e-5
+    print(a)
+    # print(a.value)
     # 测试结束
 
 
