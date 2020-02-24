@@ -7,7 +7,7 @@ import wx
 class Example(wx.Frame):
 
     def __init__(self, parent, title):
-        super(Example, self).__init__(parent, title=title)
+        super(Example, self).__init__(parent, title=title,size=(500,600))
 
         self.InitUI()
         self.Centre()
@@ -21,7 +21,7 @@ class Example(wx.Frame):
         sizer.Add(text, pos=(0, 0), flag=wx.ALL, border=5)
 
         tc = wx.TextCtrl(panel)
-        sizer.Add(tc, pos=(0, 1), span=(1, 2), flag=wx.EXPAND | wx.ALL, border=5)
+        sizer.Add(tc, pos=(0, 1), span=(1, 3), flag=wx.EXPAND | wx.ALL, border=5)
 
         text1 = wx.StaticText(panel, label="address")
         sizer.Add(text1, pos=(1, 0), flag=wx.ALL, border=5)

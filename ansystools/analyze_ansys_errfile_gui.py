@@ -3,10 +3,9 @@ import re
 
 import wx, time
 import threading
-from ansystools.analze_ansys_errfile import AnsysErrorMessageManager, InfoType,Message,get_re_expression
+from ansystools.analze_ansys_errfile import AnsysErrorMessageManager, InfoType, Message, get_re_expression
 from mybaseclasses.emptyclass import EmptyClass
 from wx_examples.mylistbox import MyListbox
-
 
 
 class MyEvent(wx.PyCommandEvent):  # 1 定义事件
@@ -14,18 +13,21 @@ class MyEvent(wx.PyCommandEvent):  # 1 定义事件
         wx.PyCommandEvent.__init__(self, evtType, id)
         self.eventArgs = ""
 
+
 def make_new_event():
     """
     生成新的事件以及他的绑定器
     @return:
     """
-    evt=wx.NewEventType()  # 2 创建一个事件类型
-    evt_binder= wx.PyEventBinder(evt)  # 3 创建一个绑定器对象
-    return evt,evt_binder
+    evt = wx.NewEventType()  # 2 创建一个事件类型
+    evt_binder = wx.PyEventBinder(evt)  # 3 创建一个绑定器对象
+    return evt, evt_binder
 
-EVT_Add,EVT_Add_Binder=make_new_event()
-EVT_Modify,EVT_Modify_Binder=make_new_event()
-EVT_MakeInfoType,EVT_MakeInfoType_Binder=make_new_event()
+
+EVT_Add, EVT_Add_Binder = make_new_event()
+EVT_Modify, EVT_Modify_Binder = make_new_event()
+EVT_MakeInfoType, EVT_MakeInfoType_Binder = make_new_event()
+
 
 class MyFrame(wx.Frame):
     def __init__(self):
@@ -84,10 +86,9 @@ class MyFrame(wx.Frame):
         self.bt_child = wx.Button(panel, id=-1, pos=(520, 100), size=(80, 30), label="已知类型管理")
         self.Bind(wx.EVT_BUTTON, self.OnOpenChild, self.bt_child)
 
-        #制作消息类型
-        self.bt_newinfotype=wx.Button(panel, id=-1, pos=(520, 130), size=(80, 30), label="制作消息类型")
-        self.Bind(wx.EVT_BUTTON,self.OnBt_makeinfotype,self.bt_newinfotype)
-
+        # 制作消息类型
+        self.bt_newinfotype = wx.Button(panel, id=-1, pos=(520, 130), size=(80, 30), label="制作消息类型")
+        self.Bind(wx.EVT_BUTTON, self.OnBt_makeinfotype, self.bt_newinfotype)
 
     def OnButton2Click(self, event):
         dlg = wx.FileDialog(self, "Open err file", wildcard="err files (*.err)|*.err",
@@ -260,30 +261,31 @@ class MyFrame(wx.Frame):
         self.child.Show()
 
     def ReclassifyMsg(self):
-        #重新对所有AnsysErrorMessageManager进行重新分类
-        #在修改 已知消息类型 后 要执行
-        t=[self.msgmgr,self.msgmgr_bk]
+        # 重新对所有AnsysErrorMessageManager进行重新分类
+        # 在修改 已知消息类型 后 要执行
+        t = [self.msgmgr, self.msgmgr_bk]
         for i in t:
             if i is not None:
                 i.refresh()
         self.lb.MyRefresh()
-        #重新设置
+        # 重新设置
         t = EmptyClass()
         t.Selection = 0
         self.OnRidioButton(t)
         self.cb.SetValue(0)
 
-    def OnBt_makeinfotype(self,evt):
-        if self.lb.selected_data is  None:
+    def OnBt_makeinfotype(self, evt):
+        if self.lb.selected_data is None:
             return
         if self.lb.selected_data.infotype_id != len(InfoType.known_infotype) - 1:
-            return #没有选中数据 或者 数据不是未知类型 就
-        #打开类型管你
+            return  # 没有选中数据 或者 数据不是未知类型 就
+        # 打开类型管你
         self.OnOpenChild()
-        #投递制作消息
-        evt=MyEvent(EVT_MakeInfoType)
-        evt.eventArgs=self.lb.selected_data
+        # 投递制作消息
+        evt = MyEvent(EVT_MakeInfoType)
+        evt.eventArgs = self.lb.selected_data
         self.child.GetEventHandler().ProcessEvent(evt)
+
 
 class MyFrameChild(wx.Frame):
     def __init__(self, prt):
@@ -291,7 +293,7 @@ class MyFrameChild(wx.Frame):
         self.prt = self.GetParent()  # type:MyFrame
         self.SetLabel("消息类型管理")
         self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
-        self.Bind(EVT_MakeInfoType_Binder,self.OnEVT_make_info_type)
+        self.Bind(EVT_MakeInfoType_Binder, self.OnEVT_make_info_type)
 
         panel = wx.Panel(self, -1)
 
@@ -304,15 +306,15 @@ class MyFrameChild(wx.Frame):
         self.bt_add = wx.Button(panel, -1, pos=(500, 30), size=(30, 30), label='添加')
         self.Bind(wx.EVT_BUTTON, self.OnShowChild_Add, self.bt_add)
 
-        #添加的 frame
-        self.child_add=MyFrameAdd(self)
+        # 添加的 frame
+        self.child_add = MyFrameAdd(self)
 
         self.Bind(EVT_Add_Binder, self.OnEVT_Add)  # 4绑定事件处理函数
 
         # 修改按钮
         self.bt_modify = wx.Button(panel, -1, pos=(500, 80), size=(30, 30), label='修改')
         self.Bind(wx.EVT_BUTTON, self.OnShowChild_Modify, self.bt_modify)
-        self.Bind(EVT_Modify_Binder,self.OnEVT_Modify)
+        self.Bind(EVT_Modify_Binder, self.OnEVT_Modify)
 
         # 重分类
         self.bt_reclassify = wx.Button(panel, -1, pos=(500, 130), size=(60, 30), label='重分类')
@@ -321,6 +323,7 @@ class MyFrameChild(wx.Frame):
         # 保存已知类型
         self.bt_save = wx.Button(panel, -1, pos=(500, 160), size=(80, 30), label='保存已知类型')
         self.Bind(wx.EVT_BUTTON, self.OnBt_save, self.bt_save)
+
     def OnCloseWindow(self, evt):
         self.GetParent().Enable()
         self.Show(False)  # 关闭时 隐藏
@@ -328,10 +331,10 @@ class MyFrameChild(wx.Frame):
     def OnShowChild_Add(self, evt):
         self.Disable()
         self.child_add.SetInitialText()
-        self.child_add.mode="add"
+        self.child_add.mode = "add"
         self.child_add.Show()
 
-    def OnShowChild_Modify(self,evt):
+    def OnShowChild_Modify(self, evt):
         if self.lb.selected_data is None:
             return
         self.Disable()
@@ -343,102 +346,97 @@ class MyFrameChild(wx.Frame):
         InfoType.append_infotype(evt.eventArgs)
         # InfoType.known_infotype.insert(-1,evt.eventArgs)
         self.Refresh_lb()
-        self.lb.SetSelection(len(InfoType.known_infotype)-2)
+        self.lb.SetSelection(len(InfoType.known_infotype) - 2)
         # print(evt.eventArgs.name)
 
     def OnEVT_Modify(self, evt):
-        t=self.lb.Selection
+        t = self.lb.Selection
         self.Refresh_lb()
         self.lb.SetSelection(t)
 
-    def Refresh_lb(self):#刷新lb
+    def Refresh_lb(self):  # 刷新lb
         self.lb.Clear()
         for i in InfoType.known_infotype:
             self.lb.Append(i)
 
-    def OnEVT_reclassify(self,evt):
+    def OnEVT_reclassify(self, evt):
         self.prt.ReclassifyMsg()
 
-    def OnEVT_make_info_type(self,evt):
-        #制作
+    def OnEVT_make_info_type(self, evt):
+        # 制作
         self.Disable()
         self.child_add.SetInitialText()
         self.child_add.mode = "make"
-        self.child_add.unknownmsg=evt.eventArgs
-        self.child_add.detailed_ctrl.SetValue("%s\n%s"%(evt.eventArgs.header,evt.eventArgs.description))
+        self.child_add.unknownmsg = evt.eventArgs
+        self.child_add.detailed_ctrl.SetValue("%s\n%s" % (evt.eventArgs.header, evt.eventArgs.description))
         self.child_add.pattern_ctrl.SetValue(get_re_expression(evt.eventArgs.description))
         self.child_add.Show()
 
-    def OnBt_save(self,evt):
+    def OnBt_save(self, evt):
         InfoType.save(r"E:\我的文档\python\GoodToolPython\ansystools\消息类型库.xlsx")
+
+
 class MyFrameAdd(wx.Frame):
     def __init__(self, prt):
         super(MyFrameAdd, self).__init__(prt, -1, size=(500, 400))
         self.prt = self.GetParent()  # type:MyFrameChild
-        self.Bind(wx.EVT_CLOSE,self.OnCloseWindow)
-
-
-
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
 
         panel = wx.Panel(self, -1)
 
-
-        self.mode="unset"# "add" "modify" "make"
-        self.target=None #type:InfoType #当mode=“modify"时 这个变量标识修改的目标
-        self.unknownmsg=None #type:Message #当mode=“make"时 这个变量标识制作的目标
-        #name
-        self.name_ctrl=wx.TextCtrl(panel,-1,pos=(80,0),size=(400,25))
-        wx.StaticText(panel,-1,pos=(0,0),size=(70,25),label='name:')
+        self.mode = "unset"  # "add" "modify" "make"
+        self.target = None  # type:InfoType #当mode=“modify"时 这个变量标识修改的目标
+        self.unknownmsg = None  # type:Message #当mode=“make"时 这个变量标识制作的目标
+        # name
+        self.name_ctrl = wx.TextCtrl(panel, -1, pos=(80, 0), size=(400, 25))
+        wx.StaticText(panel, -1, pos=(0, 0), size=(70, 25), label='name:')
         # pattern
-        self.pattern_ctrl= wx.TextCtrl(panel, -1, pos=(80, 25), size=(400, 75))
+        self.pattern_ctrl = wx.TextCtrl(panel, -1, pos=(80, 25), size=(400, 75))
         wx.StaticText(panel, -1, pos=(0, 25), size=(70, 25), label='pattern:')
         # description
-        self.description_ctrl= wx.TextCtrl(panel, -1, pos=(80, 100), size=(400, 75))
+        self.description_ctrl = wx.TextCtrl(panel, -1, pos=(80, 100), size=(400, 75))
         wx.StaticText(panel, -1, pos=(0, 100), size=(70, 25), label='description:')
 
-        #确认
-        self.apply_bt=wx.Button(panel,-1, pos=(80, 180), size=(60, 25),label="确认")
-        self.Bind(wx.EVT_BUTTON,self.OnApply,self.apply_bt)
+        # 确认
+        self.apply_bt = wx.Button(panel, -1, pos=(80, 180), size=(60, 25), label="确认")
+        self.Bind(wx.EVT_BUTTON, self.OnApply, self.apply_bt)
 
-        #取消
-        self.cancel_bt=wx.Button(panel,-1, pos=(180, 180), size=(60, 25),label="取消")
-        self.Bind(wx.EVT_BUTTON,self.OnCloseWindow,self.cancel_bt)
+        # 取消
+        self.cancel_bt = wx.Button(panel, -1, pos=(180, 180), size=(60, 25), label="取消")
+        self.Bind(wx.EVT_BUTTON, self.OnCloseWindow, self.cancel_bt)
 
-        #消息显示
-        self.detailed_ctrl = wx.TextCtrl(panel, -1, pos=(0, 205), size=(500, 100),style=wx.TE_READONLY | wx.TE_MULTILINE)
-
+        # 消息显示
+        self.detailed_ctrl = wx.TextCtrl(panel, -1, pos=(0, 205), size=(500, 100),
+                                         style=wx.TE_READONLY | wx.TE_MULTILINE)
 
     def OnCloseWindow(self, evt=None):
         self.prt.Enable()
         self.Show(False)  # 关闭时 隐藏
 
-    def OnApply(self,evt):
+    def OnApply(self, evt):
 
-
-
-        if self.mode=="add":
-            #投递事件
-            t=InfoType(name=self.name_ctrl.GetValue(),
-                     pattern=self.pattern_ctrl.GetValue(),
-                     description=self.description_ctrl.GetValue())
-            evt=MyEvent(EVT_Add)
-            evt.eventArgs=t
+        if self.mode == "add":
+            # 投递事件
+            t = InfoType(name=self.name_ctrl.GetValue(),
+                         pattern=self.pattern_ctrl.GetValue(),
+                         description=self.description_ctrl.GetValue())
+            evt = MyEvent(EVT_Add)
+            evt.eventArgs = t
             self.prt.GetEventHandler().ProcessEvent(evt)
             self.OnCloseWindow()
-        elif self.mode=="modify":
-            self.target.name=self.name_ctrl.GetValue()
+        elif self.mode == "modify":
+            self.target.name = self.name_ctrl.GetValue()
             self.target.pattern = self.pattern_ctrl.GetValue()
             self.target.description = self.description_ctrl.GetValue()
-
 
             evt = MyEvent(EVT_Modify)
             self.prt.GetEventHandler().ProcessEvent(evt)
             self.OnCloseWindow()
-        elif self.mode=="make":
-            p=re.compile(self.pattern_ctrl.GetValue())
-            r=p.search(self.unknownmsg.description)
-            if r is not None:#可以识别
-                if len(self.name_ctrl.GetValue()) !=0:
+        elif self.mode == "make":
+            p = re.compile(self.pattern_ctrl.GetValue())
+            r = p.search(self.unknownmsg.description)
+            if r is not None:  # 可以识别
+                if len(self.name_ctrl.GetValue()) != 0:
                     t = InfoType(name=self.name_ctrl.GetValue(),
                                  pattern=self.pattern_ctrl.GetValue(),
                                  description=self.description_ctrl.GetValue())
@@ -450,26 +448,28 @@ class MyFrameAdd(wx.Frame):
                     dlg = wx.MessageDialog(self, u"没有name", u"标题信息", wx.OK)
                     dlg.ShowModal()
                     dlg.Destroy()
-            else:#不可以识别
+            else:  # 不可以识别
                 dlg = wx.MessageDialog(self, u"pattern不正确", u"标题信息", wx.OK)
                 dlg.ShowModal()
                 dlg.Destroy()
         else:
             raise Exception("未知错误")
 
-    def SetInitialText(self,x=None):#设置textctrl的初始内容
+    def SetInitialText(self, x=None):  # 设置textctrl的初始内容
         if x is None:
             self.description_ctrl.Clear()
             self.name_ctrl.Clear()
             self.pattern_ctrl.Clear()
-            self.target=None
-        elif isinstance(x,InfoType):
+            self.target = None
+        elif isinstance(x, InfoType):
             self.name_ctrl.SetLabel(x.name)
             self.pattern_ctrl.SetLabel(x.pattern)
             self.description_ctrl.SetLabel(x.description)
-            self.target=x
+            self.target = x
         else:
             raise Exception("未知参数。")
+
+
 def run():
     app = wx.App()
     frame = MyFrame()

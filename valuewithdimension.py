@@ -419,6 +419,7 @@ if __name__=="__main__":
     a = ValueWithDimension(1001, 'N/m^2*s')
     a.switch_dimension('kN*m^-1')
     assert abs(a.value - 1.001) < 1e-5
+    print(a)
 
     a = ValueWithDimension(1001, 'N/m^2')
     a.switch_dimension('kN*m^-1')
