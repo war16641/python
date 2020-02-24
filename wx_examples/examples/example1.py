@@ -42,9 +42,10 @@ class StaticTextExampleFrame(wx.Frame):
 
         self.timer=wx.Timer(self)
         self.Bind(wx.EVT_TIMER,self.OnTimer,self.timer)
-        self.timer.Start(1000)
+        self.timer.Start(1000) #触发timer事件的间隔时间 ms
 
     def OnTimer(self,evt):
+        print("1")
         t=time.localtime(time.time())
         str1=time.strftime("%Y-%M-%D",t)
         str2=time.strftime("%H:%M:%S",t)

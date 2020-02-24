@@ -2,9 +2,10 @@ import math
 from floatvarwithdimension import FloatVarWithDimension
 import wx
 import wx.grid
-from GoodToolPython.wx_examples.myvalidators import MyNumberValidator
+# from GoodToolPython.wx_examples.myvalidators import MyNumberValidator
 from valuewithdimension import ValueWithDimension
-from GoodToolPython.wx_examples.mynumbertextctrl import MyNumberTextCtrl
+# from GoodToolPython.wx_examples.mynumbertextctrl import MyNumberTextCtrl
+from wx_examples.mynumbertextctrl import MyNumberTextCtrl
 
 class PeriodCalculator(wx.Frame):
     """
