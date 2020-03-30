@@ -9,6 +9,13 @@ class UnitType(Enum):  # 随从类型
     demon = 4
     dragon = 5
     beast = 6
+    murloc=7
+
+@unique
+class SummonType(Enum):  # 随从产生类型
+    User = 1  # 打牌
+    Card = 2  # 其他卡牌产生
+
 
 
 class TemplateUnit:
@@ -16,8 +23,9 @@ class TemplateUnit:
     随从模板的基函数
     """
 
-    def __init__(self, name: str, unit: 'Unit', hp, ad, shild=False, windfury=False, superwindfury=False, taunt=False,
-                 utype=UnitType.none):
+    def __init__(self, name: str, unit: 'Unit', hp, ad,shild=False, windfury=False, superwindfury=False, taunt=False,
+                 utype=UnitType.none,
+                 mana=1):
         """
 
         @param unit:
@@ -29,6 +37,7 @@ class TemplateUnit:
         @param taunt:
         """
         self.name, self.hp, self.ad, self.shild, self.windfury, self.superwindfury, self.taunt, self.utype = name, hp, ad, shild, windfury, superwindfury, taunt, utype
+        self.mana=mana #费
         self.unit = unit  # 模板需要挂一个随从
 
     def on_battlecry(self):
@@ -101,7 +110,8 @@ class MechKangaroo(TemplateUnit):
                                            )
 
     def on_deathrattle(self):
-        Unit(MechKangarooSon, self.unit.filed, self.unit.fieldindex)  # 召唤儿子
+        super(MechKangaroo,self).on_deathrattle()
+        Unit(MechKangarooSon, self.unit.filed, self.unit.fieldid,stype=SummonType.Card)  # 召唤儿子
 
 
 class FemaleTiger(TemplateUnit):
@@ -132,7 +142,139 @@ class MaleTiger(TemplateUnit):
                                         )
 
     def on_battlecry(self):
-        Unit(FemaleTiger, self.unit.filed, self.unit.fieldindex + 1)  # 召唤母的
+        super(MaleTiger,self).on_battlecry()
+        Unit(FemaleTiger, self.unit.filed, self.unit.fieldid+1)  # 召唤母的
+
+
+
+
+class DragonspawnLieutenant(TemplateUnit):
+    """
+        带嘲讽的龙
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(DragonspawnLieutenant, self).__init__(unit=unit,
+                                          hp=3,
+                                          ad=2,
+                                          utype=UnitType.dragon,
+                                          name='DragonspawnLieutenant',
+                                                    taunt=True
+                                          )
+
+
+class RightnessProtector (TemplateUnit):
+    """
+        圣盾 嘲讽
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(RightnessProtector, self).__init__(unit=unit,
+                                          hp=1,
+                                          ad=1,
+                                          utype=UnitType.none,
+                                          name='RightnessProtector',
+                                                    taunt=True,
+                                                 shild=True
+                                          )
+
+
+
+class FiendishServant(TemplateUnit):
+    """
+    亡语：转移攻击力
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(FiendishServant, self).__init__(unit=unit,
+                                           hp=1,
+                                           ad=2,
+                                           utype=UnitType.demon,
+                                           name='FiendishServant'
+                                           )
+
+    def on_deathrattle(self):
+        super(FiendishServant,self).on_deathrattle()
+        target=self.unit.filed.get_random_unit(ignore_taunt=True)
+        if target is not None:
+            target.ad+=self.unit.ad#转移攻击力
+
+class RockpoolHunter(TemplateUnit):
+    """
+        给一个鱼人+1+1
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(RockpoolHunter, self).__init__(unit=unit,
+                                        hp=3,
+                                        ad=2,
+                                        utype=UnitType.murloc,
+                                        name='RockpoolHunter',
+                                        )
+
+    def on_battlecry(self):
+        super(RockpoolHunter,self).on_battlecry()
+        #给鱼人+1+1
+        if self.unit.tarunit is None:
+            return
+        if self.unit.tarunit.template.utype is not UnitType.murloc:
+            raise Exception("战吼目标应该是鱼人")
+        else:
+            self.unit.tarunit.ad+=1
+            self.unit.tarunit.hp+=1
+
+
+
+
+
+class TideHunterSon(TemplateUnit):
+    """
+
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(TideHunterSon, self).__init__(unit=unit,
+                                        hp=1,
+                                        ad=1,
+                                        utype=UnitType.murloc,
+                                        name='TideHunterSon',
+                                        )
+
+
+class TideHunter(TemplateUnit):
+    """
+
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(TideHunter, self).__init__(unit=unit,
+                                            hp=1,
+                                            ad=2,
+                                            utype=UnitType.murloc,
+                                            name='TideHunter',
+                                            )
+
+    def on_battlecry(self):
+        super(TideHunter,self).on_battlecry()
+        Unit(TideHunterSon,self.unit.filed,self.unit.fieldid+1,stype=SummonType.Card)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 class Field:
@@ -150,20 +292,37 @@ class Field:
         return len(self.lineup)
 
     def print_info(self):
-        print("field name:%s" % self.name)
-        print("number of units:%d" % self.num)
-        print("___detail info on units___________")
+        # print("field name:%s" % self.name)
+        # print("number of units:%d" % self.num)
+        print("___%s(num:%d) detail info on units___________"%(self.name,self.num))
         for i, u in enumerate(self.lineup):
             print("%d->%s" % (i, u))
-        print("___info  end _____________________")
+        print("___info  end ___________________________")
 
+    def get_random_unit(self,ignore_taunt=False)->'Unit':
+        """
+
+        @param ignore_taunt:
+        @return:
+        """
+        if ignore_taunt:#若忽视嘲讽 选择全部随从
+            pool=self.lineup
+        else:
+            pool=[x for x in self.lineup if x.taunt==True]
+            if len(pool)==0:#如果没有嘲讽 选择全部随从
+                pool=self.lineup
+
+        if len(pool)==0:
+            return None #没有随从 返回none
+        target=random.choice(pool)
+        return target
 
 class Unit:
     """
     放到场上战斗的随从
     """
 
-    def __init__(self, template: 'TemplateUnit', field: Field, fieldindex: int):
+    def __init__(self, template: 'TemplateUnit', field: Field, fieldindex: int,stype:SummonType=SummonType.User,tarunit:'Unit'=None):
         """
         生成场上战斗随从
         @param template:模板的类 不是对象
@@ -171,10 +330,14 @@ class Unit:
         @param fieldindex:
         """
         assert isinstance(template, type), "template必须为类名"
-        self.template, self.filed, self.fieldindex = template(self), field, fieldindex
+        self.template, self.filed = template(self), field
         self.hp, self.ad, self.shild, self.windfury, self.superwindfury, self.taunt = self.template.hp, self.template.ad, self.template.shild, self.template.windfury, self.template.superwindfury, self.template.taunt
+        self.summon_type=stype
+        self.tarunit=tarunit #战吼目标 默认为none
         self.filed.lineup.insert(fieldindex, self)  # 场上添加自己
-        self.template.on_battlecry()
+
+        if self.summon_type==SummonType.User:
+            self.template.on_battlecry()#如果是打出的 触发战吼
         pass
 
     def on_damage(self, dg):
@@ -213,10 +376,11 @@ class Unit:
         dg = self.ad
         enemy.on_damage(dg)
 
-    def attack_field(self,field:Field):
+    def attack_field(self,field:Field,ignore_taunt=False):
         """
         进攻场地
         @param field:
+        @param ignore_taunt:随机选择进攻对手时，是否忽略对方嘲讽随从
         @return:
         """
         if field.num==0:
@@ -224,18 +388,25 @@ class Unit:
         assert self.filed is not field,"不能进攻自己场地"
 
         #随机选择一个随从进攻
-        target=random.choice(field.lineup)
+        target=field.get_random_unit(ignore_taunt)
+        if target is None:
+            raise Exception("场地%s无随从"%field.name)
         self.attack_unit(target)
 
 
 
     def on_death(self):
-        self.filed.lineup.remove(self)  # 从场上移除
+
         self.template.on_deathrattle()  # 触发亡语
+        self.filed.lineup.remove(self)  # 从场上移除
 
     def __str__(self):
         return "%s(%x):%d hp with %d ad" % (self.template.name, id(self), self.hp, self.ad)
 
+    @property
+    def fieldid(self):
+        #自己在field中的位置 基于0
+        return self.filed.lineup.index(self)
 
 if __name__ == '__main__':
     filed_red = Field('red')
