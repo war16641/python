@@ -16,6 +16,12 @@ class SummonType(Enum):  # 随从产生类型
     User = 1  # 打牌
     Card = 2  # 其他卡牌产生
 
+@unique
+class MessageType(Enum):  # 消息类型
+    none = 1  # 无类型
+    summon = 2  # 随从产生（不分card或者user）
+    death=3 #随从死亡
+
 
 
 class TemplateUnit:
@@ -40,9 +46,14 @@ class TemplateUnit:
         self.mana=mana #费
         self.unit = unit  # 模板需要挂一个随从
 
+
     def on_battlecry(self):
         print("%s(%x):on battlecry"%(self.name,id(self)))
         pass
+
+    def on_summon(self):
+        #战吼执行完成后，广播summon信息
+        self.unit.field.broadcast_msg(self.unit,MessageType.summon)
 
     def on_deathrattle(self):
         print("%s(%x):on deathrattle"%(self.name,id(self)))
@@ -60,6 +71,14 @@ class TemplateUnit:
         print("%s(%x):on damaged by %d" % (self.name, id(self),dg))
         pass
 
+    def on_msg(self,orgin:'Unit',msgtype=MessageType.none):
+        """
+        获得消息并处理
+        @param orgin:
+        @param msgtype:
+        @return:
+        """
+        print("%s(%x):on msg by %s(%x)" % (self.name, id(self), orgin.template.name,id(orgin)))
 
 class Dog(TemplateUnit):
     def __init__(self, unit: 'Unit'):
@@ -111,7 +130,7 @@ class MechKangaroo(TemplateUnit):
 
     def on_deathrattle(self):
         super(MechKangaroo,self).on_deathrattle()
-        Unit(MechKangarooSon, self.unit.filed, self.unit.fieldid,stype=SummonType.Card)  # 召唤儿子
+        Unit(MechKangarooSon, self.unit.field, self.unit.fieldid, stype=SummonType.Card)  # 召唤儿子
 
 
 class FemaleTiger(TemplateUnit):
@@ -143,7 +162,7 @@ class MaleTiger(TemplateUnit):
 
     def on_battlecry(self):
         super(MaleTiger,self).on_battlecry()
-        Unit(FemaleTiger, self.unit.filed, self.unit.fieldid+1)  # 召唤母的
+        Unit(FemaleTiger, self.unit.field, self.unit.fieldid + 1)  # 召唤母的
 
 
 
@@ -195,7 +214,7 @@ class FiendishServant(TemplateUnit):
 
     def on_deathrattle(self):
         super(FiendishServant,self).on_deathrattle()
-        target=self.unit.filed.get_random_unit(ignore_taunt=True)
+        target=self.unit.field.get_random_unit(ignore_taunt=True, ignore_unit=self.unit)
         if target is not None:
             target.ad+=self.unit.ad#转移攻击力
 
@@ -256,11 +275,28 @@ class TideHunter(TemplateUnit):
 
     def on_battlecry(self):
         super(TideHunter,self).on_battlecry()
-        Unit(TideHunterSon,self.unit.filed,self.unit.fieldid+1,stype=SummonType.Card)
+        Unit(TideHunterSon, self.unit.field, self.unit.fieldid + 1, stype=SummonType.Card)
 
 
 
+class TideCaller(TemplateUnit):
+    """
+        每召唤一个鱼人+1ad
+    """
 
+    def __init__(self, unit: 'Unit'):
+        super(TideCaller, self).__init__(unit=unit,
+                                            hp=2,
+                                            ad=1,
+                                            utype=UnitType.murloc,
+                                            name='TideCaller',
+                                            )
+
+    def on_msg(self,orgin:'Unit',msgtype=MessageType.none):
+        super(TideCaller,self).on_msg(orgin,msgtype)
+        if msgtype==MessageType.summon:
+            if orgin.template.utype==UnitType.murloc:
+                self.unit.ad+=1
 
 
 
@@ -299,14 +335,15 @@ class Field:
             print("%d->%s" % (i, u))
         print("___info  end ___________________________")
 
-    def get_random_unit(self,ignore_taunt=False)->'Unit':
+    def get_random_unit(self,ignore_taunt=False,ignore_unit:'Unit'=None)->'Unit':
         """
 
         @param ignore_taunt:
+        @param ignore_unit:忽略的随从，通常是忽略自己
         @return:
         """
         if ignore_taunt:#若忽视嘲讽 选择全部随从
-            pool=self.lineup
+            pool=[x for x in self.lineup]
         else:
             pool=[x for x in self.lineup if x.taunt==True]
             if len(pool)==0:#如果没有嘲讽 选择全部随从
@@ -314,8 +351,23 @@ class Field:
 
         if len(pool)==0:
             return None #没有随从 返回none
+        if ignore_unit is not None and ignore_unit in pool:#排除忽略的随从
+            pool.remove(ignore_unit)
         target=random.choice(pool)
         return target
+
+    def broadcast_msg(self,orgin:'Unit',msgtype=MessageType.none):
+        """
+        给全体随从广播消息
+        @param orgin: 发起人
+        @param msgtype:
+        @return:
+        """
+        for i in self.lineup:
+            if i==orgin:
+                continue#跳过自己
+            i.template.on_msg(orgin,msgtype)
+
 
 class Unit:
     """
@@ -329,15 +381,19 @@ class Unit:
         @param field:
         @param fieldindex:
         """
+        self.field = field  # type:Field
         assert isinstance(template, type), "template必须为类名"
-        self.template, self.filed = template(self), field
+        self.template=template(self) #type:TemplateUnit
+
         self.hp, self.ad, self.shild, self.windfury, self.superwindfury, self.taunt = self.template.hp, self.template.ad, self.template.shild, self.template.windfury, self.template.superwindfury, self.template.taunt
         self.summon_type=stype
         self.tarunit=tarunit #战吼目标 默认为none
-        self.filed.lineup.insert(fieldindex, self)  # 场上添加自己
+        self.field.lineup.insert(fieldindex, self)  # 场上添加自己
 
         if self.summon_type==SummonType.User:
             self.template.on_battlecry()#如果是打出的 触发战吼
+
+        self.template.on_summon()#广播summon消息
         pass
 
     def on_damage(self, dg):
@@ -385,7 +441,7 @@ class Unit:
         """
         if field.num==0:
             raise Exception("对方场地无随从")
-        assert self.filed is not field,"不能进攻自己场地"
+        assert self.field is not field, "不能进攻自己场地"
 
         #随机选择一个随从进攻
         target=field.get_random_unit(ignore_taunt)
@@ -398,7 +454,7 @@ class Unit:
     def on_death(self):
 
         self.template.on_deathrattle()  # 触发亡语
-        self.filed.lineup.remove(self)  # 从场上移除
+        self.field.lineup.remove(self)  # 从场上移除
 
     def __str__(self):
         return "%s(%x):%d hp with %d ad" % (self.template.name, id(self), self.hp, self.ad)
@@ -406,7 +462,7 @@ class Unit:
     @property
     def fieldid(self):
         #自己在field中的位置 基于0
-        return self.filed.lineup.index(self)
+        return self.field.lineup.index(self)
 
 if __name__ == '__main__':
     filed_red = Field('red')

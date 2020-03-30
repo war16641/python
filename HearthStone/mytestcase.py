@@ -101,6 +101,17 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(u2.hp, 4)
         self.assertEqual(u3.ad, 2)
 
+    def test6(self):
+        filed_red = Field('red')
+        field_blue = Field('blue')
+        u2 = Unit(TideCaller, field_blue, 0, tarunit=None)
+        self.assertEqual(u2.ad, 1)
+        u3 = Unit(RockpoolHunter, field_blue, 0, tarunit=None)
+        self.assertEqual(u2.ad, 2)
+        u4 = Unit(MechKangaroo, field_blue, 0, tarunit=None)
+        self.assertEqual(u2.ad, 2)
+
+
 
 if __name__ == '__main__':
     unittest.main()
