@@ -1,5 +1,7 @@
 from enum import unique, Enum
 import random
+from typing import Tuple, List
+
 
 @unique
 class UnitType(Enum):  # 随从类型
@@ -9,19 +11,27 @@ class UnitType(Enum):  # 随从类型
     demon = 4
     dragon = 5
     beast = 6
-    murloc=7
+    murloc = 7
+
 
 @unique
 class SummonType(Enum):  # 随从产生类型
     User = 1  # 打牌
     Card = 2  # 其他卡牌产生
 
+
 @unique
 class MessageType(Enum):  # 消息类型
     none = 1  # 无类型
     summon = 2  # 随从产生（不分card或者user）
-    death=3 #随从死亡
+    death = 3  # 随从死亡
 
+
+@unique
+class HaloType(Enum):  # 光环类型
+    nearby = 1  # 周围的两个 恐狼
+    singlefield = 2  # 自己场
+    bothfield = 3  # 两个场
 
 
 class TemplateUnit:
@@ -29,9 +39,10 @@ class TemplateUnit:
     随从模板的基函数
     """
 
-    def __init__(self, name: str, unit: 'Unit', hp, ad,shild=False, windfury=False, superwindfury=False, taunt=False,
+    def __init__(self, name: str, unit: 'Unit', hp, ad, shild=False, windfury=False, superwindfury=False, taunt=False,
                  utype=UnitType.none,
-                 mana=1):
+                 mana=1,
+                 htype=None):
         """
 
         @param unit:
@@ -43,20 +54,29 @@ class TemplateUnit:
         @param taunt:
         """
         self.name, self.hp, self.ad, self.shild, self.windfury, self.superwindfury, self.taunt, self.utype = name, hp, ad, shild, windfury, superwindfury, taunt, utype
-        self.mana=mana #费
+        self.mana = mana  # 费
         self.unit = unit  # 模板需要挂一个随从
-
+        self.halotype = htype  # type:HaloType#如果能提供halo，halo的类型
 
     def on_battlecry(self):
-        print("%s(%x):on battlecry"%(self.name,id(self)))
+        print("%s(%x):on battlecry" % (self.name, id(self)))
         pass
 
     def on_summon(self):
-        #战吼执行完成后，广播summon信息
-        self.unit.field.broadcast_msg(self.unit,MessageType.summon)
+        # 战吼执行完成后，广播summon信息
+        self.unit.field.broadcast_msg(self.unit, MessageType.summon)
+        # 如果自身有halo
+        if self.halotype is not None:
+            self.unit.field.units_with_halo.append(self.unit)  # field的units_with_halo加入自己
+        self.unit.field.on_unit_posiont_change(self.unit)
 
     def on_deathrattle(self):
-        print("%s(%x):on deathrattle"%(self.name,id(self)))
+        print("%s(%x):on deathrattle" % (self.name, id(self)))
+        # 如果自身有halo
+        if self.halotype is not None:
+            self.unit.clear_halo_follwers()  # 消除自身halo的影响
+            self.unit.field.units_with_halo.remove(self.unit)  # field的units_with_halo加入自己
+        self.unit.field.on_unit_posiont_change(self.unit)
         pass
 
     def on_attack(self):
@@ -68,17 +88,56 @@ class TemplateUnit:
         """
         收到伤害dg
         """
-        print("%s(%x):on damaged by %d" % (self.name, id(self),dg))
+        print("%s(%x):on damaged by %d" % (self.name, id(self), dg))
         pass
 
-    def on_msg(self,orgin:'Unit',msgtype=MessageType.none):
+    def on_msg(self, orgin: 'Unit', msgtype=MessageType.none):
         """
         获得消息并处理
         @param orgin:
         @param msgtype:
         @return:
         """
-        print("%s(%x):on msg by %s(%x)" % (self.name, id(self), orgin.template.name,id(orgin)))
+        print("%s(%x):on msg by %s(%x)" % (self.name, id(self), orgin.template.name, id(orgin)))
+
+    @staticmethod
+    def is_in_halo(obj: 'Unit', origin: 'Unit', htype: HaloType):
+        """
+        判断obj是否在halo内
+        @param obj:
+        @param origin:
+        @param htype:
+        @return:
+        """
+        if htype == HaloType.nearby:
+            return abs((origin.fieldid - obj.fieldid)) == 1 and origin.field == obj.field
+        elif htype == HaloType.singlefield:
+            return origin.field == obj.field
+        elif htype == HaloType.bothfield:
+            return origin.field == obj.field or origin.field.opponent == obj.field
+        else:
+            raise Exception("参数错误")
+
+    def halo_in_func(self, obj: 'Unit', *args):
+        """
+        当obj处于self的halo内时，触发的函数
+        一般是对ad_buff,hp_buff进行操作
+        @param obj:
+        @param args:
+        @return:
+        """
+        print("%s(%x):halo in function by %s(%x)" % (self.name, id(self), obj.template.name, id(obj)))
+
+    def halo_out_func(self, obj: 'Unit', *args):
+        """
+        当obj处从self的halo移除时，触发的函数
+        一般是对ad_buff,hp_buff进行操作
+        @param obj:
+        @param args:
+        @return:
+        """
+        print("%s(%x):halo out function by %s(%x)" % (self.name, id(self), obj.template.name, id(obj)))
+
 
 class Dog(TemplateUnit):
     def __init__(self, unit: 'Unit'):
@@ -129,7 +188,7 @@ class MechKangaroo(TemplateUnit):
                                            )
 
     def on_deathrattle(self):
-        super(MechKangaroo,self).on_deathrattle()
+        super(MechKangaroo, self).on_deathrattle()
         Unit(MechKangarooSon, self.unit.field, self.unit.fieldid, stype=SummonType.Card)  # 召唤儿子
 
 
@@ -161,10 +220,8 @@ class MaleTiger(TemplateUnit):
                                         )
 
     def on_battlecry(self):
-        super(MaleTiger,self).on_battlecry()
+        super(MaleTiger, self).on_battlecry()
         Unit(FemaleTiger, self.unit.field, self.unit.fieldid + 1)  # 召唤母的
-
-
 
 
 class DragonspawnLieutenant(TemplateUnit):
@@ -174,29 +231,28 @@ class DragonspawnLieutenant(TemplateUnit):
 
     def __init__(self, unit: 'Unit'):
         super(DragonspawnLieutenant, self).__init__(unit=unit,
-                                          hp=3,
-                                          ad=2,
-                                          utype=UnitType.dragon,
-                                          name='DragonspawnLieutenant',
+                                                    hp=3,
+                                                    ad=2,
+                                                    utype=UnitType.dragon,
+                                                    name='DragonspawnLieutenant',
                                                     taunt=True
-                                          )
+                                                    )
 
 
-class RightnessProtector (TemplateUnit):
+class RightnessProtector(TemplateUnit):
     """
         圣盾 嘲讽
     """
 
     def __init__(self, unit: 'Unit'):
         super(RightnessProtector, self).__init__(unit=unit,
-                                          hp=1,
-                                          ad=1,
-                                          utype=UnitType.none,
-                                          name='RightnessProtector',
-                                                    taunt=True,
+                                                 hp=1,
+                                                 ad=1,
+                                                 utype=UnitType.none,
+                                                 name='RightnessProtector',
+                                                 taunt=True,
                                                  shild=True
-                                          )
-
+                                                 )
 
 
 class FiendishServant(TemplateUnit):
@@ -206,17 +262,18 @@ class FiendishServant(TemplateUnit):
 
     def __init__(self, unit: 'Unit'):
         super(FiendishServant, self).__init__(unit=unit,
-                                           hp=1,
-                                           ad=2,
-                                           utype=UnitType.demon,
-                                           name='FiendishServant'
-                                           )
+                                              hp=1,
+                                              ad=2,
+                                              utype=UnitType.demon,
+                                              name='FiendishServant'
+                                              )
 
     def on_deathrattle(self):
-        super(FiendishServant,self).on_deathrattle()
-        target=self.unit.field.get_random_unit(ignore_taunt=True, ignore_unit=self.unit)
+        super(FiendishServant, self).on_deathrattle()
+        target = self.unit.field.get_random_unit(ignore_taunt=True, ignore_unit=self.unit)
         if target is not None:
-            target.ad+=self.unit.ad#转移攻击力
+            target.ad += self.unit.ad  # 转移攻击力
+
 
 class RockpoolHunter(TemplateUnit):
     """
@@ -225,25 +282,22 @@ class RockpoolHunter(TemplateUnit):
 
     def __init__(self, unit: 'Unit'):
         super(RockpoolHunter, self).__init__(unit=unit,
-                                        hp=3,
-                                        ad=2,
-                                        utype=UnitType.murloc,
-                                        name='RockpoolHunter',
-                                        )
+                                             hp=3,
+                                             ad=2,
+                                             utype=UnitType.murloc,
+                                             name='RockpoolHunter',
+                                             )
 
     def on_battlecry(self):
-        super(RockpoolHunter,self).on_battlecry()
-        #给鱼人+1+1
+        super(RockpoolHunter, self).on_battlecry()
+        # 给鱼人+1+1
         if self.unit.tarunit is None:
             return
         if self.unit.tarunit.template.utype is not UnitType.murloc:
             raise Exception("战吼目标应该是鱼人")
         else:
-            self.unit.tarunit.ad+=1
-            self.unit.tarunit.hp+=1
-
-
-
+            self.unit.tarunit.ad += 1
+            self.unit.tarunit.hp += 1
 
 
 class TideHunterSon(TemplateUnit):
@@ -253,11 +307,11 @@ class TideHunterSon(TemplateUnit):
 
     def __init__(self, unit: 'Unit'):
         super(TideHunterSon, self).__init__(unit=unit,
-                                        hp=1,
-                                        ad=1,
-                                        utype=UnitType.murloc,
-                                        name='TideHunterSon',
-                                        )
+                                            hp=1,
+                                            ad=1,
+                                            utype=UnitType.murloc,
+                                            name='TideHunterSon',
+                                            )
 
 
 class TideHunter(TemplateUnit):
@@ -267,16 +321,15 @@ class TideHunter(TemplateUnit):
 
     def __init__(self, unit: 'Unit'):
         super(TideHunter, self).__init__(unit=unit,
-                                            hp=1,
-                                            ad=2,
-                                            utype=UnitType.murloc,
-                                            name='TideHunter',
-                                            )
+                                         hp=1,
+                                         ad=2,
+                                         utype=UnitType.murloc,
+                                         name='TideHunter',
+                                         )
 
     def on_battlecry(self):
-        super(TideHunter,self).on_battlecry()
+        super(TideHunter, self).on_battlecry()
         Unit(TideHunterSon, self.unit.field, self.unit.fieldid + 1, stype=SummonType.Card)
-
 
 
 class TideCaller(TemplateUnit):
@@ -286,31 +339,76 @@ class TideCaller(TemplateUnit):
 
     def __init__(self, unit: 'Unit'):
         super(TideCaller, self).__init__(unit=unit,
+                                         hp=2,
+                                         ad=1,
+                                         utype=UnitType.murloc,
+                                         name='TideCaller',
+                                         )
+
+    def on_msg(self, orgin: 'Unit', msgtype=MessageType.none):
+        super(TideCaller, self).on_msg(orgin, msgtype)
+        if msgtype == MessageType.summon:
+            if orgin.template.utype == UnitType.murloc:
+                self.unit.ad += 1
+
+
+class SelflessHero(TemplateUnit):
+    """
+    亡语：转移攻击力
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(SelflessHero, self).__init__(unit=unit,
+                                           hp=1,
+                                           ad=2,
+                                           utype=UnitType.none,
+                                           name='SelflessHero'
+                                           )
+
+    def on_deathrattle(self):
+        super(SelflessHero, self).on_deathrattle()
+        # 寻找一个没有护盾的随从
+        pool = [x for x in self.unit.field.lineup]
+        if self.unit in pool:
+            pool.remove(self.unit)
+        lst = []
+        for i in pool:
+            if not i.shield:  # 没有圣盾
+                lst.append(i)
+        if len(lst) == 0:
+            return
+        else:
+            target = random.choice(lst)
+            target.shield = True
+
+
+class DireWolfAlpha(TemplateUnit):
+    """
+    亡语：转移攻击力
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(DireWolfAlpha, self).__init__(unit=unit,
                                             hp=2,
-                                            ad=1,
-                                            utype=UnitType.murloc,
-                                            name='TideCaller',
+                                            ad=2,
+                                            utype=UnitType.beast,
+                                            name='DireWolfAlpha',
+                                            htype=HaloType.nearby
                                             )
 
-    def on_msg(self,orgin:'Unit',msgtype=MessageType.none):
-        super(TideCaller,self).on_msg(orgin,msgtype)
-        if msgtype==MessageType.summon:
-            if orgin.template.utype==UnitType.murloc:
-                self.unit.ad+=1
+    def halo_in_func(self, follower: 'Unit', *args):
+        super(DireWolfAlpha, self).halo_in_func(follower)
+        # ad+1
+        ad1 = 1
+        follower.ad += ad1
+        follower.ad_buff += ad1
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def halo_out_func(self, follower: 'Unit', *args):
+        super(DireWolfAlpha, self).halo_out_func(follower)
+        # ad+1
+        ad1 = 1
+        follower.ad -= ad1
+        follower.ad_buff -= ad1
 
 
 class Field:
@@ -319,9 +417,11 @@ class Field:
     随从需要场地，还需要表示他们的位置
     """
 
-    def __init__(self, name):
+    def __init__(self, name, op=None):
         self.name = name
         self.lineup = []
+        self._opponent = op  # type:Field#对手的field
+        self.units_with_halo = []  # type:list[Unit]#带有halo的unit 场上
 
     @property
     def num(self):
@@ -330,43 +430,106 @@ class Field:
     def print_info(self):
         # print("field name:%s" % self.name)
         # print("number of units:%d" % self.num)
-        print("___%s(num:%d) detail info on units___________"%(self.name,self.num))
+        print("___%s(num:%d) detail info on units___________" % (self.name, self.num))
         for i, u in enumerate(self.lineup):
             print("%d->%s" % (i, u))
         print("___info  end ___________________________")
 
-    def get_random_unit(self,ignore_taunt=False,ignore_unit:'Unit'=None)->'Unit':
+    def get_random_unit(self, ignore_taunt=False, ignore_unit: 'Unit' = None) -> 'Unit':
         """
 
         @param ignore_taunt:
         @param ignore_unit:忽略的随从，通常是忽略自己
         @return:
         """
-        if ignore_taunt:#若忽视嘲讽 选择全部随从
-            pool=[x for x in self.lineup]
+        if ignore_taunt:  # 若忽视嘲讽 选择全部随从
+            pool = [x for x in self.lineup]
         else:
-            pool=[x for x in self.lineup if x.taunt==True]
-            if len(pool)==0:#如果没有嘲讽 选择全部随从
-                pool=self.lineup
+            pool = [x for x in self.lineup if x.taunt == True]
+            if len(pool) == 0:  # 如果没有嘲讽 选择全部随从
+                pool = self.lineup
 
-        if len(pool)==0:
-            return None #没有随从 返回none
-        if ignore_unit is not None and ignore_unit in pool:#排除忽略的随从
+        if len(pool) == 0:
+            return None  # 没有随从 返回none
+        if ignore_unit is not None and ignore_unit in pool:  # 排除忽略的随从
             pool.remove(ignore_unit)
-        target=random.choice(pool)
+        target = random.choice(pool)
         return target
 
-    def broadcast_msg(self,orgin:'Unit',msgtype=MessageType.none):
+    def broadcast_msg(self, orgin: 'Unit', msgtype=MessageType.none):
         """
         给全体随从广播消息
+        会跳过msg的发起人
         @param orgin: 发起人
         @param msgtype:
         @return:
         """
         for i in self.lineup:
-            if i==orgin:
-                continue#跳过自己
-            i.template.on_msg(orgin,msgtype)
+            if i == orgin:
+                continue  # 跳过自己
+            i.template.on_msg(orgin, msgtype)
+
+    @property
+    def opponent(self) -> 'Field':
+        if self._opponent is None:
+            raise Exception("没有对手场地")
+        return self._opponent
+
+    @opponent.setter
+    def opponent(self, v):
+        assert isinstance(v, Field), "参数错误"
+        self._opponent = v
+
+    @staticmethod
+    def make_twin_fields(name1='red', name2='blue') -> Tuple['Field']:
+        """
+        制作一对互为对手的field
+        @param name1:
+        @param name2:
+        @return:
+        """
+
+        field1 = Field(name1)
+        field2 = Field(name2)
+        field1.opponent = field2
+        field2.opponent = field1
+        return field1, field2
+
+    @property
+    def allunits(self) -> List['Unit']:
+        # 返回场上所有的unit 包括对手场上
+        x1 = [x for x in self.lineup]
+        x2 = [x for x in self.opponent.lineup]
+        return x1 + x2
+
+    def recalculate_halo(self):
+        # 重新计算halo的影响
+        for render in self.units_with_halo:
+            if render.template.halotype is HaloType.bothfield:
+                continue  # 全场halo不改变
+            elif render.template.halotype is HaloType.singlefield:
+                continue  # 这里可能存在bug 只影响自己场的也跳过
+            elif render.template.halotype is HaloType.nearby:
+                render.clear_halo_follwers()
+                # for fl in render.halo_follwers:
+                #     render.template.halo_out_func(fl)#移除halo
+                #     fl.halo_renders.remove(render)
+                # render.halo_follwers=[]
+                # 重新计算
+                for u in self.allunits:
+                    if TemplateUnit.is_in_halo(u, render, render.template.halotype):
+                        # 在halo内
+                        u.halo_renders.append(render)
+                        render.halo_follwers.append(u)
+                        render.template.halo_in_func(u)
+
+    def on_unit_posiont_change(self, unit: 'Unit'):
+        """
+        当场上任何一个随从的位置发生改变，包括死亡，summon 触发此函数
+        @param unit:
+        @return:
+        """
+        self.recalculate_halo()
 
 
 class Unit:
@@ -374,7 +537,8 @@ class Unit:
     放到场上战斗的随从
     """
 
-    def __init__(self, template: 'TemplateUnit', field: Field, fieldindex: int,stype:SummonType=SummonType.User,tarunit:'Unit'=None):
+    def __init__(self, template: 'TemplateUnit', field: Field, fieldindex: int, stype: SummonType = SummonType.User,
+                 tarunit: 'Unit' = None):
         """
         生成场上战斗随从
         @param template:模板的类 不是对象
@@ -383,17 +547,20 @@ class Unit:
         """
         self.field = field  # type:Field
         assert isinstance(template, type), "template必须为类名"
-        self.template=template(self) #type:TemplateUnit
+        self.template = template(self)  # type:TemplateUnit
 
-        self.hp, self.ad, self.shild, self.windfury, self.superwindfury, self.taunt = self.template.hp, self.template.ad, self.template.shild, self.template.windfury, self.template.superwindfury, self.template.taunt
-        self.summon_type=stype
-        self.tarunit=tarunit #战吼目标 默认为none
+        self.hp, self.ad, self.shield, self.windfury, self.superwindfury, self.taunt = self.template.hp, self.template.ad, self.template.shild, self.template.windfury, self.template.superwindfury, self.template.taunt
+        self.summon_type = stype
+        self.tarunit = tarunit  # 战吼目标 默认为none
+        self.ad_buff, self.hp_buff = 0, 0  # 因halo产生的额外的ad，hp
+        self.halo_renders = []  # type:List[Unit]#自己受到影响的halo的提供者
+        self.halo_follwers = []  # type:List[Unit]#自己作为halo的render 影响的unit
         self.field.lineup.insert(fieldindex, self)  # 场上添加自己
 
-        if self.summon_type==SummonType.User:
-            self.template.on_battlecry()#如果是打出的 触发战吼
+        if self.summon_type == SummonType.User:
+            self.template.on_battlecry()  # 如果是打出的 触发战吼
 
-        self.template.on_summon()#广播summon消息
+        self.template.on_summon()  # 广播summon消息
         pass
 
     def on_damage(self, dg):
@@ -404,8 +571,8 @@ class Unit:
         """
         if dg == 0:
             return  # 无伤害产生
-        if self.shild:
-            self.shild = False
+        if self.shield:
+            self.shield = False
             return  # 有圣盾 ：去除神盾
 
         # 以下，确实受到伤害
@@ -432,24 +599,24 @@ class Unit:
         dg = self.ad
         enemy.on_damage(dg)
 
-    def attack_field(self,field:Field,ignore_taunt=False):
+    def attack_field(self, field: Field = None, ignore_taunt=False):
         """
         进攻场地
-        @param field:
+        @param field:默认攻击对手field
         @param ignore_taunt:随机选择进攻对手时，是否忽略对方嘲讽随从
         @return:
         """
-        if field.num==0:
+        if field is None:
+            field = self.field.opponent
+        if field.num == 0:
             raise Exception("对方场地无随从")
         assert self.field is not field, "不能进攻自己场地"
 
-        #随机选择一个随从进攻
-        target=field.get_random_unit(ignore_taunt)
+        # 随机选择一个随从进攻
+        target = field.get_random_unit(ignore_taunt)
         if target is None:
-            raise Exception("场地%s无随从"%field.name)
+            raise Exception("场地%s无随从" % field.name)
         self.attack_unit(target)
-
-
 
     def on_death(self):
 
@@ -461,8 +628,16 @@ class Unit:
 
     @property
     def fieldid(self):
-        #自己在field中的位置 基于0
+        # 自己在field中的位置 基于0
         return self.field.lineup.index(self)
+
+    def clear_halo_follwers(self):
+        # 清楚自身halo对其他的unit的影响
+        for u in self.halo_follwers:
+            self.template.halo_out_func(u)
+            u.halo_renders.remove(self)
+        self.halo_follwers = []
+
 
 if __name__ == '__main__':
     filed_red = Field('red')
