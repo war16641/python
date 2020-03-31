@@ -13,7 +13,7 @@ from GoodToolPython.HearthStone.unit import *
 # rightness protector 1
 # dragonspawn lieutenant 1
 # red whelp
-# wrath waver
+# wrath waver 1
 class MyTestCase(unittest.TestCase):
 
     def test1(self):
@@ -191,18 +191,19 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(1, u6.ad)
         self.assertEqual(1, field_blue.lineup[2].ad)
 
-    def test10(self):#测试wrathwaver
+    def test10(self):  # 测试wrathwaver
         filed_red, field_blue = Field.make_twin_fields('red', 'blue')
         u1 = Unit(MechKangaroo, filed_red, 0)
         u2 = Unit(WrathWaver, field_blue, 0)
-        self.assertEqual(1,u2.ad)
+        self.assertEqual(1, u2.ad)
         self.assertEqual(1, u2.hp)
         Unit(SelflessHero, field_blue, 0)
-        self.assertEqual(1,u2.ad)
+        self.assertEqual(1, u2.ad)
         self.assertEqual(1, u2.hp)
         Unit(FiendishServant, field_blue, 0)
-        self.assertEqual(3,u2.ad)
+        self.assertEqual(3, u2.ad)
         self.assertEqual(3, u2.hp)
+
 
 if __name__ == '__main__':
     unittest.main()
