@@ -411,6 +411,25 @@ class DireWolfAlpha(TemplateUnit):
         follower.ad_buff -= ad1
 
 
+
+class WrathWaver(TemplateUnit):
+    """
+    每当使用恶魔牌获得+2+2
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(WrathWaver, self).__init__(unit=unit,
+                                            hp=1,
+                                            ad=1,
+                                            utype=UnitType.none,
+                                            name='WrathWaver',
+                                            )
+
+    def on_msg(self, orgin: 'Unit', msgtype=MessageType.none):
+        if msgtype is MessageType.summon and orgin.summon_type is SummonType.User and orgin.template.utype is UnitType.demon:
+            self.unit.ad+=2
+            self.unit.hp+=2
+
 class Field:
     """
     场地
