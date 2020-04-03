@@ -25,6 +25,8 @@ class MessageType(Enum):  # 消息类型
     none = 1  # 无类型
     summon = 2  # 随从产生（不分card或者user）
     death = 3  # 随从死亡
+    turn_start=4
+    turn_end=5 #回合开始 结束
 
 
 @unique
@@ -91,7 +93,7 @@ class TemplateUnit:
         print("%s(%x):on damaged by %d" % (self.name, id(self), dg))
         pass
 
-    def on_msg(self, orgin: 'Unit', msgtype=MessageType.none):
+    def on_msg(self, orgin: 'Unit', msgtype=MessageType.none,*args):
         """
         获得消息并处理
         @param orgin:
@@ -432,21 +434,168 @@ class WrathWaver(TemplateUnit):
             self.unit.hp += 2
 
 
+class RedWhelp(TemplateUnit):
+    """
+    小喷火龙
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(RedWhelp, self).__init__(unit=unit,
+                                         hp=2,
+                                         ad=1,
+                                         utype=UnitType.dragon,
+                                         name='RedWhelp',
+                                         )
+
+    def on_msg(self, orgin: 'Unit', msgtype=MessageType.none,op=None):
+        #回合开始就可以喷火 但是需要鉴别是不是战斗回合
+        if msgtype is MessageType.turn_start:
+            assert isinstance(op,Field),'op必须为field实例'
+            #to do：鉴别是不是战斗回合
+            #计算自己场上有几条龙
+            t=0
+            for u in self.unit.field.lineup:
+                if u.template.utype is UnitType.dragon:
+                    t+=1
+            #随机选择一个地方随从
+            tar=op.get_random_unit()
+            if tar is not None:#有目标
+                tar.on_damage(t)
+        else:#其他消息
+            pass
+
+
+class MicroMachine(TemplateUnit):
+    """
+    每个购买回合开始时 +1攻击力
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(MicroMachine, self).__init__(unit=unit,
+                                         hp=2,
+                                         ad=1,
+                                         utype=UnitType.mech,
+                                         name='MicroMachine',
+                                         )
+
+    def on_msg(self, orgin: 'Unit', msgtype=MessageType.none,op=None):
+
+        if msgtype is MessageType.turn_start:
+            if op =='shop':
+                self.unit.ad+=1
+
+        else:#其他消息
+            pass
+
+
+
+
+class UnstableGhoul(TemplateUnit):
+    """
+    亡语：群伤一点
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(UnstableGhoul, self).__init__(unit=unit,
+                                           hp=1,
+                                           ad=3,
+                                           utype=UnitType.none,
+                                           name='UnstableGhoul',
+                                            mana=2,
+                                            taunt=True
+
+                                           )
+
+    def on_deathrattle(self):
+        super(UnstableGhoul, self).on_deathrattle()
+        for u in self.unit.field.allunits:
+            if u is self.unit:
+                continue
+            u.on_damage(1)
+
+
+class PogoHopper(TemplateUnit):
+    """
+    兔兔 +2+2 战吼
+    """
+    counteri=-1 #累计打出的量
+    def __init__(self, unit: 'Unit'):
+        super(PogoHopper, self).__init__(unit=unit,
+                                           hp=1,
+                                           ad=1,
+                                           utype=UnitType.mech,
+                                           name='PogoHopper',
+                                            mana=2
+
+                                           )
+
+
+    def on_battlecry(self):
+        super(PogoHopper,self).on_battlecry()
+        PogoHopper.counteri+=1
+        self.unit.hp+=PogoHopper.counteri*2
+        self.unit.ad+=PogoHopper.counteri*2
+
+
+class RatPackSon(TemplateUnit):
+    """
+    亡语 等于攻击力的儿子
+    """
+    counter=-1 #累计打出的量
+    def __init__(self, unit: 'Unit'):
+        super(RatPackSon, self).__init__(unit=unit,
+                                           hp=1,
+                                           ad=1,
+                                           utype=UnitType.beast,
+                                           name='RatPackSon',
+                                            mana=1
+
+                                           )
+
+class RatPack(TemplateUnit):
+    """
+    亡语 等于攻击力的儿子
+    """
+    counter=-1 #累计打出的量
+    def __init__(self, unit: 'Unit'):
+        super(RatPack, self).__init__(unit=unit,
+                                           hp=2,
+                                           ad=2,
+                                           utype=UnitType.beast,
+                                           name='RatPack',
+                                            mana=2
+
+                                           )
+
+    def on_deathrattle(self):
+        super(RatPack,self).on_deathrattle()
+        for i in range(self.unit.ad):
+            self.unit.field.make_unit(RatPackSon,self.unit.fieldid+1,stype=SummonType.Card)
+            # Unit(RatPackSon,self.unit.field,self.unit.fieldid+1,stype=SummonType.Card)
+
+
 class Field:
     """
     场地
     随从需要场地，还需要表示他们的位置
     """
 
-    def __init__(self, name, op=None):
+    def __init__(self, name, op=None,maxnum=7):
         self.name = name
-        self.lineup = []
+        self.lineup = [] #type:List[Field]
         self._opponent = op  # type:Field#对手的field
         self.units_with_halo = []  # type:list[Unit]#带有halo的unit 场上
+        self.maxnum=maxnum #最大随从
 
     @property
     def num(self):
         return len(self.lineup)
+
+    @property
+    def realnum(self):
+        #抛去将死亡的
+        lst=[x for x in self.lineup if x.hp>0 ]
+        return len(lst)
 
     def print_info(self):
         # print("field name:%s" % self.name)
@@ -477,18 +626,18 @@ class Field:
         target = random.choice(pool)
         return target
 
-    def broadcast_msg(self, orgin: 'Unit', msgtype=MessageType.none):
+    def broadcast_msg(self, orgin: 'Unit', msgtype=MessageType.none,*args):
         """
         给全体随从广播消息
         会跳过msg的发起人
-        @param orgin: 发起人
+        @param orgin: 发起人 可以是unit实例 field实例
         @param msgtype:
         @return:
         """
         for i in self.lineup:
             # if i == orgin:
             #     continue  # 跳过自己
-            i.template.on_msg(orgin, msgtype)
+            i.template.on_msg(orgin, msgtype,*args)
 
     @property
     def opponent(self) -> 'Field':
@@ -498,11 +647,11 @@ class Field:
 
     @opponent.setter
     def opponent(self, v):
-        assert isinstance(v, Field), "参数错误"
+        # assert isinstance(v, Field), "参数错误"
         self._opponent = v
 
     @staticmethod
-    def make_twin_fields(name1='red', name2='blue') -> Tuple['Field']:
+    def make_twin_fields(name1='red', name2='blue') -> Tuple['Field','Field']:
         """
         制作一对互为对手的field
         @param name1:
@@ -552,6 +701,30 @@ class Field:
         """
         self.recalculate_halo()
 
+    def on_turn_start(self,opponent:'Field'):
+        """
+        回合开始
+        @param opponent: 对手field实例,如果是购买回合，‘shop’
+        @return:
+        """
+        self.opponent=opponent#设置opponent属性
+        self.broadcast_msg(self,MessageType.turn_start,opponent)
+
+
+    def make_unit(self,template:'TemplateUnit',fieldindex:int,stype=SummonType.User,tarunit:'Unit'=None)->'Unit':
+        """
+        在场上创建新的unit
+        @param template:
+        @param fieldindex:
+        @param stype:
+        @param tarunit:
+        @return:
+        """
+        #检查场上随从是否已满
+        if self.realnum==self.maxnum:
+            print("units in field reaches max number")
+            return None
+        return Unit(template,self,fieldindex,stype,tarunit)
 
 class Unit:
     """

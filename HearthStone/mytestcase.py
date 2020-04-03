@@ -12,8 +12,26 @@ from GoodToolPython.HearthStone.unit import *
 # selfless hero 1
 # rightness protector 1
 # dragonspawn lieutenant 1
-# red whelp
+# red whelp 1
 # wrath waver 1
+#二本怪
+# unstable ghoul 1/3 taunt 亡语全场打1
+#pogo hopper 1/1 mech
+#rat pack 2/2
+#old mark eye 2/4
+# zoobat 3/3 mech 给鱼人 野兽 龙 +1+1
+#steward of time  3/4 龙
+# murloc warleader 3/3 其他鱼+2 攻击力
+# imprisoner 3/3 taunt 亡语 恶魔
+#kaboom bat 2/2 机械 造成4点伤害
+# nathrezim overseer 2/4 恶魔 +2+2
+# waxrider togwaggle 1/2 无属性 龙
+# kindly grandmother 1/1 野兽
+# metaltooth leaper 3/3机械 +2
+# spawn of Nzoth 2/2 无属性
+# glyph guardian 2/4 龙 翻倍
+# harvest golem 2/3 机械
+# scavenging hyena 2/2 野兽 死亡+2+1
 class MyTestCase(unittest.TestCase):
 
     def test1(self):
@@ -203,6 +221,101 @@ class MyTestCase(unittest.TestCase):
         Unit(FiendishServant, field_blue, 0)
         self.assertEqual(3, u2.ad)
         self.assertEqual(3, u2.hp)
+
+    def test11(self):  # 测试redwhelp
+        filed_red, field_blue = Field.make_twin_fields('red', 'blue')
+        u1 = Unit(RightnessProtector, filed_red, 0)
+        u2 = Unit(RedWhelp, field_blue, 0)
+        self.assertEqual(1, u1.hp)
+        self.assertEqual(True, u1.shield)
+        field_blue.on_turn_start(filed_red)
+        self.assertEqual(1, u1.hp)
+        self.assertEqual(False, u1.shield)
+        field_blue.on_turn_start(filed_red)
+        self.assertEqual(0, filed_red.num)
+
+        #两个redwhelp 喷死所有
+        filed_red, field_blue = Field.make_twin_fields('red', 'blue')
+        u1 = Unit(MaleTiger, filed_red, 0)
+        u2 = Unit(RedWhelp, field_blue, 0)
+        u3 = Unit(RedWhelp, field_blue, 0)
+        field_blue.on_turn_start(filed_red)
+        self.assertEqual(0, filed_red.num)
+
+        #两个redwhelp 喷死所有
+        filed_red, field_blue = Field.make_twin_fields('red', 'blue')
+        u1 = Unit(DragonspawnLieutenant, filed_red, 0)
+        u2 = Unit(RedWhelp, field_blue, 0)
+        u3 = Unit(RedWhelp, field_blue, 0)
+        field_blue.on_turn_start(filed_red)
+        self.assertEqual(0, filed_red.num)
+
+
+    def test12(self):  # 测试redwhelp
+        filed_red, field_blue = Field.make_twin_fields('red', 'blue')
+        u1 = Unit(RightnessProtector, filed_red, 0)
+        u2 = Unit(MicroMachine, field_blue, 0)
+        self.assertEqual(1, u2.ad)
+        field_blue.on_turn_start(filed_red)
+        self.assertEqual(1, u2.ad)
+        field_blue.on_turn_start('shop')
+        self.assertEqual(2, u2.ad)
+        field_blue.on_turn_start('shop')
+        self.assertEqual(3, u2.ad)
+
+    def test13(self):  # UnstableGhoul
+        filed_red, field_blue = Field.make_twin_fields('red', 'blue')
+        # u1 = Unit(RightnessProtector, filed_red, 0)
+        u1=filed_red.make_unit(RightnessProtector,0)
+        # u2 = Unit(MaleTiger, filed_red, 0)
+        u2=filed_red.make_unit(MaleTiger,0)
+        # u3=Unit(TideHunter, filed_red, 0)
+        u3=filed_red.make_unit(TideHunter,0)
+        # u4=Unit(UnstableGhoul, field_blue, 0)
+        u4=field_blue.make_unit(UnstableGhoul,0)
+        # u5=Unit(RedWhelp, field_blue, 0)
+        u5=field_blue.make_unit(RedWhelp,0)
+        u4.on_death()
+        self.assertEqual(1,filed_red.num)
+        self.assertEqual(1, field_blue.num)
+        self.assertEqual(1, u5.hp)
+
+    def test14(self):  # pogohopper
+        filed_red, field_blue = Field.make_twin_fields('red', 'blue')
+        # u1 = Unit(RightnessProtector, filed_red, 0)
+        u1=filed_red.make_unit(RightnessProtector,0)
+        print(PogoHopper.counteri)
+        # u4 = Unit(PogoHopper, field_blue, 0)
+        u4=field_blue.make_unit(PogoHopper,0)
+        print(PogoHopper.counteri)
+        self.assertEqual(1,u4.ad)
+        u4 = field_blue.make_unit(PogoHopper, 0)
+        print(PogoHopper.counteri)
+        self.assertEqual(3,u4.ad)
+        u4=field_blue.make_unit(PogoHopper,0)
+        self.assertEqual(5,u4.ad)
+        # u4 = Unit(PogoHopper, field_blue, 0,stype=SummonType.Card)
+        u4 = field_blue.make_unit(PogoHopper, 0,stype=SummonType.Card)
+        self.assertEqual(1,u4.ad)
+
+    def test15(self):  # ratpack
+        filed_red, field_blue = Field.make_twin_fields('red', 'blue')
+         # Unit(RatPack, filed_red, 0)
+        u1 =filed_red.make_unit(RatPack,0)
+        u1.on_death()
+        self.assertEqual(2,filed_red.num)
+
+
+        setnum=8
+        filed_red, field_blue = Field.make_twin_fields('red', 'blue')
+        # u1 = Unit(RatPack, filed_red, 0)
+        u1=filed_red.make_unit(RatPack,0)
+        u2 = field_blue.make_unit(SelflessHero, 0)
+        u1.ad = setnum
+        u2.ad=100
+        u2.attack_field()
+
+        self.assertEqual(7,filed_red.num)
 
 
 if __name__ == '__main__':
