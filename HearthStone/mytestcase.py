@@ -15,15 +15,15 @@ from GoodToolPython.HearthStone.unit import *
 # red whelp 1
 # wrath waver 1
 #二本怪
-# unstable ghoul 1/3 taunt 亡语全场打1
-#pogo hopper 1/1 mech
-#rat pack 2/2
-#old mark eye 2/4
-# zoobat 3/3 mech 给鱼人 野兽 龙 +1+1
-#steward of time  3/4 龙
-# murloc warleader 3/3 其他鱼+2 攻击力
-# imprisoner 3/3 taunt 亡语 恶魔
-#kaboom bat 2/2 机械 造成4点伤害
+# unstable ghoul 1/3 taunt 亡语全场打1  √
+#pogo hopper 1/1 mech √
+#rat pack 2/2    √
+#old mark eye 2/4  √
+# zoobat 3/3 mech 给鱼人 野兽 龙 +1+1 对
+#steward of time  3/4 龙 √
+# murloc warleader 3/3 其他鱼+2 攻击力 勾
+# imprisoner 3/3 taunt 亡语 恶魔   √
+#kaboom bat 2/2 机械 造成4点伤害 勾
 # nathrezim overseer 2/4 恶魔 +2+2
 # waxrider togwaggle 1/2 无属性 龙
 # kindly grandmother 1/1 野兽
@@ -318,5 +318,62 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(7,filed_red.num)
 
 
+    def test16(self):  # old mark eye
+        filed_red, field_blue = Field.make_twin_fields('red', 'blue')
+         # Unit(RatPack, filed_red, 0)
+        u1 =filed_red.make_unit(OldMarkEye,0)
+        u2=filed_red.make_unit(TideCaller,0)
+        self.assertEqual(3,u1.ad)
+        u2 = filed_red.make_unit(TideHunter, 0)
+        self.assertEqual(5, u1.ad)
+        u2.on_death()
+        self.assertEqual(4, u1.ad)
+
+    def test16(self):  # zoobat
+        filed_red, field_blue = Field.make_twin_fields('red', 'blue')
+        u1 = filed_red.make_unit(OldMarkEye, 0)
+        u2 = filed_red.make_unit(RedWhelp, 0)
+        u3 = filed_red.make_unit(DireWolfAlpha, 0)
+        u4 = filed_red.make_unit(Zoobat, 1)
+        self.assertEqual(3,u1.ad)
+        self.assertEqual(2, u2.ad)
+        self.assertEqual(3, u3.hp)
+
+        filed_red, field_blue = Field.make_twin_fields('red', 'blue')
+        u1 = filed_red.make_unit(OldMarkEye, 0)
+        u2 = filed_red.make_unit(RedWhelp, 0)
+        u4 = filed_red.make_unit(Zoobat, 1)
+        self.assertEqual(3,u1.ad)
+        self.assertEqual(2, u2.ad)
+
+        #缺少测试融合怪的
+
+    def test17(self):  # murloc warleader
+        filed_red, field_blue = Field.make_twin_fields('red', 'blue')
+        u1=filed_red.make_unit(MurlocWarleader,0)
+        u2=filed_red.make_unit(TideCaller,0)
+        self.assertEqual(3,u2.ad)
+        u1.on_death()
+        self.assertEqual(1, u2.ad)
+
+    def test18(self):  # impriosoner
+        filed_red, field_blue = Field.make_twin_fields('red', 'blue')
+        u1=filed_red.make_unit(Imprisoner,0)
+        u2=field_blue.make_unit(RedWhelp,0)
+        u2.ad=100
+        u2.attack_unit(u1)
+        for i in range(6):
+            filed_red.make_unit(Imp, 0)
+        self.assertEqual(7,filed_red.num)
+
+    def test18(self):  # kaboom
+        filed_red, field_blue = Field.make_twin_fields('red', 'blue')
+        u1=filed_red.make_unit(KaboomBat,0)
+        u11 = filed_red.make_unit(KaboomBat, 0)
+        u2=field_blue.make_unit(RightnessProtector,0)
+        u1.on_death()
+        self.assertEqual(1,field_blue.num)
+        u11.on_death()
+        self.assertEqual(0,field_blue.num)
 if __name__ == '__main__':
     unittest.main()

@@ -79,6 +79,8 @@ class TemplateUnit:
             self.unit.clear_halo_follwers()  # 消除自身halo的影响
             self.unit.field.units_with_halo.remove(self.unit)  # field的units_with_halo加入自己
         self.unit.field.on_unit_posiont_change(self.unit)
+        #广播死亡消息
+        self.unit.field.broadcast_msg(self.unit,msgtype=MessageType.death)
         pass
 
     def on_attack(self):
@@ -574,6 +576,180 @@ class RatPack(TemplateUnit):
             # Unit(RatPackSon,self.unit.field,self.unit.fieldid+1,stype=SummonType.Card)
 
 
+
+class OldMarkEye(TemplateUnit):
+    """
+    
+    """
+    def __init__(self, unit: 'Unit'):
+        super(OldMarkEye, self).__init__(unit=unit,
+                                           hp=4,
+                                           ad=2,
+                                           utype=UnitType.murloc,
+                                           name='OldMarkEye',
+                                            mana=2
+
+                                           )
+    
+    def on_msg(self, orgin: 'Unit', msgtype=MessageType.none,*args):
+        #统计场上其他鱼人
+        super(OldMarkEye,self).on_msg(orgin,msgtype,*args)
+        #忽略自己
+        if orgin is self.unit:
+            return
+        if msgtype is MessageType.summon:
+            if orgin.template.utype is UnitType.murloc:
+                self.unit.ad+=1
+        elif msgtype is MessageType.death:
+            if orgin.template.utype is UnitType.murloc:
+                self.unit.ad-=1
+
+
+class Zoobat(TemplateUnit):
+    """
+        给鱼儿 野兽 龙 +1+1
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(Zoobat, self).__init__(unit=unit,
+                                         hp=3,
+                                         ad=3,
+                                         utype=UnitType.mech,
+                                         name='Zoobat',
+                                         mana=2
+
+                                         )
+
+    def on_battlecry(self):
+        super(Zoobat,self).on_battlecry()
+        number=3
+        lst1=[x for x in self.unit.field.lineup if x.template.utype is UnitType.murloc]
+        lst2 = [x for x in self.unit.field.lineup if x.template.utype is UnitType.beast]
+        lst3 = [x for x in self.unit.field.lineup if x.template.utype is UnitType.dragon]
+        lst4 = [x for x in self.unit.field.lineup if x.template.utype is UnitType.all]
+
+        luck=[]
+        for lt in [lst1,lst2,lst3]:
+            if len(lt)==0:
+                continue
+            luck.append(random.choice(lt))
+        lownumber=number-len(luck)#差的名额
+        if len(lst4)>=lownumber:
+            t=random.sample(lst4,lownumber)
+            luck.extend(t)
+        else:
+            luck.extend(lst4)
+        for u in luck:#+1+1
+            u.ad+=1
+            u.hp+=1
+
+
+
+class StewardOfTime(TemplateUnit):
+    """
+        卖掉时给酒馆的unit+1+1
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(StewardOfTime, self).__init__(unit=unit,
+                                         hp=4,
+                                         ad=3,
+                                         utype=UnitType.dragon,
+                                         name='StewardOfTime',
+                                         mana=2
+
+                                         )
+
+
+
+class MurlocWarleader(TemplateUnit):
+    """
+        其他鱼人+2ad
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(MurlocWarleader, self).__init__(unit=unit,
+                                         hp=3,
+                                         ad=3,
+                                         utype=UnitType.murloc,
+                                         name='MurlocWarleader',
+                                         mana=2,
+                                              htype=HaloType.singlefield
+
+                                         )
+
+    def halo_in_func(self, follower: 'Unit', *args):
+        super(MurlocWarleader,self).halo_in_func(follower)
+        #ad+2
+        ad1=2
+        follower.ad += ad1
+        follower.ad_buff += ad1
+
+
+    def halo_out_func(self, follower: 'Unit', *args):
+        super(MurlocWarleader, self).halo_out_func(follower)
+        # ad+2
+        ad1 = 2
+        follower.ad -= ad1
+        follower.ad_buff -= ad1
+
+
+class Imp(TemplateUnit):
+    """
+        小鬼
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(Imp, self).__init__(unit=unit,
+                                         hp=1,
+                                         ad=1,
+                                         utype=UnitType.demon,
+                                         name='Imp',
+                                         mana=1
+
+                                         )
+
+class Imprisoner(TemplateUnit):
+    """
+        小鬼
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(Imprisoner, self).__init__(unit=unit,
+                                         hp=3,
+                                         ad=3,
+                                         utype=UnitType.demon,
+                                         name='Imprisoner',
+                                         mana=2,
+                                         taunt=True
+
+                                         )
+    def on_deathrattle(self):
+        super(Imprisoner,self).on_deathrattle()
+        self.unit.field.make_unit(Imp,self.unit.fieldid+1)
+
+
+
+class KaboomBat(TemplateUnit):
+    """
+        炸弹
+    """
+
+    def __init__(self, unit: 'Unit'):
+        super(KaboomBat, self).__init__(unit=unit,
+                                         hp=2,
+                                         ad=2,
+                                         utype=UnitType.mech,
+                                         name='KaboomBat',
+                                         mana=2
+
+                                         )
+    def on_deathrattle(self):
+        super(KaboomBat,self).on_deathrattle()
+        tar=self.unit.field.opponent.get_random_unit()
+        if tar is not None:
+            tar.on_damage(4)#4点伤害
+
 class Field:
     """
     场地
@@ -678,7 +854,15 @@ class Field:
             if render.template.halotype is HaloType.bothfield:
                 continue  # 全场halo不改变
             elif render.template.halotype is HaloType.singlefield:
-                continue  # 这里可能存在bug 只影响自己场的也跳过
+                render.clear_halo_follwers()
+                #重新计算
+                for u in self.lineup:
+                    if TemplateUnit.is_in_halo(u, render, render.template.halotype):
+                        # 在halo内
+                        u.halo_renders.append(render)
+                        render.halo_follwers.append(u)
+                        render.template.halo_in_func(u)
+
             elif render.template.halotype is HaloType.nearby:
                 render.clear_halo_follwers()
                 # for fl in render.halo_follwers:
