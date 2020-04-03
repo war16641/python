@@ -347,6 +347,8 @@ class TideCaller(TemplateUnit):
 
     def on_msg(self, orgin: 'Unit', msgtype=MessageType.none):
         super(TideCaller, self).on_msg(orgin, msgtype)
+        if orgin is self.unit:
+            return #跳过自己
         if msgtype == MessageType.summon:
             if orgin.template.utype == UnitType.murloc:
                 self.unit.ad += 1
@@ -484,8 +486,8 @@ class Field:
         @return:
         """
         for i in self.lineup:
-            if i == orgin:
-                continue  # 跳过自己
+            # if i == orgin:
+            #     continue  # 跳过自己
             i.template.on_msg(orgin, msgtype)
 
     @property

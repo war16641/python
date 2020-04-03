@@ -105,7 +105,7 @@ class MyTestCase(unittest.TestCase):
         filed_red = Field('red')
         field_blue = Field('blue')
         u2 = Unit(TideCaller, field_blue, 0, tarunit=None)
-        self.assertEqual(u2.ad, 1)
+        self.assertEqual(1,u2.ad)
         u3 = Unit(RockpoolHunter, field_blue, 0, tarunit=None)
         self.assertEqual(u2.ad, 2)
         u4 = Unit(MechKangaroo, field_blue, 0, tarunit=None)
