@@ -1,15 +1,18 @@
 import warnings
 from copy import deepcopy
-from typing import Union, Sequence, overload, List,Generic,TypeVar,Optional
+from typing import Union, Sequence, overload, List, Generic, TypeVar, Optional
 
 import win32com
 from myfile import get_elements_from_line
 from openpyxl import *
 from openpyxl.cell.cell import Cell
+from statistics_nyh import absmax
 from win32com.client import constants as c  # 旨在直接使用VBA常数
 
 from GoodToolPython.mybaseclasses.tools import is_sequence_with_specified_type
 import unittest
+
+
 # T_Model=TypeVar('T_Model')
 
 
@@ -83,39 +86,38 @@ class FlatDataModel:
     """
 
     @staticmethod
-    def load_from_list(vn_lst,data_lst)->'FlatDataModel':
+    def load_from_list(vn_lst, data_lst) -> 'FlatDataModel':
         """
         从列表中生成
         :param vn_lst: 变量名列表
         :param data_lst: 数据列表 2维列表 每一个内层列表代表一个数据点
         :return:
         """
-        assert is_sequence_with_specified_type(vn_lst,str),'必须为str列表'
-        assert is_sequence_with_specified_type(data_lst,list),'必须为列表组成的列表'
-        fdm=FlatDataModel()
-        fdm.vn=vn_lst
+        assert is_sequence_with_specified_type(vn_lst, str), '必须为str列表'
+        assert is_sequence_with_specified_type(data_lst, list), '必须为列表组成的列表'
+        fdm = FlatDataModel()
+        fdm.vn = vn_lst
 
         for row in data_lst:
             u = DataUnit(fdm)
-            assert len(row)==len(vn_lst),'数据与变量个数必须一致'
-            for nm,v in zip(vn_lst,row):
-                u.data[nm]=v
+            assert len(row) == len(vn_lst), '数据与变量个数必须一致'
+            for nm, v in zip(vn_lst, row):
+                u.data[nm] = v
             fdm.units.append(u)
         return fdm
 
-
     @staticmethod
     @overload
-    def load_from_excel_file(fullname)-> 'FlatDataModel':
+    def load_from_excel_file(fullname) -> 'FlatDataModel':
         pass
 
     @staticmethod
     @overload
     def load_from_excel_file(fullname,
-                             sheetname:str=None,
-                             row_variable_name:int=0,
-                             row_caption:List[int]=None,
-                             row_data_start:int=None)-> 'FlatDataModel':
+                             sheetname: str = None,
+                             row_variable_name: int = 0,
+                             row_caption: List[int] = None,
+                             row_data_start: int = None) -> 'FlatDataModel':
         pass
 
     @staticmethod
@@ -216,9 +218,9 @@ class FlatDataModel:
         :param item:
         :return:
         """
-        if isinstance(item,str):#获取所有数据点的某个变量信息
-            assert item in self.vn,'该变量名不存在'
-            r=[]
+        if isinstance(item, str):  # 获取所有数据点的某个变量信息
+            assert item in self.vn, '该变量名不存在'
+            r = []
             for u in self:
                 r.append(u[item])
             return r
@@ -414,6 +416,16 @@ class FlatDataModel:
         在excel中显示 此方法不会阻塞
         :return:
         """
+        """
+        这个函数有时候会报错 。。。has no attribute 'CLSIDToClassMap'
+        解决办法：
+        运行：
+        from win32com.client.gencache import EnsureDispatch
+        import sys
+        xl = EnsureDispatch("Word.Application")
+        print(sys.modules[xl.__module__].__file__)
+        以上代码给出了临时文件路径，删除gen_py下所有长数字文件夹即可解决
+        """
         xl_app = win32com.client.gencache.EnsureDispatch("Excel.Application")  # 若想引用常数的话使用此法调用Excel
         xl_app.Visible = False  # 是否显示Excel文件
         wb = xl_app.Workbooks.Add()
@@ -439,43 +451,41 @@ class FlatDataModel:
         xl_app.Visible = True
 
     def __str__(self):
-        s1='%d个变量'%len(self.vn)
-        s2=self.vn.__str__()
-        s3='%d个数据单元'%len(self.units)
-        return "%s\n%s\n%s"%(s1,s2,s3)
+        s1 = '%d个变量' % len(self.vn)
+        s2 = self.vn.__str__()
+        s3 = '%d个数据单元' % len(self.units)
+        return "%s\n%s\n%s" % (s1, s2, s3)
 
-    def to_list(self,write_variable_names=False):
+    def to_list(self, write_variable_names=False):
         """
         将所有数据转化为2维列表并返回 一行代表一个数据点
         :return:
         """
-        t= [[x2 for x2 in x1] for x1 in self.units]
+        t = [[x2 for x2 in x1] for x1 in self.units]
         if write_variable_names is True:
-            t.insert(0,deepcopy(self.vn))
+            t.insert(0, deepcopy(self.vn))
         return t
         pass
 
-    def __delete_variable(self,nm):
+    def __delete_variable(self, nm):
         assert nm in self.vn, '变量名不存在'
         for u in self:
             del u.data[nm]
         self.vn.remove(nm)
 
-    def delete_variable(self,variable_name:Union[str,List[str]])->None:
+    def delete_variable(self, variable_name: Union[str, List[str]]) -> None:
         """
         删除某些字段名
         :param variable_name: 字符串或字符串列表
         :return:
         """
-        if isinstance(variable_name,str):
-            variable_name=[variable_name]
-        assert is_sequence_with_specified_type(variable_name,str),'必须为字符串或字符串列表'
+        if isinstance(variable_name, str):
+            variable_name = [variable_name]
+        assert is_sequence_with_specified_type(variable_name, str), '必须为字符串或字符串列表'
         for nm in variable_name:
             self.__delete_variable(nm)
 
-
-
-    def narrow(self,vn_lst:List[str],reserve=True)->'FlatDataModel':
+    def narrow(self, vn_lst: List[str], reserve=True) -> 'FlatDataModel':
         """
         瘦身为一个新的平面数据模型
         不会改变自身 而是复制一个新的数据模型进行操作
@@ -483,18 +493,19 @@ class FlatDataModel:
         :param reserve: 指定是要保留的 还是要删除的
         :return:
         """
-        fdm=deepcopy(self)
-        if True==reserve:#处理要删除的变量名
-            nms_del=deepcopy(self.vn)
+        fdm = deepcopy(self)
+        if True == reserve:  # 处理要删除的变量名
+            nms_del = deepcopy(self.vn)
             for i in vn_lst:
                 nms_del.remove(i)
         else:
-            nms_del=vn_lst
-        fdm.delete_variable(nms_del)#删除
+            nms_del = vn_lst
+        fdm.delete_variable(nms_del)  # 删除
         return fdm
 
     @staticmethod
-    def load_from_file(pathname,vn_style:Union[str,list]='numbers',omitlines=0,separator:str='',column_expected:int=None)->'FlatDataModel':
+    def load_from_file(pathname, vn_style: Union[str, list] = 'numbers', omitlines=0, separator: str = '',
+                       column_expected: int = None) -> 'FlatDataModel':
         """
         从文本文件中载入
         @param pathname:
@@ -508,8 +519,8 @@ class FlatDataModel:
         """
         f = open(pathname, 'r')
 
-        #处理跳过行
-        if omitlines !=0:
+        # 处理跳过行
+        if omitlines != 0:
             for i in range(omitlines):
                 f.readline()
 
@@ -539,25 +550,24 @@ class FlatDataModel:
         # else:
         #     raise Exception("参数错误")
 
-
         #
-        self_column=False
-        if vn_style=='numbers' and column_expected is None:#需要读第一行数据
-            self_column=True
-            firstline=f.readline()
+        self_column = False
+        if vn_style == 'numbers' and column_expected is None:  # 需要读第一行数据
+            self_column = True
+            firstline = f.readline()
             firsteles = get_elements_from_line(firstline, additional_separator=separator, number_only=False)
             column_expected = len(firsteles)
             t = range(column_expected)
             vn_lst = ['vn' + str(x) for x in t]  # 用vn0 vn1 vn2作为变量名
-        elif vn_style=='numbers' and column_expected is not None:#不需要读第一行数据
+        elif vn_style == 'numbers' and column_expected is not None:  # 不需要读第一行数据
             t = range(column_expected)
             vn_lst = ['vn' + str(x) for x in t]  # 用vn0 vn1 vn2作为变量名
         elif vn_style == 'file':  # 从文件中读取 此时不管column_expected
             vnline = f.readline()
             vn_lst = get_elements_from_line(vnline, additional_separator=separator, number_only=False)
-            column_expected=len(vn_lst)
-        elif isinstance(vn_style,list):#直接指定了vn_lst
-            vn_lst=vn_style
+            column_expected = len(vn_lst)
+        elif isinstance(vn_style, list):  # 直接指定了vn_lst
+            vn_lst = vn_style
             column_expected = len(vn_lst)
         else:
             raise Exception("参数错误")
@@ -565,26 +575,24 @@ class FlatDataModel:
         fdm = FlatDataModel()
         fdm.vn = vn_lst
 
-        #装载第一个数据
+        # 装载第一个数据
         if self_column:
             firstu = DataUnit()  # 装载第一个u
             for k, v in zip(vn_lst, firsteles):
                 firstu.data[k] = v
             fdm.units.append(firstu)
-            firstu.model=fdm
+            firstu.model = fdm
 
-
-
-        #开始读
-        line=f.readline()
+        # 开始读
+        line = f.readline()
         while line:
             eles = get_elements_from_line(line, additional_separator=separator, number_only=False)
             u = DataUnit()  # 装载第一个u
-            u.model=fdm
+            u.model = fdm
             for k, v in zip(vn_lst, eles):
                 u.data[k] = v
             fdm.units.append(u)
-            line=f.readline()
+            line = f.readline()
         f.close()
 
         return fdm
@@ -600,49 +608,64 @@ class TestCase(unittest.TestCase):
         # assert len(fdm.vn) == 3
         # assert fdm.units[0]['年龄'] == 1
         # assert fdm.units[1]['性别'] == '女'
-        self.assertAlmostEqual(len(fdm.units),2)
-        self.assertAlmostEqual(len(fdm.vn),3)
-        self.assertAlmostEqual(fdm.units[0]['年龄'],1)
-        self.assertEqual(fdm.units[1]['性别'],'女')
+        self.assertAlmostEqual(len(fdm.units), 2)
+        self.assertAlmostEqual(len(fdm.vn), 3)
+        self.assertAlmostEqual(fdm.units[0]['年龄'], 1)
+        self.assertEqual(fdm.units[1]['性别'], '女')
 
     def test_load_from_file(self):
-        fdm=FlatDataModel.load_from_file(pathname=r"test_load_from_file.txt",
-                                         vn_style='numbers',
-                                         omitlines=1,
-                                         separator=','
-                                         )
+        fdm = FlatDataModel.load_from_file(pathname=r"test_load_from_file.txt",
+                                           vn_style='numbers',
+                                           omitlines=1,
+                                           separator=','
+                                           )
         print(fdm)
-        self.assertEqual(len(fdm.units),53)
+        self.assertEqual(len(fdm.units), 53)
         self.assertEqual(len(fdm.vn), 8)
-        self.assertAlmostEqual(fdm.units[-2]['vn7'],-113001.148438)
+        self.assertAlmostEqual(fdm.units[-2]['vn7'], -113001.148438)
 
     def test_load_from_file1(self):
-        fdm=FlatDataModel.load_from_file(pathname=r"test_load_from_file.txt",
-                                         vn_style=['1','2','3','4','5','6','7','8'],
-                                         omitlines=1,
-                                         separator=','
+        fdm = FlatDataModel.load_from_file(pathname=r"test_load_from_file.txt",
+                                           vn_style=['1', '2', '3', '4', '5', '6', '7', '8'],
+                                           omitlines=1,
+                                           separator=','
 
-                                         )
+                                           )
         print(fdm)
-        self.assertEqual(len(fdm.units),53)
+        self.assertEqual(len(fdm.units), 53)
         self.assertEqual(len(fdm.vn), 8)
-        self.assertAlmostEqual(fdm.units[-2]['8'],-113001.148438)
+        self.assertAlmostEqual(fdm.units[-2]['8'], -113001.148438)
 
     def test_load_from_file2(self):
-        fdm=FlatDataModel.load_from_file(pathname=r"test_load_from_file.txt",
-                                         vn_style='file',
-                                         omitlines=0,
-                                         separator=','
+        fdm = FlatDataModel.load_from_file(pathname=r"test_load_from_file.txt",
+                                           vn_style='file',
+                                           omitlines=0,
+                                           separator=','
 
-                                         )
+                                           )
         print(fdm)
-        self.assertEqual(len(fdm.units),53)
+        self.assertEqual(len(fdm.units), 53)
         self.assertEqual(len(fdm.vn), 8)
-        self.assertAlmostEqual(fdm.units[-2]['data2'],-113001.148438)
+        self.assertAlmostEqual(fdm.units[-2]['data2'], -113001.148438)
+
+    def test_flhz(self):  # 测试flhz
+        fdm = FlatDataModel.load_from_excel_file(r"E:\我的文档\python\GoodToolPython\excel\test1.xlsx", 'Sheet1')
+        o = fdm.flhz("拉杆屈服强度", [["P1底轴力", lambda x: len(x)]])
+        self.assertEqual(42, o[0].data["P1底轴力"])
+        self.assertEqual(28, o[1].data["P1底轴力"])
+        self.assertEqual(28, o[-1].data["P1底轴力"])
+
+        o = fdm.flhz("拉杆屈服强度", [["P1底轴力", lambda x: absmax(x)], ["P1底弯矩", lambda x: absmax(x), "弯矩"],
+                                ["P1底弯矩", lambda x: abs(absmax(x)), "弯矩2"]])
+        self.assertAlmostEqual(3682, o[0].data["P1底轴力"], delta=1)
+        self.assertAlmostEqual(-11129, o[0].data["弯矩"], delta=1)
+        self.assertAlmostEqual(11129, o[0].data["弯矩2"], delta=1)
 
 
 if __name__ == '__main__':
-    unittest.main()
+    fdm = FlatDataModel.load_from_excel_file(r"E:\我的文档\python\GoodToolPython\excel\test1.xlsx", 'Sheet1')
+    fdm.show_in_excel()
+    # unittest.main()
     # test_load_from_list()
     # fullname = "test1.xlsx"
     # # fullname1 = "D:\新建 Microsoft Excel 工作表.xlsx"
@@ -651,7 +674,6 @@ if __name__ == '__main__':
     # print(u['文件名', '间距'])
     # print(model)
     # print(model['文件名'])
-
 
     # model.flhz(classify_names=['工况名','拉杆刚度'],
     #            statistics_func=[['P1底剪力',max,'p1底剪力'],

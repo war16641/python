@@ -148,5 +148,7 @@ def test_is_approximately_equal():
     assert_raises(Exception,is_approximately_equal,a1,b)
     assert_raises(Exception,is_approximately_equal,b1,a)
 if __name__ == '__main__':
-    test1()
-    test_is_approximately_equal()
+    a = [4.896149, -1.566705, -10.331777]
+    print(absmax(a))
+    # test1()
+    # test_is_approximately_equal()
