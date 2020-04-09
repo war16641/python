@@ -212,7 +212,7 @@ class FlatDataModel:
         # 返回units的个数
         return len(self.units)
 
-    def __getitem__(self, item) -> Union[DataUnit, List[DataUnit]]:
+    def __getitem__(self, item) -> Union[DataUnit, list]:
         """
         获取部分数据点（切片） 或者获取所有数据点的某个变量信息
         :param item:
@@ -226,6 +226,34 @@ class FlatDataModel:
             return r
         else:
             return self.units.__getitem__(item)
+
+    def __setitem__(self, key, value):
+        """
+        增加一个字段
+        @param key:
+        @param value: 函数 操作对象为dataunit
+                        list 长度与自身数据点个数相等
+        @return:
+        """
+        def script_func():
+            for u in self:
+                u.data[key] = value(u)
+
+        def script_lst():
+            assert len(value)==len(self),"列表长度与自身数据点个数不一致。"
+            for i,u in enumerate(self):
+                u.data[key]=value[i]
+
+        if key in self.vn:
+            print("字段(%s)被覆盖" % key)
+        else:
+            self.vn.append(key)  # 更新vn
+        if callable(value):
+            script_func()
+        elif isinstance(value,list):
+            script_lst()
+        else:
+            raise TypeError("参数错误")
 
     def save(self, fullname, sheetname=None):
         # 保存到excel文件中
@@ -661,11 +689,26 @@ class TestCase(unittest.TestCase):
         self.assertAlmostEqual(-11129, o[0].data["弯矩"], delta=1)
         self.assertAlmostEqual(11129, o[0].data["弯矩2"], delta=1)
 
+    def test_getitem_setitem(self):
+        vnlst = ['姓名', '性别', '年龄']
+        datalst = [['迈克尔', '男', 1], ['丹妮', '女', 3],['雪落','男',11]]
+        fdm = FlatDataModel.load_from_list(vnlst, datalst)
+        print(fdm['姓名'])
+        self.assertEqual(['迈克尔', '丹妮', '雪落'],fdm['姓名'])
+        fdm['年龄2']=lambda x:-1*x['年龄']
+        self.assertEqual([-1, -3, -11],fdm['年龄2'])
+        fdm['年龄2'] = lambda x: 10+ x['年龄']
+        print(fdm['年龄2'])
+        self.assertEqual([11, 13, 21], fdm['年龄2'])
+        fdm['年龄2'] =[1,1,1]
+        self.assertEqual([1,1,1], fdm['年龄2'])
+
 
 if __name__ == '__main__':
-    fdm = FlatDataModel.load_from_excel_file(r"E:\我的文档\python\GoodToolPython\excel\test1.xlsx", 'Sheet1')
-    fdm.show_in_excel()
-    # unittest.main()
+    unittest.main()
+    # fdm = FlatDataModel.load_from_excel_file(r"E:\我的文档\python\GoodToolPython\excel\test1.xlsx", 'Sheet1')
+    # fdm.show_in_excel()
+
     # test_load_from_list()
     # fullname = "test1.xlsx"
     # # fullname1 = "D:\新建 Microsoft Excel 工作表.xlsx"
