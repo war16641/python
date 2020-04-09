@@ -14,7 +14,7 @@ def ticking(mf):
             time.sleep(1)
         ct+=1
         evt = MyTestEvent(myEVT_MY_TEST,-1)  # 5 创建自定义事件对象
-        evt.SetEventArgs("test event"+str(ct))  # 6添加数据到事件
+        evt.SetEventArgs("OnlbvnChar event"+str(ct))  # 6添加数据到事件
         mf.GetEventHandler().ProcessEvent(evt)  # 7 处理事件
 
 class MyTestEvent(wx.PyCommandEvent):  # 1 定义事件

@@ -26,7 +26,7 @@ def open_image_file(fullname):
 class SampleManager:
     def __init__(self,model_path="D:\\knn_models\\knn_12"):
         if os.path.isdir(model_path+"\\classified") and \
-            os.path.isdir(model_path + "\\test") and \
+            os.path.isdir(model_path + "\\OnlbvnChar") and \
             os.path.isdir(model_path + "\\unclassified"):
             self.path=model_path
         else:
@@ -188,7 +188,7 @@ class MyKNN:
 
     def __init__(self,model_path="D:\\knn_models\\knn_12"):
         if os.path.isdir(model_path+"\\classified") and \
-            os.path.isdir(model_path + "\\test") and \
+            os.path.isdir(model_path + "\\OnlbvnChar") and \
             os.path.isdir(model_path + "\\unclassified"):
             self.path=model_path
         else:

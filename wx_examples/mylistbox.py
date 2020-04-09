@@ -24,6 +24,9 @@ class MyListbox(wx.ListBox):
         self.mydata.clear()
         super(MyListbox, self).Clear()
 
+    def __iter__(self):
+        return self.mydata.__iter__()
+
     @property#返回选择的mydata数据
     def selected_data(self):
         if self.Selection==-1:
@@ -32,10 +35,16 @@ class MyListbox(wx.ListBox):
 
     def MyRefresh(self):
         #重新从mydata中载入信息
+        lastdata = self.selected_data
         super(MyListbox, self).Clear()
+
         for i in self.mydata:
             super(MyListbox, self).Append(self.mymethod(i))
-
+        #如果lastdata不是none 复原之前选择
+        if lastdata is not None:
+            t=self.mydata.index(lastdata)
+            if t>=0:
+                super(MyListbox,self).SetSelection(t)
 
 
 

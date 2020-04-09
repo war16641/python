@@ -150,5 +150,5 @@ def test_is_approximately_equal():
 if __name__ == '__main__':
     a = [4.896149, -1.566705, -10.331777]
     print(absmax(a))
-    # test1()
+    # OnLbvnclassChar()
     # test_is_approximately_equal()

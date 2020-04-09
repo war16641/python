@@ -352,8 +352,8 @@ if __name__ == '__main__':
     # t = si.calc_springs(pile=pile)
     # t.show_in_excel()
 
-    # test1()
-    # test1()
+    # OnLbvnclassChar()
+    # OnLbvnclassChar()
     # si = SoilInfo()
     # si.levels.append(Level(thickness=29.15, scale_factor=5000))
     # si.levels.append(Level(thickness=40, scale_factor=1e4))

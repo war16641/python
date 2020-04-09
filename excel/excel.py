@@ -706,11 +706,11 @@ class TestCase(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
-    # fdm = FlatDataModel.load_from_excel_file(r"E:\我的文档\python\GoodToolPython\excel\test1.xlsx", 'Sheet1')
+    # fdm = FlatDataModel.load_from_excel_file(r"E:\我的文档\python\GoodToolPython\excel\OnLbvnclassChar.xlsx", 'Sheet1')
     # fdm.show_in_excel()
 
     # test_load_from_list()
-    # fullname = "test1.xlsx"
+    # fullname = "OnLbvnclassChar.xlsx"
     # # fullname1 = "D:\新建 Microsoft Excel 工作表.xlsx"
     # model = FlatDataModel.load_from_excel_file(fullname=fullname)
     # u = model[0]
