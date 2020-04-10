@@ -625,6 +625,20 @@ class FlatDataModel:
 
         return fdm
 
+    def sort(self,key,reverse=False):
+        """
+        排序
+        @param key:
+        @param reverse: 降序为true
+        @return:
+        """
+        lams=[]
+        if isinstance(key,str):
+            key=[key]
+        for i in key:
+            lams.append(lambda x:x.data[i])#从字段名转换为取值的匿名函数
+        func=lambda x:tuple([i(x) for i in lams])#这一段是取任意字段组成tuple的匿名函数
+        self.units.sort(key=func,reverse=reverse)
 
 class TestCase(unittest.TestCase):
     def test_load_from_list(self):
@@ -703,7 +717,12 @@ class TestCase(unittest.TestCase):
         fdm['年龄2'] =[1,1,1]
         self.assertEqual([1,1,1], fdm['年龄2'])
 
-
+    def test_sort(self):
+        vnlst = ['姓名', '性别', '年龄','身高']
+        datalst = [['迈克尔', '男', 4,2], ['丹妮', '女', 3,2],['雪落','男',11,3]]
+        fdm = FlatDataModel.load_from_list(vnlst, datalst)
+        fdm.sort(key=['身高','年龄'])
+        self.assertEquals('丹妮',fdm[0]['姓名'])
 if __name__ == '__main__':
     unittest.main()
     # fdm = FlatDataModel.load_from_excel_file(r"E:\我的文档\python\GoodToolPython\excel\OnLbvnclassChar.xlsx", 'Sheet1')
