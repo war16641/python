@@ -14,6 +14,12 @@ class MyListbox(wx.ListBox):
         self.mymethod = None  # type:callable #得到string的方法
 
     def Append(self, x):
+        """
+        添加item
+        同时更新显示
+        @param x:
+        @return:
+        """
         self.mydata.append(x)
         if isinstance(x,str):#如果硬要添加str
             super(MyListbox, self).Append(x)
@@ -32,10 +38,19 @@ class MyListbox(wx.ListBox):
         if self.Selection==-1:
             return None#没选择时返回none
         return self.mydata[self.Selection]
-
+    @selected_data.setter
+    def selected_data(self,v):
+        if v is None:
+            super(MyListbox,self).SetSelection(-1)#设定空选择
+            return
+        assert v in self.mydata,"目标不在mydata数据集中"
+        super(MyListbox,self).SetSelection(self.mydata.index(v))
     def MyRefresh(self):
         #重新从mydata中载入信息
-        lastdata = self.selected_data
+        if len(self.mydata)!=0:
+            lastdata = self.selected_data
+        else:
+            lastdata=None#数据为空时
         super(MyListbox, self).Clear()
 
         for i in self.mydata:
@@ -45,6 +60,29 @@ class MyListbox(wx.ListBox):
             t=self.mydata.index(lastdata)
             if t>=0:
                 super(MyListbox,self).SetSelection(t)
+
+    def mydeleteitem(self,item):
+        """
+        删除item 单个
+        同时更新显示
+        @param item:
+        @return:
+        """
+        id=self.mydata.index(item)
+        assert id>=0,"item不在数据集mydata中"
+        #保存删除前的数据
+        lastdata=self.selected_data
+        #删除
+        pos=self.mydata.index(item)
+        self.mydata.remove(item)
+        #更新父类的显示
+        super(MyListbox,self).Delete(pos)
+        #复原之前的选择
+        if lastdata is not item:
+            self.selected_data=item
+        else:
+            self.selected_data=None
+
 
 
 
