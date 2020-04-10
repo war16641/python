@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Union, Sequence, overload, List, Generic, TypeVar, Optional
+from typing import Union, Sequence, overload, List, Generic, TypeVar, Optional, Dict
 
 import win32com
 from myfile import get_elements_from_line
@@ -11,6 +11,24 @@ from win32com.client import constants as c  # 旨在直接使用VBA常数
 
 from GoodToolPython.mybaseclasses.tools import is_sequence_with_specified_type
 import unittest
+
+
+def myunique(lst, return_firstid=False):
+    """
+    去除重复元素
+    自编
+    按照首次出现的位置排序
+    @param lst:
+    @param return_firstid: 是否返回第一次出现的id
+    @return:
+    """
+    lst1=list(set(lst))
+    lst1.sort(key=lst.index)
+    if return_firstid:
+        firstid=[lst.index(x) for x in lst1]
+        return lst1,firstid
+    else:
+        return lst1
 
 
 # T_Model=TypeVar('T_Model')
@@ -62,7 +80,7 @@ class DataUnit:
             r = []
             for name in item:
                 r.append(self.data[name])
-            return r
+            return tuple(r)
         else:
             return self.data.__getitem__(item)
 
@@ -94,7 +112,7 @@ class FlatDataModel:
         :return:
         """
         assert is_sequence_with_specified_type(vn_lst, str), '必须为str列表'
-        assert is_sequence_with_specified_type(data_lst, list), '必须为列表组成的列表'
+        assert is_sequence_with_specified_type(data_lst, list) or is_sequence_with_specified_type(data_lst, tuple), '必须为列表组成的列表'
         fdm = FlatDataModel()
         fdm.vn = vn_lst
 
@@ -218,12 +236,16 @@ class FlatDataModel:
         :param item:
         :return:
         """
-        if isinstance(item, str):  # 获取所有数据点的某个变量信息
-            assert item in self.vn, '该变量名不存在'
-            r = []
-            for u in self:
-                r.append(u[item])
-            return r
+        # if isinstance(item,str):
+        #     item=[item]
+        if isinstance(item,list) or isinstance(item,str):  # 获取所有数据点的某个变量信息
+            t=[x[item] for x in self.units]
+            return t
+            # assert item in self.vn, '该变量名不存在'
+            # r = []
+            # for u in self:
+            #     r.append(u[item])
+            # return r
         else:
             return self.units.__getitem__(item)
 
@@ -640,6 +662,53 @@ class FlatDataModel:
         func=lambda x:tuple([i(x) for i in lams])#这一段是取任意字段组成tuple的匿名函数
         self.units.sort(key=func,reverse=reverse)
 
+    def make_bunches(self,classify_names)->Dict:
+        """
+        分类
+        不会删除或者增加数据点
+        @param classify_names: 用于分类的字段列表
+        @return:
+        """
+        def make_legend_names():
+            #生成图例名称
+            nonlocal  classify_names,classify_names_value_unique
+            r=[]
+            for i in classify_names_value_unique:
+                t = []
+                for name, value in zip(classify_names, i):
+                    t.append("%s:%s" % (name, value.__str__()))
+                r.append(",".join(t))  # 添加图例名称 逗号分隔
+            return r
+        r={}
+        if isinstance(classify_names,str):
+            classify_names=[classify_names]
+        self.sort(classify_names)
+        classify_names_value=self[classify_names]#分类名的值
+        classify_names_value_unique, firstid = myunique(classify_names_value, True)
+        legend_names=make_legend_names()
+        for i,name in enumerate(classify_names_value_unique):
+            if i != len(classify_names_value_unique)-1:
+                datas=self[firstid[i]:firstid[i+1]]
+            else:
+                datas=self[firstid[i]:]
+            r[legend_names[i]]=self.__load_from_datas(self.vn,datas)
+        return r
+
+    def __load_from_datas(self,vnlist,datas)->'FlatDataModel':
+        """
+        从datas中生成fdm
+        不用deepcopy
+        @param vnlist:
+        @param datas:
+        @return:
+        """
+        assert is_sequence_with_specified_type(datas,DataUnit),'datas必须为dataunit组成的列表'
+        fdm=FlatDataModel()
+        fdm.vn=vnlist
+        fdm.units=datas#这里没有deepcopy
+        return fdm
+
+
 class TestCase(unittest.TestCase):
     def test_load_from_list(self):
         vnlst = ['姓名', '性别', '年龄']
@@ -723,6 +792,15 @@ class TestCase(unittest.TestCase):
         fdm = FlatDataModel.load_from_list(vnlst, datalst)
         fdm.sort(key=['身高','年龄'])
         self.assertEquals('丹妮',fdm[0]['姓名'])
+
+    def test_makebunches(self):
+        vnlst = ['姓名', '性别', '年龄','身高']
+        datalst = [['迈克尔', '男', 4,2], ['丹妮', '女', 3,2],['雪落','男',11,3],['卓哥','男',11,3.5]]
+        fdm = FlatDataModel.load_from_list(vnlst, datalst)
+        r=fdm.make_bunches(['性别','年龄'])
+        self.assertEquals(3,len(r))
+        self.assertEquals(2,len(r['性别:男,年龄:11']))
+        pass
 if __name__ == '__main__':
     unittest.main()
     # fdm = FlatDataModel.load_from_excel_file(r"E:\我的文档\python\GoodToolPython\excel\OnLbvnclassChar.xlsx", 'Sheet1')
