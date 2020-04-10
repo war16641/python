@@ -8,6 +8,8 @@ import wx.grid
 from GoodToolPython.excel.excel import FlatDataModel
 import os
 from GoodToolPython.wx_examples.mylistbox import MyListbox
+from matplotlib.backends import backend_wxagg
+from matplotlib.figure import Figure
 from statistics_nyh import absmax, absmin
 
 statfuncs={'max':lambda x:max(x),
@@ -88,6 +90,10 @@ class PivotTable(wx.Frame):
         sizer.Add(self.bt_excute, pos=(9, 0), span=(1, 1), flag=wx.ALL, border=5)
         self.bt_excute.Bind(wx.EVT_BUTTON, self.OnBtexcute)
 
+
+        canvaspanel=wx.Panel(panel, size=(600, 600))
+        sizer.Add(canvaspanel, pos=(0, 12), span=(8, 1), flag=wx.ALL, border=5)
+        self.canvas=backend_wxagg.FigureCanvasWxAgg(canvaspanel, -1, Figure())
         panel.SetSizerAndFit(sizer)
     def OnFilein(self,event=None):
         self.fdm=FlatDataModel.load_from_excel_file(fullname=self.tc_filein.Value)
@@ -182,7 +188,11 @@ class PivotTable(wx.Frame):
             statistics_func.append(t)
         #执行
         o=self.fdm.flhz(classify_names=classify_names,statistics_func=statistics_func)
-        o.show_in_excel()
+        # o.show_in_excel()
+        axes=self.canvas.figure.gca()
+        axes.cla()
+        axes.plot(o[o.vn[0]],o[o.vn[1]])
+        self.canvas.draw()
         pass
 
 
