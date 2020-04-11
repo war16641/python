@@ -658,6 +658,7 @@ class FlatDataModel:
         if isinstance(key,str):
             key=[key]
         for i in key:
+            assert i in self.vn,"不存在字段%s"%i
             lams.append(lambda x:x.data[i])#从字段名转换为取值的匿名函数
         func=lambda x:tuple([i(x) for i in lams])#这一段是取任意字段组成tuple的匿名函数
         self.units.sort(key=func,reverse=reverse)
