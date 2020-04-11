@@ -68,7 +68,7 @@ class StatFuncInfo:#统计的信息
 class ClassifyFieldInfo:
     """
     在fdm的flhz函数中只有分类变量
-    但是在本程序中分类变量分为：自变量和图例变量
+    但是在本程序中分类变量分为：自变量和图例变量 自变量只能有一个 其他都是图例变量 如果要做图的话
     """
     def __init__(self,fieldname,islegend=False):
         self.fieldname=fieldname
