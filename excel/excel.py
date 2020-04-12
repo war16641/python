@@ -709,6 +709,27 @@ class FlatDataModel:
         fdm.units=datas#这里没有deepcopy
         return fdm
 
+    @staticmethod
+    def load_from_string(stringtxt:str,vn_syle='fromstring',separator=' '):
+        stringtxt=stringtxt.strip('\n ')#去除多余的换行符
+        lns=stringtxt.split('\n')#按行划分
+        fdm=FlatDataModel()
+        if vn_syle == 'fromstring':#使用第一行的数据
+            eles = get_elements_from_line(lns[0], additional_separator=separator, number_only=False)
+            fdm.vn=eles
+            lns.pop(0)#去除第一个list
+        elif isinstance(vn_syle,list):
+            fdm.vn=vn_syle
+        else:
+            raise TypeError("vn_style参数错误")
+        for ln in lns:
+            u=DataUnit()
+            u.model=fdm
+            eles = get_elements_from_line(ln, additional_separator=separator, number_only=False)
+            for k,v in zip(fdm.vn,eles):
+                u.data[k]=v
+            fdm.units.append(u)
+        return fdm
 
 class TestCase(unittest.TestCase):
     def test_load_from_list(self):
@@ -802,6 +823,48 @@ class TestCase(unittest.TestCase):
         self.assertEquals(3,len(r))
         self.assertEquals(2,len(r['性别:男,年龄:11']))
         pass
+
+    def test_loadfromstring(self):
+        st = """拉杆刚度	拉杆屈服强度	P1底轴力	P1底剪力
+        1	50	3678.027091	570.7248771
+        70000	50	3682.18235	558.0163549
+        70000	100	3725.238945	554.0071293
+        70000	150	3763.116878	551.450626
+        70000	200	3795.721789	550.3307469
+        70000	250	3821.993015	549.582025
+        70000	300	3851.3423	548.9927673
+        90000	50	3664.146017	557.0739193
+        90000	100	3701.476992	552.4944948
+        90000	150	3733.630435	548.1569784
+        90000	200	3759.021624	546.8723534
+        90000	250	3778.943963	545.8375741
+        90000	300	3801.283942	544.9070614
+        """
+        fdm=FlatDataModel.load_from_string(st,separator='\t')
+        # fdm.show_in_excel()
+        self.assertEquals(4,len(fdm.vn))
+        self.assertEquals(13, len(fdm))
+        self.assertEquals(1,fdm[0]['拉杆刚度'])
+
+        st = """
+        1	50	3678.027091	570.7248771
+        70000	50	3682.18235	558.0163549
+        70000	100	3725.238945	554.0071293
+        70000	150	3763.116878	551.450626
+        70000	200	3795.721789	550.3307469
+        70000	250	3821.993015	549.582025
+        70000	300	3851.3423	548.9927673
+        90000	50	3664.146017	557.0739193
+        90000	100	3701.476992	552.4944948
+        90000	150	3733.630435	548.1569784
+        90000	200	3759.021624	546.8723534
+        90000	250	3778.943963	545.8375741
+        90000	300	3801.283942	544.9070614
+        """
+        fdm=FlatDataModel.load_from_string(st,vn_syle=['1','2','3','4'],separator='\t')
+        self.assertEquals(4,len(fdm.vn))
+        self.assertEquals(13, len(fdm))
+        self.assertAlmostEqual(70000, fdm[2]['1'],delta=0.1)
 if __name__ == '__main__':
     unittest.main()
     # fdm = FlatDataModel.load_from_excel_file(r"E:\我的文档\python\GoodToolPython\excel\OnLbvnclassChar.xlsx", 'Sheet1')
