@@ -8,7 +8,7 @@ class SnaptoCursor:
     可以支持axes有多条线
     但是要求：这些线的x数据是递增的 不然判断最近会出差错
     在figure上按下f1，会开启或者关闭自动捕捉
-    使用方法：SnaptoCursor(axes)即可
+    使用方法：SnaptoCursor(axes)即可,切记在所有数据绘制完成后，show之前
     支持双y轴
     """
 
@@ -29,9 +29,18 @@ class SnaptoCursor:
         self.txt_format = txt_format
         self.txt = ax.text(self.txt_pos[0], self.txt_pos[1], '', transform=ax.transAxes)
         self.snap_active = True  # 是否捕捉
+
         # 绑定事件
         ax.figure.canvas.mpl_connect('motion_notify_event', self.mouse_move)
         ax.figure.canvas.mpl_connect('key_press_event', self.onpress)
+
+        #锁定xlim ylim 因为：refline是有数值的，会引起fig的autoscaling纳入refline的数据 造成不正常缩放
+        for ax1 in self.ax.figure.axes:
+            t1,t2=ax1.viewLim.xmin,ax1.viewLim.xmax
+            ax1.set_xlim((t1,t2))
+            t1,t2=ax1.viewLim.ymin,ax1.viewLim.ymax
+            ax1.set_ylim((t1,t2))
+
 
     def mouse_move(self, event):
         # print(event.inaxes)
@@ -117,12 +126,13 @@ if __name__ == '__main__':
 
     fig1, ax = plt.subplots()
     ln1 = ax.plot(t, s, 'o')
+    ax.plot(t,s*-0.5,'x')
     ax1 = ax.twinx()
     ax1.plot(t, s1, '+')
     snap_cursor1 = SnaptoCursor(ax)
 
-    fig, ax = plt.subplots()
-    ln1 = ax.plot(t, s, 'o')
-    ax.plot(t, s1, '+')
-    snap_cursor = SnaptoCursor(ax)
+    # fig, ax = plt.subplots()
+    # ln1 = ax.plot(t, s, 'o')
+    # ax.plot(t, s1, '+')
+    # snap_cursor = SnaptoCursor(ax)
     plt.show()
