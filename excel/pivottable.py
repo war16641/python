@@ -12,6 +12,7 @@ from GoodToolPython.excel.excel import FlatDataModel, myunique
 import os
 from GoodToolPython.wx_examples.mylistbox import MyListbox
 # from matplotlib.backends import backend_wxagg
+from matplot_examples.roulette import ColorRoulette
 from matplot_examples.snaptocursor import SnaptoCursor
 from matplotlib.figure import Figure
 from statistics_nyh import absmax, absmin
@@ -347,6 +348,7 @@ class PivotTable(wx.Frame):
             statistics_func.append(t)
 
         #开始做图
+        cr=ColorRoulette()
         if StatFuncInfo.y is None:
             # 提示消息框
             dlg = wx.MessageDialog(None, u"未指定y变量", u"标题信息", wx.OK)
@@ -361,7 +363,7 @@ class PivotTable(wx.Frame):
 
         myfont = FontProperties(fname='C:\Windows\Fonts\STXINGKA.TTF',size=10) # 前提是对应路径下有你想要使用的字体文件
         for k,bunch in bunches.items():
-            ax.plot(bunch[xname], bunch[yname],label=k)
+            ax.plot(bunch[xname], bunch[yname],label=k,color=cr.next_data)
 
 
         plt.xlabel(xname)
@@ -379,7 +381,7 @@ class PivotTable(wx.Frame):
         yname = StatFuncInfo.y2.fieldname
         plt.ylabel(yname)
         for k,bunch in bunches.items():
-            ax2.plot(bunch[xname], bunch[yname],label=k)
+            ax2.plot(bunch[xname], bunch[yname],label=k,color=cr.next_data)
         fig.legend(prop=myfont, loc="upper left")  #
         ttt = SnaptoCursor(ax)
         plt.show()
