@@ -12,6 +12,7 @@ from GoodToolPython.excel.excel import FlatDataModel, myunique
 import os
 from GoodToolPython.wx_examples.mylistbox import MyListbox
 # from matplotlib.backends import backend_wxagg
+from matplot_examples.snaptocursor import SnaptoCursor
 from matplotlib.figure import Figure
 from statistics_nyh import absmax, absmin
 import matplotlib as mpl
@@ -162,6 +163,9 @@ class PivotTable(wx.Frame):
         self.bt_save = wx.Button(panel, label='保存')
         sizer.Add(self.bt_save, pos=(9, 2), span=(1, 1), flag=wx.ALL, border=5)
         self.bt_save.Bind(wx.EVT_BUTTON, self.OnSave)
+        self.bt_show = wx.Button(panel, label='显示')
+        sizer.Add(self.bt_show, pos=(9, 3), span=(1, 1), flag=wx.ALL, border=5)
+        self.bt_show.Bind(wx.EVT_BUTTON, self.OnShow)
 
         # canvaspanel=wx.Panel(panel, size=(600, 600))
         # sizer.Add(canvaspanel, pos=(0, 12), span=(8, 1), flag=wx.ALL, border=5)
@@ -354,9 +358,12 @@ class PivotTable(wx.Frame):
         yname=StatFuncInfo.y.fieldname
         #外部打开figure 显示结果
         fig, ax = plt.subplots()
+
         myfont = FontProperties(fname='C:\Windows\Fonts\STXINGKA.TTF',size=10) # 前提是对应路径下有你想要使用的字体文件
         for k,bunch in bunches.items():
             ax.plot(bunch[xname], bunch[yname],label=k)
+
+
         plt.xlabel(xname)
         plt.ylabel(yname)
 
@@ -364,6 +371,7 @@ class PivotTable(wx.Frame):
         #y2变量
         if StatFuncInfo.y2 is  None:
             fig.legend(prop=myfont, loc="upper left")  #
+            ttt = SnaptoCursor(ax)
             plt.show()
             return #结束
         print("y2")
@@ -373,6 +381,7 @@ class PivotTable(wx.Frame):
         for k,bunch in bunches.items():
             ax2.plot(bunch[xname], bunch[yname],label=k)
         fig.legend(prop=myfont, loc="upper left")  #
+        ttt = SnaptoCursor(ax)
         plt.show()
 
     def OnSave(self,evt):
@@ -390,6 +399,8 @@ class PivotTable(wx.Frame):
             pathname = fileDialog.GetPath()
             self.rfdm.save(pathname)
 
+    def OnShow(self,evt):
+        self.rfdm.show_in_excel()
 
 
 if __name__ == '__main__':
