@@ -8,11 +8,11 @@ import GoodToolPython.lol.knn_gui as kg
 
 bbox_ap=(1465,953,1500,971)
 
-def snap_screen(wait_time=3,bbox=(640, 732, 668, 744,)):
+def snap_screen(wait_time=3,bbox='full'):
     time.sleep(wait_time)
     # im = ImageGrab.grab(bbox=(640, 732, 661, 744,))
     # im = ImageGrab.grab(bbox=(640, 732, 671, 744,))
-    if bbox=='full':
+    if bbox=='full':#默认全屏
         im=ImageGrab.grab()
     else:
         im = ImageGrab.grab(bbox)
