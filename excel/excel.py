@@ -1,6 +1,6 @@
 import warnings
 from copy import deepcopy
-from typing import Union, Sequence, overload, List, Generic, TypeVar, Optional, Dict
+from typing import Union, Sequence, overload, List, Generic, TypeVar, Optional, Dict, Iterable
 
 import win32com
 from myfile import get_elements_from_line
@@ -112,7 +112,8 @@ class FlatDataModel:
         :return:
         """
         assert is_sequence_with_specified_type(vn_lst, str), '必须为str列表'
-        assert is_sequence_with_specified_type(data_lst, list) or is_sequence_with_specified_type(data_lst, tuple), '必须为列表组成的列表'
+        assert isinstance(data_lst,Iterable),"数据必须可迭代"
+        # assert is_sequence_with_specified_type(data_lst, list) or is_sequence_with_specified_type(data_lst, tuple), '必须为列表组成的列表'
         fdm = FlatDataModel()
         fdm.vn = vn_lst
 
@@ -285,6 +286,14 @@ class FlatDataModel:
         # 保存文件
         wb.save(fullname)
 
+    def save_to_txt(self,fullname,txt_func,write_vn=True):
+        with open(fullname, 'w') as file_object:
+            if write_vn:#写入vn
+                file_object.write(",".join(self.vn))
+                file_object.write("\n")
+            for u in self:
+                file_object.write(txt_func(u))
+        pass
     def __iter__(self):
         # 依次返回每一个unit
         return self.units.__iter__()
