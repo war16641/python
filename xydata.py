@@ -174,6 +174,26 @@ class XYData:
                 return linear_interpolation(x,self[i-1:i+1,:])
         raise Exception("错误：不应该执行到这儿")
 
+    def save_to_file(self,fullname,txtformat=None,write_name=True):
+        """
+        写入到文件
+        @param fullname:
+        @param txtformat: 每行格式 注意要用\n结尾 有默认值
+        @param write_name:
+        @return:
+        """
+        if txtformat is None:
+            txtformat="%f\t%f\n"#设置自动格式
+        with open(fullname, 'w') as file_object:
+            if write_name:  # 写入name
+                file_object.write("%s\n"%self.name)
+            for u in self:
+                file_object.write(txtformat%tuple(u))
+
+    def __iter__(self):
+        #返回data字段的迭代器
+        return self.data.__iter__()
+
 def test1():
     A=np.array([[1, 1],[2, 1],[3 ,2]])
     xy=XYData('数据集',A)
@@ -293,6 +313,14 @@ class TestCase(unittest.TestCase):
         xy[1, 1] = 10
         assert xy[1, 1] == 10
         self.assertEqual(xy[1,1],10.0)
+
+    def test4(self):
+        xy = XYData(name='yi', x=[1, 2, 3], y=[1.1, 2.1, 3.1])
+        xy.print_in_detail()
+        for i in xy:
+            print(tuple(i))
+            print(i)
+
 if __name__ == '__main__':
     unittest.main()
     #
