@@ -3,6 +3,7 @@ from typing import overload,TypeVar
 from copy import deepcopy
 from GoodToolPython.mybaseclasses.tools import is_vector_like,format_vector,is_matrix_like,format_matrix
 import matplotlib.pyplot as plt
+from matplot_examples.snaptocursor import SnaptoCursor
 from myfile import read_file
 from math import pi
 from nose.tools import assert_raises
@@ -194,76 +195,85 @@ class XYData:
         #返回data字段的迭代器
         return self.data.__iter__()
 
-def test1():
-    A=np.array([[1, 1],[2, 1],[3 ,2]])
-    xy=XYData('数据集',A)
-    print(xy)
-    xy.print_in_detail()
+    def show_in_figure(self):
+        #在fig中显示
+        fig1, ax = plt.subplots()
+        assert len(self)>0,'没有数据'
+        ax.plot(self.x,self.y,'o-')
+        snap_cursor1 = SnaptoCursor(ax)
+        plt.show()
 
-    x=[1,2,3]
-    y=[1,1,2]
-    xy=XYData('第二种',x=x,y=y)
-    xy.print_in_detail()
 
-    x = np.array([1, 2, 3])
-    y = np.array([1, 1, 2])
-    xy = XYData('第二种', x=x, y=y)
-    xy.print_in_detail()
-
-    x = np.array([1, 2, 3])
-    y = np.array([1, 1, 2])
-    x=x.reshape((1,3))
-    xy = XYData('第二种', x=x, y=y)
-    xy.print_in_detail()
-    xy.interpolation(2)
-    xy.print_in_detail()
-
-    ori=read_file(r"E:\市政院\施工招标上部出图-王博-20190706\22号\BC社区双层拱桥抗震\地震波-用\E2-(4).Txt")
-    xy=XYData(name='kobe',xy=ori)
-    # xy.plot()
-    # xy.plot()
-    # xy.psd(False)
-
-def test_fft():
-    fs=600
-    time=np.arange(0.,1.5,1/fs)
-    y=np.sin(2*pi*100*time)+np.sin(2*pi*45*time)
-    N=time.size
-    df=fs/(N-1)
-    f=np.arange(0,N)*df
-    Y=np.fft.fft(y)/N*2
-    am=abs(Y)
-    plt.figure()
-    plt.plot(f, am)
-    plt.show()
-
-def test_fft2():
-    fs = 600
-    time = np.arange(0., 1.5, 1 / fs)
-    y = np.sin(2 * pi * 100 * time) + np.sin(2 * pi * 45 * time)
-    xy=XYData(name='sin',x=time,y=y)
-    xy.psd(False)
-
-def test3():
-    xy=XYData(name='yi',x=[1,2 ,3],y=[1.1,2.1,3.1])
-    xy.print_in_detail()
-    print(xy.x)
-    xy.x=[1,1,1]
-    assert xy.data[1, 0] == 1
-    xy.print_in_detail()
-    x=xy.x
-    print(x)
-    xy.print_in_detail()
-    x[1]=3
-    xy.print_in_detail()
-    assert xy.data[1,0]==3
-    assert xy[1,1]==2.1
-    xy[1,1]=10
-    assert xy[1, 1] == 10
-
-def test4():
-    xy = XYData(name='yi', x=[1, 2, 3], y=[1.1, 2.1, 3.1])
-    assert abs(xy.get_similar_value(1.5)-1.6)<1e-8
+# def test1():
+#     A=np.array([[1, 1],[2, 1],[3 ,2]])
+#     xy=XYData('数据集',A)
+#     print(xy)
+#     xy.print_in_detail()
+#
+#     x=[1,2,3]
+#     y=[1,1,2]
+#     xy=XYData('第二种',x=x,y=y)
+#     xy.print_in_detail()
+#
+#     x = np.array([1, 2, 3])
+#     y = np.array([1, 1, 2])
+#     xy = XYData('第二种', x=x, y=y)
+#     xy.print_in_detail()
+#
+#     x = np.array([1, 2, 3])
+#     y = np.array([1, 1, 2])
+#     x=x.reshape((1,3))
+#     xy = XYData('第二种', x=x, y=y)
+#     xy.print_in_detail()
+#     xy.interpolation(2)
+#     xy.print_in_detail()
+#
+#     ori=read_file(r"E:\市政院\施工招标上部出图-王博-20190706\22号\BC社区双层拱桥抗震\地震波-用\E2-(4).Txt")
+#     xy=XYData(name='kobe',xy=ori)
+#     # xy.plot()
+#     # xy.plot()
+#     # xy.psd(False)
+#
+# def test_fft():
+#     fs=600
+#     time=np.arange(0.,1.5,1/fs)
+#     y=np.sin(2*pi*100*time)+np.sin(2*pi*45*time)
+#     N=time.size
+#     df=fs/(N-1)
+#     f=np.arange(0,N)*df
+#     Y=np.fft.fft(y)/N*2
+#     am=abs(Y)
+#     plt.figure()
+#     plt.plot(f, am)
+#     plt.show()
+#
+# def test_fft2():
+#     fs = 600
+#     time = np.arange(0., 1.5, 1 / fs)
+#     y = np.sin(2 * pi * 100 * time) + np.sin(2 * pi * 45 * time)
+#     xy=XYData(name='sin',x=time,y=y)
+#     xy.psd(False)
+#
+# def test3():
+#     xy=XYData(name='yi',x=[1,2 ,3],y=[1.1,2.1,3.1])
+#     xy.print_in_detail()
+#     print(xy.x)
+#     xy.x=[1,1,1]
+#     assert xy.data[1, 0] == 1
+#     xy.print_in_detail()
+#     x=xy.x
+#     print(x)
+#     xy.print_in_detail()
+#     x[1]=3
+#     xy.print_in_detail()
+#     assert xy.data[1,0]==3
+#     assert xy[1,1]==2.1
+#     xy[1,1]=10
+#     assert xy[1, 1] == 10
+#
+# def test4():
+#     xy = XYData(name='yi', x=[1, 2, 3], y=[1.1, 2.1, 3.1])
+#     assert abs(xy.get_similar_value(1.5)-1.6)<1e-8
 
 class TestCase(unittest.TestCase):
     def test1(self):
@@ -289,6 +299,7 @@ class TestCase(unittest.TestCase):
         # xy.print_in_detail()
         xy.interpolation(2)
         # xy.print_in_detail()
+        xy.show_in_figure()
 
     def test2(self):
         xy = XYData(name='yi', x=[1, 2, 3], y=[1.1, 2.1, 3.1])
