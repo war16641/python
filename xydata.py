@@ -7,6 +7,8 @@ from matplot_examples.snaptocursor import SnaptoCursor
 from myfile import read_file
 from math import pi
 from nose.tools import assert_raises
+from statistics_nyh import absmax
+
 Vector=TypeVar('Vector',list,np.ndarray)
 from myfile import read_file
 from mybaseclasses.tools import linear_interpolation
@@ -64,13 +66,13 @@ class XYData:
         for xy in self.data:
             print("%f,%f"%(xy[0],xy[1]))
 
-    def plot(self):
-        if len(self) == 0:
-            print('无数据点，做图取消')
-            return
-        plt.plot(self.data[:,0],self.data[:,1])
-        plt.title(self.name)
-        plt.show()
+    # def plot(self):
+    #     if len(self) == 0:
+    #         print('无数据点，做图取消')
+    #         return
+    #     plt.plot(self.data[:,0],self.data[:,1])
+    #     plt.title(self.name)
+    #     plt.show()
 
     def interpolation(self,points_number=1)->None:
         """
@@ -201,8 +203,13 @@ class XYData:
         assert len(self)>0,'没有数据'
         ax.plot(self.x,self.y,'o-')
         snap_cursor1 = SnaptoCursor(ax)
+        plt.title(self.name)
         plt.show()
 
+    @property
+    def peak_point(self):
+        v,i=absmax(self.y,flag_return_index=True)
+        return self.x[i],self.y[i]
 
 # def test1():
 #     A=np.array([[1, 1],[2, 1],[3 ,2]])
@@ -299,7 +306,7 @@ class TestCase(unittest.TestCase):
         # xy.print_in_detail()
         xy.interpolation(2)
         # xy.print_in_detail()
-        xy.show_in_figure()
+        # xy.show_in_figure()
 
     def test2(self):
         xy = XYData(name='yi', x=[1, 2, 3], y=[1.1, 2.1, 3.1])
@@ -331,6 +338,11 @@ class TestCase(unittest.TestCase):
         for i in xy:
             print(tuple(i))
             print(i)
+
+    def test5(self):#测试极值点
+        xy = XYData(name='yi', x=[1, 2, 3], y=[1.1, 2.1, -3.1])
+        print(xy.peak_point)
+        self.assertEqual((3,-3.1),xy.peak_point)
 
 if __name__ == '__main__':
     unittest.main()
