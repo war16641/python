@@ -253,8 +253,9 @@ class FlatDataModel:
     def __setitem__(self, key, value):
         """
         增加一个字段
+        如果该字段已存在会打印警告信息
         @param key:
-        @param value: 函数 操作对象为dataunit
+        @param value: 函数 操作对象为dataunit 如：fdm['新字段名']=lambda x:-1*x['已有字段名']
                         list 长度与自身数据点个数相等
         @return:
         """
