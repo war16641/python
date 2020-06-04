@@ -817,6 +817,7 @@ class TestCase(unittest.TestCase):
         fdm['年龄2'] =[1,1,1]
         self.assertEqual([1,1,1], fdm['年龄2'])
 
+
     def test_sort(self):
         vnlst = ['姓名', '性别', '年龄','身高']
         datalst = [['迈克尔', '男', 4,2], ['丹妮', '女', 3,2],['雪落','男',11,3]]
