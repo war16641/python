@@ -6,6 +6,8 @@
 #
 # _*_ coding:UTF-8 _*_
 __author__ = 'shanl'
+
+import psutil
 import win32api
 import win32con
 import win32gui
@@ -184,6 +186,19 @@ def key_input(str='',input_inteval=0.005,rebound_inteval=0.005):
         time.sleep(rebound_inteval)
         win32api.keybd_event(VK_CODE[c],0,win32con.KEYEVENTF_KEYUP,0)
         time.sleep(input_inteval)
+
+
+def find_process_by_name(name:str)->psutil.Process:
+    #寻找指定进程名的进程 返回找到的第一个
+    #没找到就返回none
+    name=name.lower()#默认不区分大小写
+    for proc in psutil.process_iter():#有点类似于进程快照
+        try:
+            if proc.name().lower() == name:
+                return proc
+        except psutil.NoSuchProcess:
+            return None
+
 def t0():
     pass
 def t2():
