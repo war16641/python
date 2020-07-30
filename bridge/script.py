@@ -64,7 +64,7 @@ def 计算钢束伸长量(fdm: FlatDataModel, 张拉控制应力=1395, 弹模=1.
             fdm2.units[0].data['θ/°'] = fdm2.units[0].data['孔道长度x/m'] / fdm2.units[0].data['曲率半径/m'] / 3.14159 * 180
 
         fdm2.units.reverse()  # 颠倒顺序
-        fdm2_, t, l2 = __计算钢束伸长量_子脚本(fdm2)
+        fdm2_, t, l2 = __计算钢束伸长量_子脚本(fdm2,张拉控制应力=张拉控制应力,弹模=弹模,偏差系数=偏差系数,摩擦系数=摩擦系数)
         stress2 = t.units[-1].data['终点应力/Mpa']
         return stress1 - stress2
 

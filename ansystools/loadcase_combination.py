@@ -5,10 +5,10 @@
 from excel.excel import FlatDataModel
 
 if __name__ == '__main__':
-    fdm1=FlatDataModel.load_from_excel_file(fullname=r"H:\sjgj_cst工况表.xlsx",
+    fdm1=FlatDataModel.load_from_excel_file(fullname=r"E:\研究生\项目\进贤门\sjgj_cst工况表0508a.xlsx",
                                             sheetname='工况'
                                             )
-    fdm2=FlatDataModel.load_from_excel_file(fullname=r"H:\sjgj_cst工况表.xlsx",
+    fdm2=FlatDataModel.load_from_excel_file(fullname=r"E:\研究生\项目\进贤门\sjgj_cst工况表0508a.xlsx",
                                             sheetname='工况组合'
                                             )
     print('/post1')
