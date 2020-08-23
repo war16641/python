@@ -165,7 +165,10 @@ class FlatDataModel:
         # 读变量名
         self.vn = [cell.value for cell in rows[row_variable_name]]  # type: List[str]
         assert is_sequence_with_specified_type(self.vn, str), '变量名读取失败'
-
+        #检查变量名是否重复
+        t=set(self.vn)
+        if len(t)<len(self.vn):
+            raise Exception("变量名重复")
         # 读注释行
         self.caption = []  # type:List[List[str]]
         if row_caption is not None:
@@ -423,7 +426,16 @@ class FlatDataModel:
     def add_variables_from_other_model(self,
                                        other: 'FlatDataModel',
                                        link_variable: str,
-                                       add_variable: Union[str, List[str]] = None) -> None:
+                                       add_variable: Union[str, List[str]] = None,
+                                       continue_on_not_found=True) -> None:
+        """
+
+        @param other:
+        @param link_variable:
+        @param add_variable: 为None时，默认添加other中除link_var的全部变量
+        @param continue_on_not_found: 如果没找到 是否继续找下一个
+        @return:
+        """
         # 参数处理
         assert isinstance(other, FlatDataModel), 'other必须为FlatDataModel对象'
         assert isinstance(link_variable, str) and \
@@ -444,7 +456,10 @@ class FlatDataModel:
             expr = lambda x: x[link_variable].__eq__(link_variable_value)
             cor_unit = other.find(expr)  # 找到此模型的unit对应的在另外一个unit
             if cor_unit is None:  # 没找到
-                raise Exception("另外一个模型中未找到对应的unit")
+                if continue_on_not_found is False:
+                    raise Exception("另外一个模型中未找到对应的unit")
+                else:
+                    continue
             for name in add_variable:
                 unit.data[name] = cor_unit[name]
 
@@ -741,7 +756,36 @@ class FlatDataModel:
             fdm.units.append(u)
         return fdm
 
+    def append_unit(self,u:DataUnit):
+        """
+        从dataunit中添加
+        @param u:
+        @return:
+        """
+        assert isinstance(u,DataUnit),'参数类型错误'
+        u=deepcopy(u)
+        self.units.append(u)
+        u.model=self
+
 class TestCase(unittest.TestCase):
+    def test_append_unit(self):
+        vnlst = ['姓名', '性别', '列表']
+        datalst = [['迈克尔', '男', 1], ['丹妮', '女', 2]]
+        fdm1 = FlatDataModel.load_from_list(vnlst, datalst)
+        fdm=FlatDataModel()
+        fdm.vn=['姓名', '性别', '列表']
+        fdm.append_unit(fdm1[0])
+        self.assertEqual(1,fdm[0]['列表'])
+        t=fdm1[0]
+        t.data['列表']=2
+        self.assertEqual(1, fdm[0]['列表'])#不跟着这个dataunit动
+        # fdm = FlatDataModel()
+        # fdm.vn = ['姓名', '性别', '列表']
+        # fdm.append_unit(fdm1[0],flag_deepcopy=True)
+        # self.assertEqual(2, len(fdm[0]['列表']))
+        # t = fdm1[0]
+        # t.data['列表'] = []
+        # self.assertEqual(0, len(fdm[0]['列表']))#不会跟着这个dataunit动
     def test_load_from_list(self):
         vnlst = ['姓名', '性别', '年龄']
         datalst = [['迈克尔', '男', 1], ['丹妮', '女', 3]]
@@ -853,9 +897,9 @@ class TestCase(unittest.TestCase):
         """
         fdm=FlatDataModel.load_from_string(st,separator='\t')
         # fdm.show_in_excel()
-        self.assertEquals(4,len(fdm.vn))
-        self.assertEquals(13, len(fdm))
-        self.assertEquals(1,fdm[0]['拉杆刚度'])
+        self.assertEqual(4,len(fdm.vn))
+        self.assertEqual(13, len(fdm))
+        self.assertEqual(1,fdm[0]['拉杆刚度'])
 
         st = """
         1	50	3678.027091	570.7248771
@@ -878,6 +922,19 @@ class TestCase(unittest.TestCase):
         self.assertAlmostEqual(70000, fdm[2]['1'],delta=0.1)
 if __name__ == '__main__':
     unittest.main()
+
+
+
+
+
+
+
+
+
+
+
+
+
     # fdm = FlatDataModel.load_from_excel_file(r"E:\我的文档\python\GoodToolPython\excel\OnLbvnclassChar.xlsx", 'Sheet1')
     # fdm.show_in_excel()
 

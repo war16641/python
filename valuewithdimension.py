@@ -325,7 +325,7 @@ class ValueWithDimension:
                         tg=tg+"^1" #添加^
                     # tg[0]="*"#把 / 换成 *
                     tg=tg.replace("/","*")
-                    p=re.compile(r"-?\d+\.?\d*e?-?\d*?")#识别数字（含科学计数 小数点）的pattern
+                    p=re.compile(r"-?\d+\.?\d*e?-?\d*?")#识别数字（含科学计数 小数点）的pattern 任意数字
                     r=p.search(tg)#找到阶数
                     od=r.group(0)
                     od=-1*float(od)
