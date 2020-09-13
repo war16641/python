@@ -309,6 +309,21 @@ class Vector3D(Generic[T_Vector]):
         assert len(arr)==3
         return Vector3D(arr[0],arr[1],arr[2])
 
+    def __getitem__(self, item):
+        """
+        使用索引访问xyz
+        @param item: 0 1 2
+        @return:
+        """
+        if item==0:
+            return self.x
+        elif item==1:
+            return self.y
+        elif item==2:
+            return self.z
+        else:
+            raise Exception("参数错误")
+
 
 class Plane3D(Generic[T_Plane]):
     """平面"""

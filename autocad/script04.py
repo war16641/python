@@ -5,23 +5,25 @@
 不同桥的相邻标注距离必须大于line_dist
 描述桥名的文字放在bridgename_layer图层中，并且必须严格符合“XXX桥 桥梁用地： 1.23 亩”
 其位置（插入点，一般是最左端）必须位于这个桥的正中间附近。
-脚本能正确执行需要：指定第一个对齐标注
+脚本能正确执行需要：指定第一个对齐标注. 第一个对齐标注，一定是线路的第一个且方向不能错
 """
 from excel.excel import FlatDataModel, DataUnit
 from pyautocad import Autocad,APoint
 import re
 from mybaseclasses.mylogger import MyLogger
+from vector3d import Vector3D
+import math
 logger=MyLogger()
 logger.hide_level=True
 logger.hide_name=True
 logger.setLevel('debug')
-dimaligned_layers=['nyh水田','nyh旱地','nyh园地']#对齐标注所在图层名
-bridgename_layer='nyh_name'#桥名图层
+dimaligned_layers=['nyh果园','nyh旱地','nyh乔木林地','nyh自然保留地','nyh公共管理与服务用地','nyh城镇用地','nyh河流水面','nyh集体建设用地','nyh设施农用地','nyh水浇地']#对齐标注所在图层名
+bridgename_layer='nyh桥名'#桥名图层
 
 class SegLine:
     def __init__(self,p1,p2,measurement,la):
-        self.p1=p1
-        self.p2=p2
+        self.p1=Vector3D(p1[0],p1[1],p1[2])
+        self.p2=Vector3D(p2[0],p2[1],p2[2])
         self.measurement=measurement
         self.layer=la#图层 用于标识用地类别
 
@@ -94,12 +96,23 @@ while True:
             sortedlines=[sortedlines[-1]]
             logger.debug("新桥的segline")
 
-#从新按照x递增排列
-t=sortedlines[0]
-if t.p1[0]>t.p2[0]:
-    sortedlines.reverse()
-    for x in sortedlines:
-        x.switch_dir()
+#求线路走向
+dirsum=Vector3D()
+for i in sortedlines:
+    thisdir=i.p2-i.p1
+    dirsum+=thisdir
+rotate_theta=Vector3D.calculate_angle_in_xoy(dirsum[0],dirsum[1])#线路走向夹角
+logger.info('线路走向大致为：%f°(%s)，逆时针为正'%(rotate_theta/3.14159*180,dirsum))
+
+###这段建议删除#################
+# new_basic_vectors=(Vector3D(math.cos(rotate_theta),math.sin(rotate_theta),0),
+#                    Vector3D(-math.sin(rotate_theta),math.cos(rotate_theta),0),
+#                    Vector3D(0,0,1),)#新的基向量
+# for i in sortedlines:
+#     i.new_p1=i.p1.get_coordinates_under_cartesian_coordinates_system(new_basic_vectors)#在新的基向量下的坐标 用于排序
+# #按照new_p1排序
+# sortedlines.sort(key=lambda x:x.new_p1[0])
+###这段建议删除jiesu#################
 
 #打印
 for i,c in enumerate(chains):
@@ -209,7 +222,8 @@ for bd in bridgenames:
 
 #输出结果
 fdm=FlatDataModel()
-soil_types=['nyh旱地','nyh水田','nyh园地','nyh沙漠']#有待补充
+# soil_types=['nyh旱地','nyh水田','nyh园地','nyh沙漠']#有待补充
+soil_types=dimaligned_layers#有待补充
 fdm.vn=['桥梁','全长','面积',]
 fdm.vn.extend(soil_types)
 for bd in bridgenames:
@@ -223,11 +237,11 @@ for bd in bridgenames:
     for iu in bd.stat_info:
         u.data[iu['用地类别']]=iu['面积']
     fdm.units.append(u)
-# fdm.show_in_excel()
+fdm.show_in_excel()
 
 
 #与统计前的表联合
-fdm1=FlatDataModel.load_from_excel_file(r"C:\Users\niyinhao\Desktop\成渝中线 比较方案  用地统计.xlsx",
-                                       sheetname="Sheet2")
-fdm1.add_variables_from_other_model(fdm,'桥梁')
-fdm1.show_in_excel()
+# fdm1=FlatDataModel.load_from_excel_file(r"C:\Users\niyinhao\Desktop\成渝中线 比较方案  用地统计.xlsx",
+#                                        sheetname="Sheet2")
+# fdm1.add_variables_from_other_model(fdm,'桥梁')
+# fdm1.show_in_excel()

@@ -148,6 +148,8 @@ class FlatDataModel:
                              row_data_start=None) -> 'FlatDataModel':
         """
         从excel'文件中载入平面数据模型
+        允许单元格有竖向的合并，合并的单元格看做是后续合并行与第一行有相同数据
+         不允许有横向的合并，但程序未做检查
         :param fullname:
         :param sheetname:
         :param row_variable_name: 变量名所在行 0-based
@@ -166,7 +168,7 @@ class FlatDataModel:
         worksheet = workbook[sheetname]
         rows = list(worksheet.rows)  # 将工作簿中所有数据转化为以行为单位的列表
 
-        #处理合并单元格
+        #处理合并单元格 允许单元格有竖向的合并 不允许有横向的合并
         mergecells={}
         if worksheet.merged_cells:
             for item in worksheet.merged_cells:#对每一处合并单元格进行循环
@@ -933,6 +935,12 @@ class TestCase(unittest.TestCase):
         self.assertEquals(4,len(fdm.vn))
         self.assertEquals(13, len(fdm))
         self.assertAlmostEqual(70000, fdm[2]['1'],delta=0.1)
+
+    def test_readxls_with_mergedcells(self):
+        fdm=FlatDataModel.load_from_excel_file(r"E:\我的文档\python\GoodToolPython\excel\test_合并单元格.xlsx")
+        self.assertEqual("跨绕城高速大桥",fdm.units[2]['桥梁'])
+        self.assertEqual("跨绕城高速大桥", fdm.units[3]['桥梁'])
+        self.assertAlmostEqual(2031, fdm.units[3]['全长'],delta=1)
 if __name__ == '__main__':
     unittest.main()
 
