@@ -45,22 +45,26 @@ class DataUnit:
     """
 
     @staticmethod
-    def make(vn: Sequence[str], row: Sequence[Cell], model: 'FlatDataModel'):
+    def make(vn: Sequence[str], row: Sequence[Cell], model: 'FlatDataModel',mergedcells:dict):
         """
         这个函数用于从excel文件中生成数据单元
         :param vn:
         :param row:
         :param model:
+        :@param mergecells:传递合并单元格信息
         :return:
         """
         self = DataUnit()
-        assert is_sequence_with_specified_type(row, Cell), 'row必须是Cell组成的列表'
+        # assert is_sequence_with_specified_type(row, Cell), 'row必须是Cell组成的列表'
         assert is_sequence_with_specified_type(vn, str), 'vn必须是str组成的序列'
         assert isinstance(model, FlatDataModel), 'model必须是FlatDataModel对象'
         assert len(vn) == len(row), 'vn与row必须大小一致'
         self.data = {}  # type: Union[int,str,float]#以字典的形式保存所有变量
         for name, value in zip(vn, row):
-            self.data[name] = value.value
+            if "MergedCell" in str(type(value)):#若是合并单元格
+                self.data[name]=value.parent.cell(mergedcells[(value.row,value.column,)][0],mergedcells[(value.row,value.column,)][1]).value
+            else:#普通单元格
+                self.data[name] = value.value
         self.model = model  # type:FlatDataModel   #保存模型
         return self
 
@@ -162,6 +166,14 @@ class FlatDataModel:
         worksheet = workbook[sheetname]
         rows = list(worksheet.rows)  # 将工作簿中所有数据转化为以行为单位的列表
 
+        #处理合并单元格
+        mergecells={}
+        if worksheet.merged_cells:
+            for item in worksheet.merged_cells:#对每一处合并单元格进行循环
+                for row in range(item.min_row, item.max_row+1):
+                    for col in range(item.min_col, item.max_col+1):
+                        #用位置坐标作为key，value为首单元格坐标
+                        mergecells[(row,col)]=(item.min_row,item.min_col,)
         # 读变量名
         self.vn = [cell.value for cell in rows[row_variable_name]]  # type: List[str]
         assert is_sequence_with_specified_type(self.vn, str), '变量名读取失败'
@@ -178,6 +190,7 @@ class FlatDataModel:
                 tmp = [cell.value for cell in rows[row_id]]
                 self.caption.append(tmp)
 
+
         # 读数据
         self.units = []  # type:list[DataUnit]
         if row_data_start is None:
@@ -186,7 +199,7 @@ class FlatDataModel:
             else:
                 row_data_start = row_caption[-1] + 1
         for row in rows[row_data_start:]:
-            unit = DataUnit.make(self.vn, row, self)
+            unit = DataUnit.make(self.vn, row, self,mergecells)
             self.units.append(unit)
         return self
 
@@ -471,7 +484,7 @@ class FlatDataModel:
         查找满足epxr的unit
         :param epxr: 真假判断函数
         :param flag_find_all: 是否查找全部
-        :return: 找不到的时候 返回None
+        :return: 找不到的时候 返回None []
         """
         assert callable(epxr), 'expr必须为函数'
         r = []
@@ -519,7 +532,7 @@ class FlatDataModel:
             col_rd = 1
         for unit in self:
             for v in unit:
-                sht.Cells(row_rd, col_rd).Value = v
+                sht.Cells(row_rd, col_rd).Value = v.__str__()
                 col_rd += 1
             row_rd += 1
             col_rd = 1

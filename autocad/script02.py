@@ -277,6 +277,7 @@ def script_analyze(spans_txt,brdges_txt)->FlatDataModel:
     fdm_error_bridge.vn=['编号','梁类型','梁长','左侧梁缝','右侧梁缝','左线距左边缘','右线距右边缘']
     #获取跨径 桥梁信息
     spans=get_spans_list(spans_txt)
+
     bridges=FlatDataModel.load_from_string(brdges_txt,
                                    vn_syle=['梁类型','梁长','左侧梁缝','右侧梁缝','左线距左边缘','右线距右边缘'])
     for i,u in enumerate(bridges):
