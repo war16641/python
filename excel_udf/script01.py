@@ -7,8 +7,13 @@ import xlwings as xw
 
 @xw.func
 def get_mileage(label:str)->float:
+    """
     #获取里程
     #从字符串中获取里程 类似于D1K892+123.345
+    @param label: 字符串，也可以是数字
+    @return:
+    """
+
     if isinstance(label,(float,int)):
         return label#如果已经是数字了，直接返回这个数字
     assert isinstance(label,str),'参数必须为str'

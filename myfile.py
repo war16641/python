@@ -6,7 +6,7 @@ import shutil
 from enum import Enum, unique
 import numpy as np
 
-def rename_file(fullname: str, newname: str) -> None:
+def rename_file(fullname: str, newname: str) -> str:
     """
     重命名文件
     :param fullname:文件全路径名 如"D:\测试文件\mydata.txt"
@@ -19,6 +19,7 @@ def rename_file(fullname: str, newname: str) -> None:
     newfullname = os.path.join(pathname, newname)
     try:
         os.rename(fullname, newfullname)
+        return newfullname
     except FileExistsError:
         print("警告：新文件名已存在，重命名失败。(" + __file__ + " " + sys._getframe().f_code.co_name + ")")
 

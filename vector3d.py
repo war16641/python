@@ -6,6 +6,7 @@ import numpy
 from GoodToolPython.linearalgebra import MyLinearAlgebraEquations
 from enum import Enum, unique
 import nose.tools
+from collections.abc import Iterable
 
 T_Vector = TypeVar('T_Vector')
 T_Plane = TypeVar('T_Plane')
@@ -16,8 +17,19 @@ class Vector3D(Generic[T_Vector]):
     tol_for_eq = 1e-6  # 判断相等时的误差
 
     def __init__(self, x=0., y=0., z=0.):
+        if isinstance(x,Iterable):
+            if len(x)==2:
+                self.x,self.y=x[0],x[1]
+                self.z=0.
+            elif len(x)==3:
+                self.x, self.y,self.z = x[0], x[1],x[2]
+            else:
+                raise Exception("参数错误")
+            return
         self.x, self.y, self.z = x, y, z
 
+    def __abs__(self):
+        return self.modulus
     def __add__(self, other: T_Vector) -> T_Vector:
         assert isinstance(other, Vector3D)
         c = copy.deepcopy(self)
@@ -73,6 +85,11 @@ class Vector3D(Generic[T_Vector]):
         """
         assert power == 2.0
         return self * self
+
+    def __truediv__(self, other):
+        assert isinstance(other,(int,float))
+        return Vector3D(self.x/other,self.y/other,self.z/other,)
+        pass
 
     def __eq__(self, other: (T_Vector, int)) -> bool:
         if isinstance(other, Vector3D):
@@ -557,7 +574,7 @@ class Line3D(Generic[T_Line]):
         assert isinstance(direction, Vector3D)
         assert isinstance(point, Vector3D)
         assert not direction == 0  # 方向不能为0
-        self.direction, self.point = direction, point
+        self.direction, self.point = copy.deepcopy(direction), copy.deepcopy(point)
 
     def __str__(self):
         return "direction:%s point:%s" % (self.direction, self.point)
@@ -661,7 +678,7 @@ class Line3D(Generic[T_Line]):
         return self.point+self.direction*random.uniform(0.1,100)
 
     @staticmethod
-    def make_line_by_2_points(point1: Vector3D, point2: Vector3D) -> T_Line:
+    def make_line_by_2_points(point1: Vector3D, point2: Vector3D) -> 'Line3D':
         """
         通过直线上两点生成直线
         :param point1:
@@ -673,7 +690,7 @@ class Line3D(Generic[T_Line]):
         assert point1 != point2
         return Line3D(direction=point2 - point1, point=point1)
 
-    def get_point(self,axis:str='x',v:float=0.)->T_Vector:
+    def get_point(self,axis:str='x',v:float=0.)->'Vector3D':
         """
         通过指定直线上一点某一个分量的值 返回此点坐标
         :param axis:
@@ -846,4 +863,18 @@ if __name__ == '__main__':
     elo=Line3D(point=Vector3D(1,1,0),
                direction=Vector3D(1,2,0))
     assert elo.get_point('x',6)==Vector3D(6,11)
+
+    # 测试结束
+
+    #测试x载入
+    v=Vector3D([1,2])
+    assert 1==v.x and 2==v.y and 0==v.z
+    v=Vector3D([1,2,3])
+    assert 1 == v.x and 2 == v.y and 3 == v.z
+    # 测试结束
+
+    #测试除法
+    v=Vector3D(2,4,5)
+    r=v/2.0
+    assert r.z==2.5
     # 测试结束

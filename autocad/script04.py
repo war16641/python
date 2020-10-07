@@ -17,7 +17,38 @@ logger=MyLogger()
 logger.hide_level=True
 logger.hide_name=True
 logger.setLevel('debug')
-dimaligned_layers=['nyh果园','nyh旱地','nyh乔木林地','nyh自然保留地','nyh公共管理与服务用地','nyh城镇用地','nyh河流水面','nyh集体建设用地','nyh设施农用地','nyh水浇地']#对齐标注所在图层名
+dimaligned_layers=['nyh水田',
+'nyh水浇地',
+'nyh旱地',
+'nyh果园',
+'nyh茶园',
+'nyh其他园地',
+'nyh乔木林地',
+'nyh灌木林地',
+'nyh苗圃',
+'nyh其他林地',
+'nyh牧草地',
+'nyh养殖水面',
+'nyh集体建设用地',
+'nyh国有商服用地',
+'nyh国有工矿仓储用地',
+'nyh国有住宅用地',
+'nyh公共管理与服务用地',
+'nyh未利用地',
+'nyh铁路既有用地',
+'nyh河流水面',
+'nyh设施农用地',
+'nyh自然保留地',
+'nyh其他草地',
+'nyh其他独立建设用地',
+'nyh特殊用地',
+'nyh有林地',
+'nyh沟渠',
+'nyh内陆滩涂',
+                   'nyh水工建筑用地',
+                   'nyh农村道路',
+                   'nyh风景名胜设施用地',
+]#对齐标注所在图层名
 bridgename_layer='nyh桥名'#桥名图层
 
 class SegLine:
@@ -49,7 +80,7 @@ for x in acad.iter_objects('Dim'):
 
 #排序
 valve_dist=1#阈值距离，如果超过这个距离意味着没有找到相连的下一个线段
-line_dist=20#超过这个距离 被认为是另一条线 而不是断线
+line_dist=5#10#20#超过这个距离 被认为是另一条线 而不是断线
 lines1=[x for x in lines] #备份全部线段 需要把第一个标注（通常是线路最左端）放在第一个位置 并且方向不能错
 
 #选择第一条segline 至关重要 由用于选择，通常是最左边的 而且整个线路的走向是近乎于向右的
@@ -224,13 +255,13 @@ for bd in bridgenames:
 fdm=FlatDataModel()
 # soil_types=['nyh旱地','nyh水田','nyh园地','nyh沙漠']#有待补充
 soil_types=dimaligned_layers#有待补充
-fdm.vn=['桥梁','全长','面积',]
+fdm.vn=['桥梁','图上全长','面积',]
 fdm.vn.extend(soil_types)
 for bd in bridgenames:
     u=DataUnit()
     u.model=fdm
     u.data['桥梁']=bd.bridgename
-    u.data['全长']=bd.length
+    u.data['图上全长']=bd.length
     u.data['面积']=bd.bridgearea
     for tn in soil_types:
         u.data[tn]=0#先默认0

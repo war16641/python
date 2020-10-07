@@ -13,6 +13,43 @@ from GoodToolPython.mybaseclasses.tools import is_sequence_with_specified_type
 import unittest
 
 
+
+def bisection_method(sorted_list:list,
+                     goal,
+                     func:callable):
+    """
+    二分法查找
+    @param sorted_list: 已经按升序排列好的列表，或者可以进行下标操作的对象 程序不会检查这个条件，请确保这个参数已经按升序排好 否则可能返回错误结果
+    @param goal: 目标
+    @param func: 函数 其输入参数为sorted_list的元素
+    @return: 如果成功找到，返回id,lbound,ubound  id是基于0 如果goal完全找到，lb和ub就有两种可行的值
+            如果找不到,返回None,lbound,ubound#没找到 返回最接近的两个id
+    """
+    #检查goal是否在上下界之间
+    assert callable(func),'func必须为函数'
+    assert len(sorted_list)>=2,'sorted_list必须至少两个元素'
+    if goal==func(sorted_list[0]):
+        return 0,0,1
+    elif goal==func(sorted_list[-1]):
+        return len(sorted_list)-1, len(sorted_list)-2, len(sorted_list)-1
+    else:
+        assert func(sorted_list[0])<goal<func(sorted_list[-1]),'goal超出sorted_list的上下界'
+    lbound = 0
+    ubound = len(sorted_list) - 1  # 二分法的上下界
+    while True:
+        #检查是否结束
+        if ubound-lbound<=1:
+            return None,lbound,ubound#没找到 返回最接近的两个id
+        midone_id=round((lbound+ubound)/2.0)
+        midone=func(sorted_list[midone_id])
+        if goal==midone:
+            return midone_id,midone_id-1,midone_id
+        elif goal<midone:
+            #在前半段
+            ubound=midone_id
+        else:#在后半段
+            lbound=midone_id
+
 def myunique(lst, return_firstid=False):
     """
     去除重复元素
@@ -782,6 +819,32 @@ class FlatDataModel:
         self.units.append(u)
         u.model=self
 
+    def merge(self,primary:str,secondary:Union[str,list],func:callable=None)->None:
+        """
+        合并某部分字段名
+        如果中途发生错误，可能获得一个错误的fdm，且无法撤回。建议操作前备份
+        @param primary:主字段名
+        @param secondary: 次字段名，合并完成后会删除
+        @param func:
+        @return:
+        """
+        assert primary in self.vn,"未知字段%s"%primary
+        if func is None:
+            func=lambda x,y:x+y#默认相加
+        assert callable(func),'func必须为二元函数'
+        if isinstance(secondary,str):
+            secondary=[secondary]
+        assert isinstance(secondary,list),'secodary(%s)参数错误,必须为str或者str列表'%secondary
+        # fdm=deepcopy(self)#复制一份自己 并在复制里面进行操作
+        fdm=self
+        for i in secondary:
+            assert i in self.vn,"未知字段%s"%i
+            for u in fdm:#操作
+                u.data[primary]=func(u.data[primary],u.data[i])
+            fdm.delete_variable(i)
+        # return fdm
+        pass
+
 class TestCase(unittest.TestCase):
     def test_append_unit(self):
         vnlst = ['姓名', '性别', '列表']
@@ -941,6 +1004,49 @@ class TestCase(unittest.TestCase):
         self.assertEqual("跨绕城高速大桥",fdm.units[2]['桥梁'])
         self.assertEqual("跨绕城高速大桥", fdm.units[3]['桥梁'])
         self.assertAlmostEqual(2031, fdm.units[3]['全长'],delta=1)
+
+
+    def test_merge(self):
+        vnlst = ['姓名', '性别', '年龄','身高']
+        datalst = [['迈克尔', '男', 4,2], ['丹妮', '女', 3,2],['雪落','男',11,3],['卓哥','男',11,3.5]]
+        fdm = FlatDataModel.load_from_list(vnlst, datalst)
+        fdm.merge('年龄','身高')
+        self.assertEqual(6,fdm[0]['年龄'])
+        self.assertEqual(14.5, fdm[-1]['年龄'])
+
+    def test_eff(self):#测试二分法
+        vnlst = ['姓名', '性别', '年龄','身高']
+        datalst = [['迈克尔', '男', 4,2], ['丹妮', '女', 3,2],['雪落','男',11,3],['卓哥','男',10,3.5]]
+        fdm = FlatDataModel.load_from_list(vnlst, datalst)
+        fdm.sort(key='年龄')
+        i,lb,ub=bisection_method(sorted_list=fdm.units,
+                                 goal=4,
+                                 func=lambda x:x['年龄'])
+        self.assertEqual(1,i)
+        self.assertEqual(0, lb)
+        i, lb, ub = bisection_method(sorted_list=fdm.units,
+                                     goal=11,
+                                     func=lambda x: x['年龄'])
+        self.assertEqual(3, i)
+        self.assertEqual(3, ub)
+        i, lb, ub = bisection_method(sorted_list=fdm.units,
+                                     goal=3,
+                                     func=lambda x: x['年龄'])
+        self.assertEqual(0, i)
+        self.assertEqual(0, lb)
+        i, lb, ub = bisection_method(sorted_list=fdm.units,
+                                     goal=3.5,
+                                     func=lambda x: x['年龄'])
+        self.assertEqual(0, lb)
+        self.assertEqual(1, ub)
+        i, lb, ub = bisection_method(sorted_list=fdm.units,
+                                     goal=10.01,
+                                     func=lambda x: x['年龄'])
+        self.assertEqual(2, lb)
+        self.assertEqual(3, ub)
+        self.assertRaises(Exception,bisection_method,sorted_list=fdm.units,
+                                     goal=2,
+                                     func=lambda x: x['年龄'])
 if __name__ == '__main__':
     unittest.main()
 

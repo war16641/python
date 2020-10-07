@@ -19,7 +19,7 @@ for i in range(0,5):
     p1.y+=10
 
 dp=APoint(10,0)
-for text in acad.iter_objects('Text'):
+for text in acad.iter_objects(''):
     print('text: %s at: %s' %(text.TextString,text.InsertionPoint))
     text.InsertionPoint=APoint(text.InsertionPoint)+dp
     # text.TextString="123" #改变text的文字
