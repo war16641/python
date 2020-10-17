@@ -1,7 +1,7 @@
 import math
 import random
 import copy
-from typing import TypeVar, Generic
+from typing import TypeVar, Generic, List, Tuple
 import numpy
 from GoodToolPython.linearalgebra import MyLinearAlgebraEquations
 from enum import Enum, unique
@@ -30,7 +30,7 @@ class Vector3D(Generic[T_Vector]):
 
     def __abs__(self):
         return self.modulus
-    def __add__(self, other: T_Vector) -> T_Vector:
+    def __add__(self, other: T_Vector) -> 'Vector3D':
         assert isinstance(other, Vector3D)
         c = copy.deepcopy(self)
         c.x += other.x
@@ -38,14 +38,14 @@ class Vector3D(Generic[T_Vector]):
         c.z += other.z
         return c
 
-    def __iadd__(self, other: T_Vector) -> T_Vector:
+    def __iadd__(self, other: T_Vector) -> 'Vector3D':
         assert isinstance(other, Vector3D)
         self.x += other.x
         self.y += other.y
         self.z += other.z
         return self
 
-    def __sub__(self, other: T_Vector) -> T_Vector:
+    def __sub__(self, other: T_Vector) -> 'Vector3D':
         assert isinstance(other, Vector3D)
         c = copy.deepcopy(self)
         c.x -= other.x
@@ -53,7 +53,7 @@ class Vector3D(Generic[T_Vector]):
         c.z -= other.z
         return c
 
-    def __isub__(self, other: T_Vector) -> T_Vector:
+    def __isub__(self, other: T_Vector) -> 'Vector3D':
         assert isinstance(other, Vector3D)
         self.x -= other.x
         self.y -= other.y
@@ -72,7 +72,7 @@ class Vector3D(Generic[T_Vector]):
         else:
             raise Exception("type error")
 
-    def __rmul__(self, other: float) -> T_Vector:
+    def __rmul__(self, other: float) -> 'Vector3D':
         assert isinstance(other, (float, int))
         return self.__mul__(other)
 
@@ -192,7 +192,7 @@ class Vector3D(Generic[T_Vector]):
         c1 = v3 * eq.x[2, 0]
         return [a1, b1, c1]
 
-    def get_coordinates_under_cartesian_coordinates_system(self,basic_vectors:tuple)->T_Vector:
+    def get_coordinates_under_cartesian_coordinates_system(self,basic_vectors:tuple)->'Vector3D':
         """
         将本向量在新的笛卡尔坐标系中分解 返回新坐标
         :param basic_vectors: 新的笛卡尔坐标的基向量 这些基向量既不一定正交 也不一定是单位向量 但是要求不能共面
@@ -340,6 +340,25 @@ class Vector3D(Generic[T_Vector]):
             return self.z
         else:
             raise Exception("参数错误")
+
+    @staticmethod
+    def get_bound_corner(lst:List['Vector3D'])-> Tuple['Vector3D', 'Vector3D']:
+        """
+        获取这些点的xyz范围 即范围角点
+        @param lst:
+        @return:
+        """
+        assert isinstance(lst,(tuple,list))
+        t1=[x.x for x in lst]
+        t2 = [x.y for x in lst]
+        t3 = [x.z for x in lst]
+        t1a=min(t1)
+        t1b=max(t1)
+        t2a=min(t2)
+        t2b=max(t2)
+        t3a=min(t3)
+        t3b=max(t3)
+        return Vector3D(t1a,t2a,t3a),Vector3D(t1b,t2b,t3b)
 
 
 class Plane3D(Generic[T_Plane]):

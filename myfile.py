@@ -371,6 +371,25 @@ def copy_file(fullname,to_path,new_name='',create_folder=False):
     shutil.copyfile(fullname,os.path.join(to_path,new_name))
     return True #成功返回true
 
+def append_file(file1:str,file2:str,transition_txt=""):
+    """
+    向file1中添加file2的内容 并且可以在中间插入文字
+    @param file1:
+    @param file2:
+    @param transition_txt: 要插入的文字
+    @return:
+    """
+    assert os.path.isfile(file1)
+    assert os.path.isfile(file2)
+    f1 = open(file1, 'a')
+    f2 = open(file2, 'r')
+    f1.write(transition_txt)
+    conts = f2.readlines()
+    for ln in conts:
+        f1.write(ln)
+    f1.close()
+    f2.close()
+
 
 if __name__ == '__main__':
     # mat=read_file("F:\\的t1.txt",column_expected=3,separator=',',omit_lines=1)

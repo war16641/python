@@ -50,6 +50,8 @@ def clearnup_biaozhi():
             myobj.rightup = Vector3D(myobj.rightup[0:2])
             text_objs.append(myobj)
         elif 'acdbline' in myobj.ObjectName.lower():#直线
+            if myobj.Length<0.1:
+                continue#长度小于这个值的直线忽略
             myobj.myline=Line3D.make_line_by_2_points(Vector3D(myobj.startpoint[0:2]),Vector3D(myobj.endpoint[0:2]))
             myobj.rotation=Vector3D.calculate_angle_in_xoy(myobj.myline.direction[0],
                                                            myobj.myline.direction[1])#计算方向角
@@ -74,8 +76,8 @@ def clearnup_biaozhi():
     t=[x.rotation for x in text_objs]
     avg_rotation=mean(t)#平均文字
     std_rotation=std(t)
-    if std_rotation>3/180*pi:
-        raise Exception("文字的旋转角不一致，程序终止。")
+    # if std_rotation>3/180*pi:
+    #     raise Exception("文字的旋转角不一致，程序终止。")
 
 
     #开始对line和text进行匹配对应
@@ -118,6 +120,7 @@ def clearnup_biaozhi():
             pass
         else:#过多的文字
             #此时 通过到中心点距离最近的两个被保留
+            #或者缩小 valve_dist valve_dist1
             for text in text_to_del:
                 text.t_dist=abs(thisline.centerpoint-text.centerpoint)
             text_to_del.sort(key=lambda x:x.t_dist)

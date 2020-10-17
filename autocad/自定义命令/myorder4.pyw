@@ -53,6 +53,10 @@ def rearrange_objects():
     # valve_x=5#超过这个值 被认为是下一组
     cur_group=[]
     while True:
+
+
+
+
         if len(all_objs)>0:
             cur_obj=all_objs[0]#取第一个
         else:
