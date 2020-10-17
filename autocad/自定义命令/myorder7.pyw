@@ -154,7 +154,6 @@ class BiaoZhi:
                 # mr.draw_in_cad(acad.doc)
             except TypeError:
                 pass
-
         mm = MapMesh(wd_ld, wd_ru)
         mm.mesh(meshsize)
 
@@ -166,8 +165,12 @@ class BiaoZhi:
                     break
 
         # 开始计算最佳位置
+        t=myaddindex(self.zuankong)
+        t1=mydistfunc(self.zuankong)
         r = find_whiterect(mm=mm, rects=rects, target_rect=target_mr,
-                           valve_func=myfunc1)
+                           valve_func=myfunc2,
+                           additional_index=t.func,
+                           dist_func=t1.func)
         # 移动
         self.move(target_mr.xy, r.xy, acad_doc)
 
@@ -184,7 +187,25 @@ def myfunc(a, b):
 
 def myfunc1(a,b):
     return (e**(8*a)-1)*b
+def myfunc2(a,b):
+    return (e**(8*a)-1)*(b+1.0)
 
+
+
+class myaddindex:#附加价值函数
+    def __init__(self,zk):
+        self.zuankong=zk
+    def func(self,x):
+        if x.bound_corners[0].x<self.zuankong.centerpoint.x<x.bound_corners[1].x:
+            return 100
+        else:
+            # return abs(x.center-self.zuankong.centerpoint)#返回rect中心到zk中心距离
+            return 0
+class mydistfunc:#定义 以钻孔距离为距离函数
+    def __init__(self,zk):
+        self.zuankong = zk
+    def func(self,target_rect,thisrect):
+        return abs(thisrect.center-self.zuankong.centerpoint)
 def clearnup_biaozhi():
     acad = Autocad(create_if_not_exists=True)
     slt = acad.get_selection(text="选择需要调整标志线的对象：按enter结束")
@@ -337,7 +358,9 @@ def clearnup_biaozhi():
     # bizhis[0].clearup(acad.doc)
 
     # 自动调整位置
-    bizhis[0].automove(acad, acad.doc)
+    for i,o in enumerate(bizhis):
+        o.automove(acad, acad.doc)
+        acad.prompt("已完成%d/%d\n"%(i+1,len(bizhis)) )
 
     duration_time = time.time() - start_time
     acad.prompt("命令完成。耗时%fs\n" % duration_time)

@@ -143,27 +143,36 @@ def print_outr(outr,n=5):
 def typical_valve_func(x):
     #一个典型的价值函数 红色占比和距离直接相乘 加上距离
     return x[1]*x[2]+x[2]
-def find_whiterect(mm:MapMesh,rects:List[MyRect],target_rect:MyRect,valve_func=None)->MyRect:
+def find_whiterect(mm:MapMesh,rects:List[MyRect],target_rect:MyRect,valve_func=None,additional_index=None,coeffs=(1,1),dist_func=None)->MyRect:
     """
     在mapmesh中寻找一片指定大小的空白区域rect（非红色区域）
-    算法介绍：遍历每一个区域 ，计算这个区域的红色覆盖率，移动距离 通过价值函数，排序得出最佳区域
+    算法介绍：
+    遍历每一个区域 ，计算这个区域的红色覆盖率，距离 通过价值函数（二元函数）与附加价值函数的和，排序得出最佳区域（越低越好）
+    其中：距离可以通过dist_func指定，默认为当前的rect与target_rect的距离，
+
     @param mm:
     @param rects:
     @param target_rect:
     @param valve_func:价值函数 一个二元函数 即当前rect的（红色覆盖率，移动距离） 如果不指定会使用本文件中的价值函数
+    @param additional_index:附加价值函数（一元函数，以当前rect作为函数输入）
+    @param dist_func:距离函数（二元函数，依次以target_rect和当前rect作为函数输入） 有默认值
+    @param coeffs:长度为2的序列，依次为价值函数和附加价值函数的系数，
     @return:
     """
 
     if valve_func is None:
         valve_func=typical_valve_func
+    if additional_index is None:
+        additional_index=lambda x:0
+    if dist_func is None:
+        dist_func=default_dist_func
     #先把rects占据的cell填红
     for r in rects:
         for c in mm.get_cells_in_rect_fast(r):
             c.facecolor='r'
-    # mm.show(additional_rect=target_rect)
-    ax,_=mm.show()
-    target_rect.draw_in_axes(ax)
-    plt.show()
+    # ax,_=mm.show()
+    # target_rect.draw_in_axes(ax)
+    # plt.show()
     # 开始计算最佳位置
     outr = []
     numofcells_in_target = target_rect.height * target_rect.width / mm.cell_length ** 2#target rect中cell个数 不取整
@@ -171,24 +180,29 @@ def find_whiterect(mm:MapMesh,rects:List[MyRect],target_rect:MyRect,valve_func=N
         for y in np.arange(mm.leftdown.y, mm.rightup.y - target_rect.height, mm.cell_length):
             thisrect = MyRect(Vector3D(x, y), target_rect.width, target_rect.height, 0.0)  # 新位置
             number_goodcells = 0
-            dist = abs(target_rect.center - thisrect.center)  # 距离
+            # dist = abs(target_rect.center - thisrect.center)  # 中心点距离
+            dist=dist_func(target_rect,thisrect)#使用距离函数
             for c in mm.get_cells_in_rect_fast(thisrect):
                 if c.facecolor == 'g':
                     number_goodcells += 1
             #红色cell占比 移动距离
             t1=(numofcells_in_target-number_goodcells)/numofcells_in_target
             t2=dist
-            outr.append([thisrect,t1 ,t2 ,valve_func(t1,t2) ])
+            outr.append([thisrect,t1 ,t2 ,valve_func(t1,t2)*coeffs[0]+additional_index(thisrect)*coeffs[1] ])
     # 根据计算结果排序得出最优
     outr.sort(key=lambda x:x[3])
     print_outr(outr)
-    ax,_=mm.show()
-    outr[0][0].draw_in_axes(ax)
-    plt.show()
+    # ax,_=mm.show()
+    # outr[0][0].draw_in_axes(ax)
+    # plt.show()
     return outr[0][0]#返回计算得出的 最佳的rect
 
     pass
 
+def default_dist_func(rect1,rect2):#默认的距离函数
+    dist1, dist2 = rect1.get_dist_from_rect(rect2)
+    dist = (dist1 ** 2 + dist2 ** 2) ** 0.5  # 矩形框的距离
+    return dist
 class TestCase(unittest.TestCase):
     def test1(self):
         mm = MapMesh(Vector3D(0, 0), Vector3D(80., 90))

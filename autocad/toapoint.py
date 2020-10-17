@@ -130,6 +130,34 @@ class MyRect:
                       width=v2.x-v1.x,
                       height=v2.y-v1.y)
 
+    def get_dist_from_rect(self,other:'MyRect'):
+        assert isinstance(other,MyRect)
+        #先处理x
+        if self.bound_corners[0].x<other.bound_corners[0].x:#谁的起点在前面
+            before=self
+            after=other
+        else:
+            before=other
+            after=self
+        t=before.bound_corners[1].x-before.bound_corners[0].x-(after.bound_corners[0].x-before.bound_corners[0].x)
+        if t<0:
+            x_dist=-t
+        else:
+            x_dist=0#两者接壤或者相交
+        #先处理y
+        if self.bound_corners[0].y<other.bound_corners[0].y:#谁的起点在前面
+            before=self
+            after=other
+        else:
+            before=other
+            after=self
+        t=before.bound_corners[1].y-before.bound_corners[0].y-(after.bound_corners[0].y-before.bound_corners[0].y)
+        if t<0:
+            y_dist=-t
+        else:
+            y_dist=0#两者接壤或者相交
+
+        return x_dist,y_dist
 
 def make_myrect_from_obj(myobj)->MyRect:
     """
@@ -270,3 +298,9 @@ def my_get_selection(acad,text="")->list:
     for i in range(slt.Count):
         lst.append(acad.best_interface(slt[i]))
     return lst
+
+
+if __name__ == '__main__':
+    mr1=MyRect.make_by_two_corners(Vector3D(0,0),Vector3D(1,1))
+    mr2 = MyRect.make_by_two_corners(Vector3D(1.5, 0.9), Vector3D(10, 10))
+    print(mr1.get_dist_from_rect(mr2))
