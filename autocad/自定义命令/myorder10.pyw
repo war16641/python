@@ -180,6 +180,15 @@ class BiaoZhi:
         # 移动
         self.move(target_mr.xy, r.xy, acad_doc)
 
+    def rotate(self):
+        #只移动文字和格式线
+        bp=self.geshixian.p1
+        rt=-1*self.geshixian.rotation
+        self.geshixian.Rotate(to_Apoint(bp),rt)
+        for i in self.texts:
+            i.Rotate(to_Apoint(bp),rt)
+        pass
+
 
 def myfunc(a, b):
     # return (20*(a+1))*b+b
@@ -294,6 +303,7 @@ def clearnup_biaozhi():
     t_lines = [x for x in line_objs]
     t_texts = [x for x in text_objs]  # 临时的集合
     bizhis = []  # type:list[BiaoZhi]
+    t_lines_fresh=[]#不是格式线的线
     for thisline in t_lines:
         dist_list = []
         text_to_del = []
@@ -330,6 +340,7 @@ def clearnup_biaozhi():
             newbz.geshixian = thisline
             bizhis.append(newbz)
         elif len(text_to_del) == 0:  # 一个也没有
+            t_lines_fresh.append(thisline)
             pass
         else:  # 过多的文字
             # 此时 通过到中心点距离最近的两个被保留
@@ -346,19 +357,26 @@ def clearnup_biaozhi():
         if len(t_texts) == 0:
             break  # 提前退出
 
-    # 将block和bizohi匹配
-    valve_dist_for_zuankong = 5.  # 钻孔的block是属于biaozhi的极限距离 超过这个值 认为这个block是没有对应的
-    for bz in bizhis:
-        compare_lst = []
-        for bl in block_objs:
-            t1 = abs(bl.centerpoint - bz.geshixian.p1)
-            t2 = abs(bl.centerpoint - bz.geshixian.p2)
-            compare_lst.append((bl, min([t1, t2])))  # 以到格式线两个端点距离最小值为判据
-        compare_lst.sort(key=lambda x: x[1])
-        head = compare_lst[0]
-        if head[1] < valve_dist_for_zuankong:
-            bz.zuankong = head[0]
-            block_objs.remove(head[0])  # 匹配上了就删除
+    # if len(block_objs)==1 and len(t_lines_fresh)==1 and len(bizhis)==1:
+    #     bizhis[0].zuankong=block_objs[0]
+    #     bizhis[0].zhishixian=t_lines_fresh[0]
+    # else:
+    #     raise Exception("对象过多")
+
+
+    # # 将block和bizohi匹配
+    # valve_dist_for_zuankong = 5.  # 钻孔的block是属于biaozhi的极限距离 超过这个值 认为这个block是没有对应的
+    # for bz in bizhis:
+    #     compare_lst = []
+    #     for bl in block_objs:
+    #         t1 = abs(bl.centerpoint - bz.geshixian.p1)
+    #         t2 = abs(bl.centerpoint - bz.geshixian.p2)
+    #         compare_lst.append((bl, min([t1, t2])))  # 以到格式线两个端点距离最小值为判据
+    #     compare_lst.sort(key=lambda x: x[1])
+    #     head = compare_lst[0]
+    #     if head[1] < valve_dist_for_zuankong:
+    #         bz.zuankong = head[0]
+    #         block_objs.remove(head[0])  # 匹配上了就删除
 
     # #画框线
     # for bz in bizhis:
@@ -374,7 +392,8 @@ def clearnup_biaozhi():
     print("共找到%d个。"%len(bizhis))
     for i,o in enumerate(bizhis):
         # o.clearup(acad.doc,both=False)
-        o.automove(acad, acad.doc)
+        # o.automove(acad, acad.doc)
+        o.rotate()
         acad.prompt("已完成%d/%d\n"%(i+1,len(bizhis)) )
 
     duration_time = time.time() - start_time

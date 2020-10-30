@@ -45,6 +45,11 @@ class MyLinearAlgebraEquations:
             (x, res, rank, s) = numpy.linalg.lstsq(a=A, b=b, rcond=None)
             self.x = x
 
+    @staticmethod
+    def least_squares_solution(A,b):
+        #最小二乘解 利用广义逆矩阵计算 不要求A为方阵
+        pinv = numpy.linalg.pinv(A)
+        return numpy.dot(pinv,b)
 
 if __name__ == '__main__':
     # 测试
@@ -83,4 +88,15 @@ if __name__ == '__main__':
     sol = MyLinearAlgebraEquations(A=A, b=b)
     assert MyLinearAlgebraEquations.NumOfSolution.no == sol.num_of_solutions
     # assert sol.x is None
+
+
+    #无解
+    A = numpy.matrix([[ 1],
+                      [-1],
+                      [2]])
+    b = numpy.matrix([[1.0002],
+                      [-1.0005],
+                      [1.997]])
+
+    assert abs(MyLinearAlgebraEquations.least_squares_solution(A,b)[0][0]-1)<0.001
     # 测试结束

@@ -1,13 +1,14 @@
 import math
 import random
 import copy
+import unittest
 from typing import TypeVar, Generic, List, Tuple
 import numpy
 from GoodToolPython.linearalgebra import MyLinearAlgebraEquations
 from enum import Enum, unique
 import nose.tools
 from collections.abc import Iterable
-
+import  sympy as sp
 T_Vector = TypeVar('T_Vector')
 T_Plane = TypeVar('T_Plane')
 T_Line = TypeVar('T_Line')
@@ -138,6 +139,15 @@ class Vector3D(Generic[T_Vector]):
         lt = y * d_st
         z = d_st * lt
         return (y - z).modulus
+
+    def get_nearest_point_to_line(self,elo:'Line3D')->"Vector3D":
+        """点到直线最近的点"""
+        assert isinstance(elo,Line3D)
+        n=elo.direction.get_standard_copy()
+        p=elo.point
+        pm=self-p
+        pn=(pm*n)*n
+        return p+pn
 
     @staticmethod
     def is_parallel(v1: T_Vector, v2: T_Vector):
@@ -726,174 +736,255 @@ class Line3D(Generic[T_Line]):
         else:
             raise Exception("参数错误")
 
+    def get_parameter(self,p:Vector3D)->float:
+        """
+        得到点在直线上的参数
+        具体：直线为参数式方程形式 每一个点都会对应一个参数值
+        使用了广义逆矩阵求解
+        警告：不检查点是否真的在直线上
+        @param p:
+        @return:
+        """
+        A = numpy.array([[self.direction.x], [self.direction.y], [self.direction.z]])
+        b = numpy.array([[p.x-self.point.x], [p.y-self.point.y], [p.z-self.point.z]])
+        return MyLinearAlgebraEquations.least_squares_solution(A,b)
+
+    def calc_line_integral_of_vector_function(self,m:Vector3D,n:Vector3D,P,Q):
+        """
+        求曲线（直线）的第二类积分
+        来自于《微积分下层》 P181 ，使用参数方程法计算第二类积分
+        @param m: 积分起点 不会检查这个点是否真的在直线上 下同
+        @param n:  积分终点
+        @param P:
+        @param Q:
+        @return:
+        """
+        # assert isinstance(P,sp.core.symbol.Symbol)
+        # assert isinstance(Q, sp.core.symbol.Symbol)
+        x=sp.symbols('x')
+        y = sp.symbols('y')
+        z = sp.symbols('z')
+        alpha=sp.symbols('alpha')
+        P=P.subs([[x,self.direction.x*alpha+self.point.x],
+                  [y,self.direction.y*alpha+self.point.y],
+                  [z,self.direction.z*alpha+self.point.z]])#使用参数计算第二类积分
+        Q=Q.subs([[x,self.direction.x*alpha+self.point.x],
+                  [y,self.direction.y*alpha+self.point.y],
+                  [z,self.direction.z*alpha+self.point.z]])#使用参数计算第二类积分
+        alpha1=self.get_parameter(m)
+        alpha2=self.get_parameter(n)#积分上下限
+        return sp.integrate(P*self.direction.x+Q*self.direction.y,(alpha,alpha1,alpha2))
+
+class TestCase(unittest.TestCase):
+    def test1(self):
+        # 测试开始
+        a = Vector3D(1, 1, 1)
+        b = Vector3D(2, 2, 2)
+        c = Vector3D(1, 1, 1)
+        assert a * b == 6
+        assert a != b
+        assert a == c
+        a += c
+        assert a == b
+
+        a = Vector3D(0, 0, 0)
+        b = Vector3D(1e-7, 0, -1e-8)
+        assert a == 0
+        assert b == 0
+
+        a = Vector3D(1, 1, 1)
+        b = Vector3D(2, 2, 2)
+        assert b == 2 * a
+
+        v = Vector3D(1, 1, 1)
+        a = Vector3D(1, 0, 0)
+        b = Vector3D(0, 1, 0)
+        b1 = Vector3D(1, 1, 0)
+        c = Vector3D(0, 0, 1)
+        nose.tools.assert_raises(AssertionError, v.decompose, a, b, b1)
+        li = v.decompose(a, b, c)
+        assert li[0] == a and li[1] == b and li[2] == c
+
+        elo1 = Line3D(direction=Vector3D(1, 0, 0), point=Vector3D())
+        elo2 = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D(2, 0, 0))
+        assert Vector3D(2, 0, 0) == elo1.get_intersect_point(elo2) and Vector3D(2, 0, 0) == elo2.get_intersect_point(
+            elo1)
+        elo2 = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D(2, 0, 1))
+        # nose.tools.assert_raises(AssertionError,elo1.get_intersect_point,elo2)
+        assert elo1.get_intersect_point(elo2) is None
+        elo2 = Line3D(direction=Vector3D(1, -1, 0), point=Vector3D(0, 1, 0))
+        assert Vector3D(1, 0, 0) == elo1.get_intersect_point(elo2)
+
+        v = Vector3D(1, 1, 1)
+        phi, _, _ = v.get_spheroidal_coordinates()
+        assert phi == math.pi / 4
+        v = Vector3D(-1, -1, 1)
+        phi, _, _ = v.get_spheroidal_coordinates()
+        assert phi == -3 * math.pi / 4
+        v = Vector3D(1, -1, 1)
+        phi, _, _ = v.get_spheroidal_coordinates()
+        assert phi == -math.pi / 4
+        v = Vector3D(-1, 1, 1)
+        phi, _, _ = v.get_spheroidal_coordinates()
+        assert phi == 3 * math.pi / 4
+        v = Vector3D(-1, 3 ** 0.5, 1)
+        phi, _, _ = v.get_spheroidal_coordinates()
+        assert abs(phi - 2 * math.pi / 3) < 1e-15
+        # 测试结束
+
+        # 测试开始平面
+        a = Vector3D(0, 0, 1)
+        b = Vector3D(2, 2, 2)
+        p1 = Plane3D(a, b)
+        assert b in p1
+        c = Vector3D(1, 1.1, 2)
+        assert c in p1
+        assert a not in p1
+        elo = Line3D(Vector3D(0, 1, 0), Vector3D(2, -.2, 2))
+        assert elo in p1
+
+        a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
+        b = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(10, 10, 10))
+        assert a.judge_position_relation(b) == a.PositionRelationForPlane.parallel
+        b = Plane3D(normal=Vector3D(0, 1, 0), point=Vector3D(10, 10, 10))
+        assert a.judge_position_relation(b) == a.PositionRelationForPlane.perpendicular
+        b = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(10, 10, 0))
+        assert a.judge_position_relation(b) == a.PositionRelationForPlane.coplane
+        b = Plane3D(normal=Vector3D(1, 0, 1), point=Vector3D(10, 10, 0))
+        assert a.judge_position_relation(b) == a.PositionRelationForPlane.skew
+
+        elo = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D(0, 0, 0))
+        assert a.judge_position_relation(elo) is a.PositionRelationForLine.include
+        elo = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D(0, 0, 10))
+        assert a.judge_position_relation(elo) is a.PositionRelationForLine.parallel
+        elo = Line3D(direction=Vector3D(0, 0, 1), point=Vector3D(0, 0, 10))
+        assert a.judge_position_relation(elo) is a.PositionRelationForLine.perpendicular
+        elo = Line3D(direction=Vector3D(1, 1, 1), point=Vector3D(0, 0, 10))
+        assert a.judge_position_relation(elo) is a.PositionRelationForLine.skew
+
+        a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
+        b = Plane3D(normal=Vector3D(0, 1, 0), point=Vector3D(10, 10, 10))
+        assert a.angle(b) == math.pi / 2
+
+        a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
+        elo = Line3D(direction=Vector3D(0, 0, -1), point=Vector3D())
+        assert a.angle(elo) == math.pi / 2
+        elo = Line3D(direction=Vector3D(0, 1, 1), point=Vector3D())
+        assert abs(a.angle(elo) - math.pi / 4) < Vector3D.tol_for_eq
+        elo = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D())
+        nose.tools.assert_raises(AssertionError, a.angle, elo)
+
+        a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
+        pt = Vector3D(10, 10, 0)
+        assert a.projection(pt) == pt
+        b = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 2))
+        assert b.projection(pt) == Vector3D(10, 10, 2)
+
+        a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
+        line = Line3D(direction=Vector3D(0, 0, 1), point=Vector3D())
+        nose.tools.assert_raises(AssertionError, a.projection, line)
+        line = Line3D(direction=Vector3D(1, 1, 0), point=Vector3D(0, 0, 10))
+        line1 = Line3D(direction=Vector3D(1, 1, 0), point=Vector3D())
+        t = a.projection(line)
+        assert t == line1
+        line = Line3D(direction=Vector3D(0, 1, 1), point=Vector3D(0, 0, 0))
+        line1 = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D())
+        assert a.projection(line) == line1
+
+        a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
+        assert a.get_random_line() in a
+        assert a.get_random_point() in a
+
+        a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
+        b = Plane3D(normal=Vector3D(1, 0, 0), point=Vector3D(0, 0, 0))
+        elo = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D())
+        assert a.get_intersect_line(b) == elo
+
+        a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
+        elo = Line3D(direction=Vector3D(0, 0, 1), point=Vector3D(10, 20, 0))
+        assert a.get_intersect_point(elo) == Vector3D(10, 20, 0)
+        elo = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D(10, 20, 0))
+        assert a.get_intersect_point(elo) is None
+        # 测试结束
+
+        # 测试开始 直线
+        a = Line3D(Vector3D(1, 0, 0))
+        b = Vector3D(1.1, 0, 0)
+        c = Vector3D(1, 4, 3)
+        assert b in a
+        assert c not in a
+        assert b.distance_to_line(a) == 0
+        assert c.distance_to_line(a) == 5.
+
+        a = Line3D(Vector3D(1, 0, 0))
+        b = Line3D(Vector3D(0, 1, 0), Vector3D(0, 0, 4))
+        assert 4 == Line3D.distance_between_two_lines(a, b)
+        assert a.judge_position_relation(b) == a.PositionRelation.non_intersect
+        c = Line3D(Vector3D(-1.3, 0, 0), Vector3D(111, 0, 0))
+        assert a.judge_position_relation(c) == a.PositionRelation.collinear
+
+        a = Line3D(Vector3D(1, 0, 0))
+        b = Line3D(Vector3D(0, 1, 0), Vector3D(0, 0, 4))
+        assert a.angle(b) == math.pi / 2
+
+        a = Line3D(Vector3D(1, 0, 0))
+        assert a.get_random_point() in a
+
+        elo = Line3D(point=Vector3D(1, 1, 0),
+                     direction=Vector3D(1, 2, 0))
+        assert elo.get_point('x', 6) == Vector3D(6, 11)
+
+        # 测试结束
+
+        # 测试x载入
+        v = Vector3D([1, 2])
+        assert 1 == v.x and 2 == v.y and 0 == v.z
+        v = Vector3D([1, 2, 3])
+        assert 1 == v.x and 2 == v.y and 3 == v.z
+        # 测试结束
+
+        # 测试除法
+        v = Vector3D(2, 4, 5)
+        r = v / 2.0
+        assert r.z == 2.5
+        # 测试结束
+
+        # 测试点到直线最近点
+        elo = Line3D(point=Vector3D(0, 0), direction=Vector3D(1, 1))
+        m = Vector3D(2, 0)
+        n = m.get_nearest_point_to_line(elo)
+        assert n == Vector3D(1, 1)
+        elo = Line3D(point=Vector3D(0, 0), direction=Vector3D(1, 1))
+        m = Vector3D(1, 1)
+        n = m.get_nearest_point_to_line(elo)
+        assert n == Vector3D(1, 1)
+        elo = Line3D(point=Vector3D(0, 0, 1), direction=0.3 * Vector3D(0, 3 / 2, 0.8660254))
+        m = Vector3D(0, 2, 1)
+        n = m.get_nearest_point_to_line(elo)
+        assert n == Vector3D(0, 3 / 2, 1 + 0.8660254)
+        # 测试结束
+
+    def test2(self):
+        elo=Line3D(point=Vector3D(0,0),direction=Vector3D(1,0))
+        x=sp.symbols('x')
+        y = sp.symbols('y')
+        P=x**2
+        Q=x+y
+        t=elo.calc_line_integral_of_vector_function(m=Vector3D(0,0),
+                                                        n=Vector3D(1,0),
+                                                        P=P,
+                                                        Q=Q)
+        self.assertAlmostEqual(t,1/3,delta=1e-5)
+
+        elo=Line3D(point=Vector3D(0,1),direction=Vector3D(2,1))
+        x=sp.symbols('x')
+        y = sp.symbols('y')
+        P=x**2
+        Q=x+y
+        t=elo.calc_line_integral_of_vector_function(m=Vector3D(2,2),
+                                                        n=Vector3D(4,3),
+                                                        P=P,
+                                                        Q=Q)
+        self.assertAlmostEqual(t,24.1666666666667, delta=1e-5)
 if __name__ == '__main__':
-    # 测试开始
-    a = Vector3D(1, 1, 1)
-    b = Vector3D(2, 2, 2)
-    c = Vector3D(1, 1, 1)
-    assert a * b == 6
-    assert a != b
-    assert a == c
-    a += c
-    assert a == b
-
-    a = Vector3D(0, 0, 0)
-    b = Vector3D(1e-7, 0, -1e-8)
-    assert a == 0
-    assert b == 0
-
-    a = Vector3D(1, 1, 1)
-    b = Vector3D(2, 2, 2)
-    assert b == 2 * a
-
-    v = Vector3D(1, 1, 1)
-    a = Vector3D(1, 0, 0)
-    b = Vector3D(0, 1, 0)
-    b1 = Vector3D(1, 1, 0)
-    c = Vector3D(0, 0, 1)
-    nose.tools.assert_raises(AssertionError, v.decompose, a, b, b1)
-    li = v.decompose(a, b, c)
-    assert li[0] == a and li[1] == b and li[2] == c
-
-    elo1=Line3D(direction=Vector3D(1,0,0),point=Vector3D())
-    elo2=Line3D(direction=Vector3D(0,1,0),point=Vector3D(2,0,0))
-    assert Vector3D(2,0,0)==elo1.get_intersect_point(elo2) and Vector3D(2,0,0)==elo2.get_intersect_point(elo1)
-    elo2=Line3D(direction=Vector3D(0,1,0),point=Vector3D(2,0,1))
-    # nose.tools.assert_raises(AssertionError,elo1.get_intersect_point,elo2)
-    assert elo1.get_intersect_point(elo2) is None
-    elo2 = Line3D(direction=Vector3D(1, -1, 0), point=Vector3D(0, 1, 0))
-    assert Vector3D(1,0,0)==elo1.get_intersect_point(elo2)
-
-    v = Vector3D(1, 1, 1)
-    phi,_,_=v.get_spheroidal_coordinates()
-    assert phi==math.pi/4
-    v = Vector3D(-1, -1, 1)
-    phi, _, _ = v.get_spheroidal_coordinates()
-    assert phi == -3*math.pi / 4
-    v = Vector3D(1, -1, 1)
-    phi, _, _ = v.get_spheroidal_coordinates()
-    assert phi == -math.pi / 4
-    v = Vector3D(-1, 1, 1)
-    phi, _, _ = v.get_spheroidal_coordinates()
-    assert phi == 3*math.pi / 4
-    v = Vector3D(-1, 3**0.5, 1)
-    phi, _, _ = v.get_spheroidal_coordinates()
-    assert abs(phi - 2 * math.pi / 3)<1e-15
-    # 测试结束
-
-    # 测试开始平面
-    a = Vector3D(0, 0, 1)
-    b = Vector3D(2, 2, 2)
-    p1 = Plane3D(a, b)
-    assert b in p1
-    c = Vector3D(1, 1.1, 2)
-    assert c in p1
-    assert a not in p1
-    elo = Line3D(Vector3D(0, 1, 0), Vector3D(2, -.2, 2))
-    assert elo in p1
-
-    a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
-    b = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(10, 10, 10))
-    assert a.judge_position_relation(b) == a.PositionRelationForPlane.parallel
-    b = Plane3D(normal=Vector3D(0, 1, 0), point=Vector3D(10, 10, 10))
-    assert a.judge_position_relation(b) == a.PositionRelationForPlane.perpendicular
-    b = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(10, 10, 0))
-    assert a.judge_position_relation(b) == a.PositionRelationForPlane.coplane
-    b = Plane3D(normal=Vector3D(1, 0, 1), point=Vector3D(10, 10, 0))
-    assert a.judge_position_relation(b) == a.PositionRelationForPlane.skew
-
-    elo = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D(0, 0, 0))
-    assert a.judge_position_relation(elo) is a.PositionRelationForLine.include
-    elo = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D(0, 0, 10))
-    assert a.judge_position_relation(elo) is a.PositionRelationForLine.parallel
-    elo = Line3D(direction=Vector3D(0, 0, 1), point=Vector3D(0, 0, 10))
-    assert a.judge_position_relation(elo) is a.PositionRelationForLine.perpendicular
-    elo = Line3D(direction=Vector3D(1, 1, 1), point=Vector3D(0, 0, 10))
-    assert a.judge_position_relation(elo) is a.PositionRelationForLine.skew
-
-    a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
-    b = Plane3D(normal=Vector3D(0, 1, 0), point=Vector3D(10, 10, 10))
-    assert a.angle(b) == math.pi / 2
-
-    a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
-    elo = Line3D(direction=Vector3D(0, 0, -1), point=Vector3D())
-    assert a.angle(elo) == math.pi / 2
-    elo = Line3D(direction=Vector3D(0, 1, 1), point=Vector3D())
-    assert abs(a.angle(elo) - math.pi / 4) < Vector3D.tol_for_eq
-    elo = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D())
-    nose.tools.assert_raises(AssertionError, a.angle, elo)
-
-    a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
-    pt = Vector3D(10, 10, 0)
-    assert a.projection(pt) == pt
-    b = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 2))
-    assert b.projection(pt) == Vector3D(10, 10, 2)
-
-    a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
-    line = Line3D(direction=Vector3D(0, 0, 1), point=Vector3D())
-    nose.tools.assert_raises(AssertionError, a.projection, line)
-    line = Line3D(direction=Vector3D(1, 1, 0), point=Vector3D(0, 0, 10))
-    line1 = Line3D(direction=Vector3D(1, 1, 0), point=Vector3D())
-    t = a.projection(line)
-    assert t == line1
-    line = Line3D(direction=Vector3D(0, 1, 1), point=Vector3D(0, 0, 0))
-    line1 = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D())
-    assert a.projection(line) == line1
-
-    a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
-    assert a.get_random_line() in a
-    assert a.get_random_point() in a
-
-    a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
-    b=Plane3D(normal=Vector3D(1, 0, 0), point=Vector3D(0, 0, 0))
-    elo=Line3D(direction=Vector3D(0, 1, 0), point=Vector3D())
-    assert a.get_intersect_line(b)==elo
-
-    a = Plane3D(normal=Vector3D(0, 0, 1), point=Vector3D(0, 0, 0))
-    elo=Line3D(direction=Vector3D(0, 0, 1), point=Vector3D(10,20,0))
-    assert a.get_intersect_point(elo) == Vector3D(10,20,0)
-    elo = Line3D(direction=Vector3D(0, 1, 0), point=Vector3D(10, 20, 0))
-    assert a.get_intersect_point(elo) is None
-    # 测试结束
-
-    # 测试开始 直线
-    a = Line3D(Vector3D(1, 0, 0))
-    b = Vector3D(1.1, 0, 0)
-    c = Vector3D(1, 4, 3)
-    assert b in a
-    assert c not in a
-    assert b.distance_to_line(a) == 0
-    assert c.distance_to_line(a) == 5.
-
-    a = Line3D(Vector3D(1, 0, 0))
-    b = Line3D(Vector3D(0, 1, 0), Vector3D(0, 0, 4))
-    assert 4 == Line3D.distance_between_two_lines(a, b)
-    assert a.judge_position_relation(b) == a.PositionRelation.non_intersect
-    c = Line3D(Vector3D(-1.3, 0, 0), Vector3D(111, 0, 0))
-    assert a.judge_position_relation(c) == a.PositionRelation.collinear
-
-    a = Line3D(Vector3D(1, 0, 0))
-    b = Line3D(Vector3D(0, 1, 0), Vector3D(0, 0, 4))
-    assert a.angle(b) == math.pi / 2
-
-    a = Line3D(Vector3D(1, 0, 0))
-    assert a.get_random_point() in a
-
-    elo=Line3D(point=Vector3D(1,1,0),
-               direction=Vector3D(1,2,0))
-    assert elo.get_point('x',6)==Vector3D(6,11)
-
-    # 测试结束
-
-    #测试x载入
-    v=Vector3D([1,2])
-    assert 1==v.x and 2==v.y and 0==v.z
-    v=Vector3D([1,2,3])
-    assert 1 == v.x and 2 == v.y and 3 == v.z
-    # 测试结束
-
-    #测试除法
-    v=Vector3D(2,4,5)
-    r=v/2.0
-    assert r.z==2.5
-    # 测试结束
+    unittest.main()

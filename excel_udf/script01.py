@@ -81,6 +81,41 @@ def fold_numbers(lst1)->str:
     else:
         pts.append("%d~%d" % (head, lst1[-1]))
     return "、".join(pts)
+
+def arange_inteval(L,itv)->str:
+    """
+    自动获取钢筋的调整间距
+    算法介绍：根据经验，余数通过调整最两侧钢筋间距实现去除余数
+    @param L: 总长
+    @param itv: 间距
+    @return:
+    """
+    def geshi(x):
+        #处理输出格式
+        if x%1<=1e-5:#整数
+            return "%d"
+        else:
+            return "%.1f"#小数
+    n1=L//itv#取整 向下
+    Y=L%itv #取余
+    if Y==0:
+        return ("%d×"+geshi(itv))%(n1,itv)
+    if Y>=0.5*itv:
+        n1+=-1
+        t=(itv+Y)/2.
+        # return "%f+%d×%d+%f"%(t,n1,itv,t)
+        if n1<=0:
+            raise Exception("L太小")
+        return (geshi(t) + "+%d×" + geshi(itv) + "+" + geshi(t)) % (t, n1, itv, t)
+    else:
+        n1+=-2#拿出两个
+        t=(2*itv+Y)/2.
+        # return "%.1f+%d×%d+%.1f"%(t,n1,itv,t)
+        if n1<=0:
+            raise Exception("L太小")
+        return (geshi(t)+"+%d×"+geshi(itv)+"+"+geshi(t)) % (t, n1, itv, t)
+    pass
+
 class TestCase(unittest.TestCase):
     def test_get_mileage(self):
         self.assertEqual(892*1000+123.345,get_mileage('D1K892+123.345'))
@@ -89,5 +124,17 @@ class TestCase(unittest.TestCase):
         self.assertEqual(892 * 1000 + 123., get_mileage('DK892+123'))
         self.assertEqual(0 * 1000 + 123., get_mileage('DK000+123.'))
         self.assertEqual(85 * 1000 + 0., get_mileage('DK85+000.'))
+
+    def test_arange_inteval(self):
+        t=arange_inteval(708,15)
+        self.assertEqual("16.5+45×15+16.5",t)
+        t=arange_inteval(709,15)
+        self.assertEqual("17+45×15+17",t)
+        t=arange_inteval(714,15)
+        self.assertEqual("12+46×15+12",t)
+        t=arange_inteval(715,15)
+        self.assertEqual("12.5+46×15+12.5",t)
+        t = arange_inteval(45, 15)
+        self.assertEqual("3×15", t)
 if __name__ == '__main__':
     unittest.main()

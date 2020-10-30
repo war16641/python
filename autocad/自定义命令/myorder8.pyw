@@ -59,7 +59,7 @@ def thisorder():
     desc_ld=Vector3D(min(xs),min(ys))#得到角点
     desc_ru=Vector3D(max(xs),max(ys))
 
-    left_margin=20
+    left_margin=10
     right_margin=20#左右留白
 
     cp_width=cp_ru.x-cp_ld.x#签名栏的宽度

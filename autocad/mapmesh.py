@@ -143,7 +143,13 @@ def print_outr(outr,n=5):
 def typical_valve_func(x):
     #一个典型的价值函数 红色占比和距离直接相乘 加上距离
     return x[1]*x[2]+x[2]
-def find_whiterect(mm:MapMesh,rects:List[MyRect],target_rect:MyRect,valve_func=None,additional_index=None,coeffs=(1,1),dist_func=None)->MyRect:
+def find_whiterect(mm:MapMesh,
+                   rects:List[MyRect],
+                   target_rect:MyRect,
+                   valve_func=None,
+                   additional_index=None,
+                   coeffs=(1,1),
+                   dist_func=None)->MyRect:
     """
     在mapmesh中寻找一片指定大小的空白区域rect（非红色区域）
     算法介绍：

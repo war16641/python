@@ -1,5 +1,5 @@
 """
-清楚带括号的标高中的括号，需先打开2018cad
+清楚带括号的标高中的括号 或者里程的括号，需先打开2018cad
 """
 from pyautocad import Autocad,APoint
 import re

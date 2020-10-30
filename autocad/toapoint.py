@@ -5,7 +5,7 @@ from math import cos, sin, pi
 from typing import Tuple
 
 from pyautocad import APoint, Autocad
-from vector3d import Vector3D
+from vector3d import Vector3D, Line3D
 
 
 def to_Apoint(p):
@@ -65,6 +65,9 @@ class MyRect:
                        self._tfi(Vector3D(self.width,self.height)),
                        self._tfi(Vector3D(0,self.height)))#四个角点 原坐标系
         self._bound_corners=tuple(Vector3D.get_bound_corner(self._corners))#范围角点
+
+    def __str__(self):
+        return "插入点%f,%f 宽%f 高%f 旋转%f"%(self.xy.x,self.xy.y,self.width,self.height,self.rotation)
 
     @property
     def center(self):
@@ -237,7 +240,23 @@ def make_myrect_from_obj(myobj)->MyRect:
         return mr
     elif  'polyline' in myobj.ObjectName.lower():
         if myobj.closed is False or myobj.getwidth(0)[0] < 0.19:  # 没有闭合 或者 没什么宽度的多段线 跳过
-            raise TypeError('')
+            raise TypeError('没有闭合的多段线无法生成rect')
+        if len(myobj.Coordinates)==8 or len(myobj.Coordinates)==10 :#有四个点 看是否能能生成矩形
+            p1=Vector3D(myobj.Coordinates[0],myobj.Coordinates[1])
+            p2 = Vector3D(myobj.Coordinates[2], myobj.Coordinates[3])
+            p3 = Vector3D(myobj.Coordinates[4], myobj.Coordinates[5])
+            p4 = Vector3D(myobj.Coordinates[6], myobj.Coordinates[7])
+            v1=p2-p1
+            v2=p3-p2
+            v3=p4-p3
+            v4=p1-p4
+            if Vector3D.is_parallel(v1,v3) and Vector3D.is_parallel(v2,v4):#平行
+                mr=MyRect(xy=p1,
+                          width=abs(v2),
+                          height=abs(v1),
+                          rotation=Vector3D.calculate_angle_in_xoy(v2.x,v2.y))
+                return mr
+            pass
         myobj.leftdown=Vector3D(myobj.leftdown)
         myobj.rightup = Vector3D(myobj.rightup)
         mr=MyRect.make_by_two_corners(myobj.leftdown,myobj.rightup)
@@ -300,6 +319,35 @@ def my_get_selection(acad,text="")->list:
     return lst
 
 
+def haircut(myobj):
+    """
+    给原生的cad对象理发
+    添加一些便于计算和操作的变量
+    需分类型
+    @param myobj:
+    @return:
+    """
+    if 'acdbtext' in myobj.ObjectName.lower() or 'blockref' in myobj.ObjectName.lower():  # 文字 块参照
+        myobj.leftdown = myobj.GetBoundingBox()[0]
+        myobj.rightup = myobj.GetBoundingBox()[1]  # 两个角点
+        myobj.leftdown = Vector3D(myobj.leftdown[0:2])
+        myobj.rightup = Vector3D(myobj.rightup[0:2])
+        myobj.centerpoint = (myobj.rightup + myobj.leftdown) * 0.5
+        myobj.myrect = MyRect(xy=myobj.leftdown, width=myobj.rightup.x - myobj.leftdown.x,
+                              height=myobj.rightup.y - myobj.leftdown.y)  # 生成对应myrect 不考虑旋转，以bouding生成rect
+    elif 'acdbline' in myobj.ObjectName.lower():  # 直线
+        myobj.p1 = Vector3D(myobj.startpoint[0:2])
+        myobj.p2 = Vector3D(myobj.endpoint[0:2])  # 保留原坐标下的坐标
+        myobj.centerpoint = (myobj.p1 + myobj.p2) / 2.0  # 中心点 原坐标系
+        myobj.myline = Line3D.make_line_by_2_points(myobj.p1, myobj.p2)
+        myobj.rotation = Vector3D.calculate_angle_in_xoy(myobj.myline.direction.x, myobj.myline.direction.y)
+        myobj.tf, myobj.tfi = get_trans_func(
+            theta=Vector3D.calculate_angle_in_xoy(myobj.myline.direction.x, myobj.myline.direction.y))
+        # 计算自己的两个端点在这个坐标系下的坐标
+        myobj.x1 = myobj.tf(myobj.p1)
+        myobj.x2 = myobj.tf(myobj.p2)
+    else:
+        pass
 if __name__ == '__main__':
     mr1=MyRect.make_by_two_corners(Vector3D(0,0),Vector3D(1,1))
     mr2 = MyRect.make_by_two_corners(Vector3D(1.5, 0.9), Vector3D(10, 10))

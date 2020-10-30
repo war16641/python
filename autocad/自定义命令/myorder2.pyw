@@ -15,7 +15,8 @@ def draw_slope():
     # acad.prompt("Hello,Autocad from Python\n")
     # print (acad.doc.Name)
 
-    ratio = acad.doc.Utility.getreal('输入边坡率1：')
+    #
+    ratio=acad.doc.Utility.getreal("输入边坡率1:")
     p1=acad.doc.Utility.getpoint(APoint(0,0),'拾取起点：')
     p2 = acad.doc.Utility.getpoint(APoint(p1[0],p1[1]),'拾取大致方向点：')
     if p2[0]>=p1[0]:#方向向右
