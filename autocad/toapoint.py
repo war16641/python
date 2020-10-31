@@ -315,7 +315,11 @@ def my_get_selection(acad,text="")->list:
     slt = acad.get_selection(text=text)
     lst=[]
     for i in range(slt.Count):
-        lst.append(acad.best_interface(slt[i]))
+        try:
+            lst.append(acad.best_interface(slt[i]))
+        except:#如果没有接口，直接返回原始对象。在后续阶段使用这个对象可能会出错
+            lst.append(slt[i])
+
     return lst
 
 
