@@ -352,6 +352,27 @@ def haircut(myobj):
         myobj.x2 = myobj.tf(myobj.p2)
     else:
         pass
+
+
+
+def safe_prompt(acad,txt,maxtime=3):
+    """
+    允许3次 被呼叫方无应答
+    @param acad:
+    @param txt:
+    @param maxtime:
+    @return:
+    """
+    ct=0
+    while True:
+        try:
+            ct+=1
+            acad.prompt(txt)
+            return
+        except Exception as e:
+            if ct==maxtime:
+                raise e
+            pass
 if __name__ == '__main__':
     mr1=MyRect.make_by_two_corners(Vector3D(0,0),Vector3D(1,1))
     mr2 = MyRect.make_by_two_corners(Vector3D(1.5, 0.9), Vector3D(10, 10))

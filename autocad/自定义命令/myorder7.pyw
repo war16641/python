@@ -9,7 +9,7 @@ from math import pi, cos, sin, e
 from statistics import mean
 
 from autocad.mapmesh import MapMesh, find_whiterect
-from autocad.toapoint import to_Apoint, MyRect, get_trans_func, make_myrect_from_obj
+from autocad.toapoint import to_Apoint, MyRect, get_trans_func, make_myrect_from_obj, safe_prompt
 from autocad.自定义命令.myorder6 import get_best_rect, select_by_window
 import numpy as np
 from pyautocad import Autocad, APoint
@@ -57,8 +57,10 @@ class BiaoZhi:
     def __str__(self):
         if len(self.texts) == 0:
             return "空"
-        else:
+        elif len(self.texts)==1:
             return self.texts[0].TextString
+        elif len(self.texts)==2:
+            return self.texts[0].TextString+self.texts[1].TextString
 
     def draw_frame(self, doc):
         # 在cad中画框线
@@ -99,9 +101,10 @@ class BiaoZhi:
         self.zhishixian = t
         self.zhishixian.layer = self.texts[0].layer  # 改变图层
 
-    def clearup(self, acad_doc,both=True):
+    def clearup(self, acad_doc,both=False):
         """
-        标志线两端都剪掉
+        标志线和文字对齐
+        默认只剪掉右边的线
         不需要有转孔也可以执行
         @param acad_doc:
         @return:
@@ -179,6 +182,16 @@ class BiaoZhi:
                            dist_func=t1.func)
         # 移动
         self.move(target_mr.xy, r.xy, acad_doc)
+
+    def rotate(self):
+        #旋转至水平
+        #只移动文字和格式线
+        bp=self.geshixian.p1
+        rt=-1*self.geshixian.rotation
+        self.geshixian.Rotate(to_Apoint(bp),rt)
+        for i in self.texts:
+            i.Rotate(to_Apoint(bp),rt)
+        pass
 
 
 def myfunc(a, b):
@@ -294,7 +307,11 @@ def clearnup_biaozhi():
     t_lines = [x for x in line_objs]
     t_texts = [x for x in text_objs]  # 临时的集合
     bizhis = []  # type:list[BiaoZhi]
+    t_lines_fresh=[]#不是格式线的线
     for thisline in t_lines:
+        if len(t_texts) == 0:
+            t_lines_fresh.append(thisline)
+            continue  # 提前退出
         dist_list = []
         text_to_del = []
         tf, _ = get_trans_func(
@@ -313,7 +330,7 @@ def clearnup_biaozhi():
             text.x3 = tf(text.centerpoint)
             # 开始判别这个text是不是和直线对应的
             if calc_angle_difference(thisline.rotation , text.rotation) < 5 / 180 * pi or \
-                    calc_angle_difference( text.rotation,thisline.rotation ):  # 文字和直线的方向不能大于5°
+                    calc_angle_difference( text.rotation,thisline.rotation )< 5 / 180 * pi:  # 文字和直线的方向不能大于5°
                 if text.t_dist < valve_dist:  # 文字到直线的距离 有要求
                     if text.x3[0] > thisline.x1[0] - valve_dist1 and text.x3[0] < thisline.x2[
                         0] + valve_dist1:  # 文字必须在这个直线附近 以直线为新坐标系
@@ -330,6 +347,7 @@ def clearnup_biaozhi():
             newbz.geshixian = thisline
             bizhis.append(newbz)
         elif len(text_to_del) == 0:  # 一个也没有
+            t_lines_fresh.append(thisline)#将这个直线保存，后续将和block匹配
             pass
         else:  # 过多的文字
             # 此时 通过到中心点距离最近的两个被保留
@@ -343,22 +361,112 @@ def clearnup_biaozhi():
         # 删除已经匹配上的文字
         for tt in text_to_del:
             t_texts.remove(tt)
-        if len(t_texts) == 0:
-            break  # 提前退出
 
-    # 将block和bizohi匹配
-    valve_dist_for_zuankong = 5.  # 钻孔的block是属于biaozhi的极限距离 超过这个值 认为这个block是没有对应的
+
+    # if len(block_objs)==1 and len(t_lines_fresh)==1 and len(bizhis)==1:
+    #     bizhis[0].zuankong=block_objs[0]
+    #     bizhis[0].zhishixian=t_lines_fresh[0]
+    # else:
+    #     raise Exception("对象过多")
+
+    #匹配block和剩下的t_lines_fresh
+    biaozhi_t=[]
+    block_to_del=None
+    line_to_del=[]#找到对子的block和line
+    lines_bakcup=[x for x in  t_lines_fresh]
+    for thisline in t_lines_fresh:
+        for thisblock in block_objs:
+            if thisline.p1 in thisblock.myrect:
+                t=BiaoZhi()
+                t.zuankong=thisblock
+                t.zhishixian=thisline
+                biaozhi_t.append(t)
+                block_to_del=thisblock
+                line_to_del.append(thisline)
+                break
+            elif thisline.p2 in thisblock.myrect:#终点在rect内
+                #对调终点和起点
+                #即 起点一定是block内 终点连接格式线
+                t=thisline.p2
+                thisline.EndPoint=to_Apoint(thisline.p1)
+                thisline.StartPoint=to_Apoint(t)
+                haircut(thisline)
+                t=BiaoZhi()
+                t.zuankong=thisblock
+                t.zhishixian=thisline
+                biaozhi_t.append(t)
+                block_to_del=thisblock
+                line_to_del.append(thisline)
+                break
+        block_objs.remove(block_to_del)
+    for i in line_to_del:
+        t_lines_fresh.remove(i)
+    bzs_backup=[x for x in biaozhi_t]
+
+    #将格式线和文字的biaozhi 与 zuankong与指示线的biaozhi 匹配
+    valve_dist2=0.01#大于这个值认为不是一对
+    bz_matched=[]#匹配上的biaozhi （格式线和文字的b）
     for bz in bizhis:
-        compare_lst = []
-        for bl in block_objs:
-            t1 = abs(bl.centerpoint - bz.geshixian.p1)
-            t2 = abs(bl.centerpoint - bz.geshixian.p2)
-            compare_lst.append((bl, min([t1, t2])))  # 以到格式线两个端点距离最小值为判据
-        compare_lst.sort(key=lambda x: x[1])
-        head = compare_lst[0]
-        if head[1] < valve_dist_for_zuankong:
-            bz.zuankong = head[0]
-            block_objs.remove(head[0])  # 匹配上了就删除
+        if len(biaozhi_t)==0:
+            break
+        for bz1 in biaozhi_t:
+            bz1.t_dist=abs(bz.geshixian.p1-bz1.zhishixian.p2)
+        biaozhi_t.sort(key=lambda x:x.t_dist)
+        if biaozhi_t[0].t_dist<=valve_dist2:#匹配上了
+            bz.zhishixian=biaozhi_t[0].zhishixian
+            bz.zuankong=biaozhi_t[0].zuankong
+            bz_matched.append(bz)
+            biaozhi_t.remove(biaozhi_t[0])
+
+
+    #     生成序列  biaozhi（格式线加文字） ，未匹配上指示线的biaozhi
+    bz_unmatched = [x for x in bizhis]
+    for i in bz_matched:
+        bz_unmatched.remove(i)
+    #匹配 biaozhi（格式线加文字） 直接和zuankong匹配
+
+    if len(block_objs)!=0 and len(bz_unmatched)!=0:#两个都有剩余
+        #将block和这个biaozhi匹配
+        valve_dist_for_zuankong = 5.  # 钻孔的block是属于biaozhi的极限距离 超过这个值 认为这个block是没有对应的
+        biaozhi_t2=[]
+        for bz in bz_unmatched:
+            compare_lst = []
+            for bl in block_objs:
+                t1 = abs(bl.centerpoint - bz.geshixian.p1)
+                t2 = abs(bl.centerpoint - bz.geshixian.p2)
+                compare_lst.append((bl, min([t1, t2])))  # 以到格式线两个端点距离最小值为判据
+            compare_lst.sort(key=lambda x: x[1])
+            head = compare_lst[0]
+            if head[1] < valve_dist_for_zuankong:
+                bz.zuankong = head[0]
+                biaozhi_t2.append(bz)
+                block_objs.remove(head[0])  # 匹配上了就删除
+        for i in biaozhi_t2:
+            bz_matched.append(i)#放入最后的 能用的biaozhi中取
+            bz_unmatched.remove(i)
+    #输出结果信息
+    if len(block_objs)!=0:
+        print("有%d个block未匹配上直线,有%d个line未匹配上block。"%(len(block_objs),len(t_lines_fresh)))
+
+    if len(bz_matched)<len(bizhis):
+        print("有%d个biaozhi(格式线和文字)未匹配上biaozhi(zuankong与指示线)。"%(len(bizhis)-len(bz_matched)))
+    if len(biaozhi_t)!=0:
+        print("有%d个biaozhi(zuankong与指示线)未匹配上biaozhi(格式线和文字)。" % (len(biaozhi_t)))
+
+    pass
+    # # 将block和bizohi匹配
+    # valve_dist_for_zuankong = 5.  # 钻孔的block是属于biaozhi的极限距离 超过这个值 认为这个block是没有对应的
+    # for bz in bizhis:
+    #     compare_lst = []
+    #     for bl in block_objs:
+    #         t1 = abs(bl.centerpoint - bz.geshixian.p1)
+    #         t2 = abs(bl.centerpoint - bz.geshixian.p2)
+    #         compare_lst.append((bl, min([t1, t2])))  # 以到格式线两个端点距离最小值为判据
+    #     compare_lst.sort(key=lambda x: x[1])
+    #     head = compare_lst[0]
+    #     if head[1] < valve_dist_for_zuankong:
+    #         bz.zuankong = head[0]
+    #         block_objs.remove(head[0])  # 匹配上了就删除
 
     # #画框线
     # for bz in bizhis:
@@ -371,11 +479,13 @@ def clearnup_biaozhi():
     # bizhis[0].clearup(acad.doc)
 
     # 自动调整位置 修剪格式线
-    print("共找到%d个。"%len(bizhis))
-    for i,o in enumerate(bizhis):
-        # o.clearup(acad.doc,both=False)
-        o.automove(acad, acad.doc)
-        acad.prompt("已完成%d/%d\n"%(i+1,len(bizhis)) )
+    print("共找到%d个。"%len(bz_matched))
+    for i,o in enumerate(bz_matched):
+        o.clearup(acad.doc,both=False)
+        # o.automove(acad, acad.doc)
+        # o.rotate()
+        print("%i:%s"%(i,o))
+        safe_prompt(acad,"已完成%d/%d\n"%(i+1,len(bz_matched)))
 
     duration_time = time.time() - start_time
     acad.prompt("命令完成。耗时%fs\n" % duration_time)

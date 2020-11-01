@@ -8,7 +8,7 @@ def thisorder():
     acad = Autocad(create_if_not_exists=True)
     # slt_draw = acad.get_selection(text="选择图面对象：")
     slt_draw=my_get_selection(acad,"选择图面对象：")
-    slt_desc= my_get_selection(acad,"选择说明对象：")
+    # slt_desc= my_get_selection(acad,"选择说明对象：")
     slt_cp = my_get_selection(acad,"选择copyright对象：")
     papersize = acad.doc.Utility.getreal('输入图纸大小A：')
     zoomscale = acad.doc.Utility.getreal('输入图缩放比例：')
@@ -50,22 +50,22 @@ def thisorder():
 
     xs=[]
     ys=[]
-    for myobj in slt_desc:
-        # myobj = acad.best_interface(i)
-        xs.append(myobj.GetBoundingBox()[0][0])
-        xs.append(myobj.GetBoundingBox()[1][0])
-        ys.append(myobj.GetBoundingBox()[0][1])
-        ys.append(myobj.GetBoundingBox()[1][1])
-    desc_ld=Vector3D(min(xs),min(ys))#得到角点
-    desc_ru=Vector3D(max(xs),max(ys))
+    # for myobj in slt_desc:
+    #     # myobj = acad.best_interface(i)
+    #     xs.append(myobj.GetBoundingBox()[0][0])
+    #     xs.append(myobj.GetBoundingBox()[1][0])
+    #     ys.append(myobj.GetBoundingBox()[0][1])
+    #     ys.append(myobj.GetBoundingBox()[1][1])
+    # desc_ld=Vector3D(min(xs),min(ys))#得到角点
+    # desc_ru=Vector3D(max(xs),max(ys))
 
-    left_margin=10
-    right_margin=20#左右留白
+    left_margin=10*zoomscale
+    right_margin=10*zoomscale#左右留白
 
     cp_width=cp_ru.x-cp_ld.x#签名栏的宽度
     cp_height=cp_ru.y-cp_ld.y
-    if desc_ru.x+right_margin-draw_ru.x<cp_width:#签名栏侵入图面
-        right_margin=draw_ru.x+cp_width-desc_ru.x+0.1 #最后这个数为0 时，签名栏和图面完全相邻
+    # if right_margin-draw_ru.x<cp_width:#签名栏侵入图面
+    #     right_margin=draw_ru.x+cp_width+0.1 #最后这个数为0 时，签名栏和图面完全相邻
 
     if papersize == 2:
         h1=205/0.5*zoomscale
@@ -80,7 +80,7 @@ def thisorder():
     centerline_y=0.5*(draw_ld.y+draw_ru.y)#中心线完全由图面中心线决定
     frame1_ld=Vector3D(x=draw_ld.x-left_margin,
                     y=centerline_y-h1/2)
-    frame1_ru=Vector3D(x=desc_ru.x+right_margin,
+    frame1_ru=Vector3D(x=draw_ru.x+right_margin,
                     y=centerline_y+h1/2)
     # frame2_ld=frame1_ld-Vector3D(12.5,2.5)
     # frame2_ru=frame1_ru+Vector3D(2.5,2.5)#由内框线生成外框线
@@ -101,7 +101,7 @@ def thisorder():
 
     #移动签名
 
-    newp=Vector3D(desc_ru.x+right_margin,frame1_ld.y+cp_height)
+    newp=Vector3D(draw_ru.x+right_margin,frame1_ld.y+cp_height)
     for myobj in slt_cp:
         myobj.move(to_Apoint(cp_ru),to_Apoint(newp))
     acad.prompt("命令完成。\n")
