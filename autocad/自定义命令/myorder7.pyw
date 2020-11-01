@@ -12,10 +12,14 @@ from autocad.mapmesh import MapMesh, find_whiterect
 from autocad.toapoint import to_Apoint, MyRect, get_trans_func, make_myrect_from_obj, safe_prompt
 from autocad.自定义命令.myorder6 import get_best_rect, select_by_window
 import numpy as np
+from mybaseclasses.mylogger import MyLogger
 from pyautocad import Autocad, APoint
 from vector3d import Vector3D, Line3D
 
-
+logger=MyLogger('myorder7')
+logger.hide_name=True
+logger.hide_level=True
+logger.setLevel('debug')
 def haircut(myobj):
     """
     给原生的cad对象理发
@@ -151,7 +155,7 @@ class BiaoZhi:
         t = Vector3D(radius, radius)
         wd_ld = target_mr.center - t
         wd_ru = target_mr.center + t
-        objs = select_by_window(acad, acad.doc, wd_ld, wd_ru)  # 选择附近对象
+        objs = select_by_window(acad, acad_doc, wd_ld, wd_ru)  # 选择附近对象
         for i in self.texts:
             objs.remove(i)  # 移除自己
         # 根据对象 生成对应的rect
@@ -160,7 +164,7 @@ class BiaoZhi:
             try:
                 mr = make_myrect_from_obj(oj)
                 rects.append(mr)
-                # mr.draw_in_cad(acad.doc)
+                # mr.draw_in_cad(acadoc)
             except TypeError:
                 pass
         mm = MapMesh(wd_ld, wd_ru)
@@ -207,7 +211,8 @@ def myfunc(a, b):
 def myfunc1(a,b):
     return (e**(8*a)-1)*b
 def myfunc2(a,b):
-    return (e**(8*a)-1)*(b+1.0)
+    # return (e**(8*a)-1)*(b+1.0)#这个好像是一点也不能有覆盖
+    return (e**(4*a)-1)*(b+1.0)
 
 
 
@@ -233,18 +238,19 @@ def calc_angle_difference(a,b):
 
 def clearnup_biaozhi():
     acad = Autocad(create_if_not_exists=True)
+    acadoc=acad.doc
     slt = acad.get_selection(text="选择需要调整标志线的对象：按enter结束")
     acad.prompt("正在执行命令...\n")
     start_time = time.time()
     # acad.prompt("选择需要重新排列的对象：按enter结束\n")
-    print(acad.doc.Name)
+    print(acadoc.Name)
 
     text_objs = []  # 所有文字
     line_objs = []
     block_objs = []
     print('共选择%d个对象' % slt.Count)
-    # valve_x = acad.doc.Utility.getreal('输入分组x距离：')
-    # new_distance_x = acad.doc.Utility.getreal('输入新的组间x距离：')
+    # valve_x = acadoc.Utility.getreal('输入分组x距离：')
+    # new_distance_x = acadoc.Utility.getreal('输入新的组间x距离：')
     # acad.prompt("正在重新排列...\n")
     for i in range(slt.Count):
         myobj = acad.best_interface(slt[i])
@@ -376,6 +382,7 @@ def clearnup_biaozhi():
     lines_bakcup=[x for x in  t_lines_fresh]
     for thisline in t_lines_fresh:
         for thisblock in block_objs:
+
             if thisline.p1 in thisblock.myrect:
                 t=BiaoZhi()
                 t.zuankong=thisblock
@@ -383,6 +390,7 @@ def clearnup_biaozhi():
                 biaozhi_t.append(t)
                 block_to_del=thisblock
                 line_to_del.append(thisline)
+                logger.debug("添加将删除的block：%s" % block_to_del.__str__())
                 break
             elif thisline.p2 in thisblock.myrect:#终点在rect内
                 #对调终点和起点
@@ -398,7 +406,10 @@ def clearnup_biaozhi():
                 block_to_del=thisblock
                 line_to_del.append(thisline)
                 break
-        block_objs.remove(block_to_del)
+        if block_to_del is not None:
+            logger.debug("删除block：%s"%block_to_del.__str__())
+            block_objs.remove(block_to_del)
+            block_to_del=None
     for i in line_to_del:
         t_lines_fresh.remove(i)
     bzs_backup=[x for x in biaozhi_t]
@@ -470,19 +481,19 @@ def clearnup_biaozhi():
 
     # #画框线
     # for bz in bizhis:
-    #     bz.draw_frame(acad.doc)
+    #     bz.draw_frame(acadoc)
 
     # #移动
-    # bizhis[0].move(Vector3D(0,0,0),Vector3D(0,10,0),acad.doc)
+    # bizhis[0].move(Vector3D(0,0,0),Vector3D(0,10,0),acadoc)
 
     # #修剪格式线
-    # bizhis[0].clearup(acad.doc)
+    # bizhis[0].clearup(acadoc)
 
     # 自动调整位置 修剪格式线
     print("共找到%d个。"%len(bz_matched))
     for i,o in enumerate(bz_matched):
-        o.clearup(acad.doc,both=False)
-        # o.automove(acad, acad.doc)
+        o.automove(acad,acadoc)
+        # o.clearup(acadoc,both=False)
         # o.rotate()
         print("%i:%s"%(i,o))
         safe_prompt(acad,"已完成%d/%d\n"%(i+1,len(bz_matched)))
