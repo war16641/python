@@ -205,7 +205,7 @@ def find_whiterect(mm:MapMesh,
 
     pass
 
-def default_dist_func(rect1,rect2):#默认的距离函数
+def default_dist_func(rect1,rect2):#默认的距离函数K
     dist1, dist2 = rect1.get_dist_from_rect(rect2)
     dist = (dist1 ** 2 + dist2 ** 2) ** 0.5  # 矩形框的距离
     return dist
