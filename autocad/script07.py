@@ -10,7 +10,7 @@ import re
 from myfile import collect_all_filenames, append_file
 
 transition_txt="————————————————以下为TZ输出——————————————————————\n"
-pn=r"d:\t1"#路径名
+pn=r"E:\铁二院\工作\初步设计\DK100+066梁家庄大桥\t1"#路径名
 fm1="^\d+$"
 lst1=[]
 fm2="^\d+zj\.RST$"

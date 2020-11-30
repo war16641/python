@@ -19,3 +19,10 @@ rt=re.findall(p1, words)
 print(rt)
 rt=re.findall(p2, words)
 print(rt)
+
+
+
+import re
+pt=r"-?\d+\.?\d*e?-?\d*?"#匹配数字
+l=re.findall(pt,"abc嘻嘻哈哈桥 桥 1.23 亩") #匹配桥名
+print(l)
