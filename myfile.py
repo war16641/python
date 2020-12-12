@@ -60,35 +60,36 @@ def del_file(fullname: str) -> bool:
         return False
 
 
-def search_directory(directory: str, rex: str, func: callable, *args, **kwargs) -> None:
+def search_directory(dre: str, rex: str, func: callable, *args, **kwargs) -> None:
     """
     对文件夹下所有文件 含子文件夹 进行筛选 
     筛选规则 使用正则表达式rex进行匹配
-    :param directory: 
+    可能是新版本的原因，递归函数不能使用 “dre=？？”的函数调用，改为直接传入参数
+    :param dre: 
     :param rex: 正则表达式
     :param func: 筛选成功后 进行的操作
     :param args: 
     :param kwargs: 
     :return: 
     """
-    assert os.path.exists(directory)
+    assert os.path.exists(dre)
     assert callable(func)
-    for filename in os.listdir(directory):
-        curent_full_name = os.path.join(directory, filename)
+    for filename in os.listdir(dre):
+        curent_full_name = os.path.join(dre, filename)
         print(curent_full_name, end='')
         if os.path.isfile(curent_full_name):  # 文件
             flag = len(re.findall(rex, filename)) > 0
             if flag is True:
                 print("->命中")
-                func(fullname=curent_full_name,
+                func(curent_full_name,
                      *args, **kwargs)
             else:
                 print("->未命中")
         else:  # 文件夹
             print("->文件夹")
-            search_directory(directory=curent_full_name,
-                             rex=rex,
-                             func=func,
+            search_directory(curent_full_name,
+                             rex,
+                             func,
                              *args, **kwargs)
 
 def is_number(s):
