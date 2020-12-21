@@ -1,27 +1,28 @@
 """
 自动添加图框
 """
-from autocad.toapoint import to_Apoint, my_get_selection
+from autocad.toapoint import to_Apoint, my_get_selection, safe_prompt
 from pyautocad import Autocad, APoint
 from vector3d import Vector3D
 def thisorder():
     acad = Autocad(create_if_not_exists=True)
+    acadoc=acad.doc
     # slt_draw = acad.get_selection(text="选择图面对象：")
     slt_draw=my_get_selection(acad,"选择图面对象：")
     # slt_desc= my_get_selection(acad,"选择说明对象：")
     slt_cp = my_get_selection(acad,"选择copyright对象：")
-    papersize = acad.doc.Utility.getreal('输入图纸大小A：')
-    zoomscale = acad.doc.Utility.getreal('输入图缩放比例：')
-    acad.prompt("正在执行命令...\n")
+    papersize = acadoc.Utility.getreal('输入图纸大小A：')
+    zoomscale = acadoc.Utility.getreal('输入图缩放比例：')
+    # safe_prompt(acadoc,"正在执行命令...\n")
 
-    print(acad.doc.Name)
+    print(acadoc.Name)
 
 
 
     xs=[]
     ys=[]
     for myobj in slt_draw:
-        # myobj=acad.best_interface(myobj)
+        myobj=acad.best_interface(myobj)
         xs.append(myobj.GetBoundingBox()[0][0])
         xs.append(myobj.GetBoundingBox()[1][0])
         ys.append(myobj.GetBoundingBox()[0][1])
@@ -87,17 +88,17 @@ def thisorder():
     frame2_ld=frame1_ld-Vector3D(12.5/0.5*zoomscale,2.5/0.5*zoomscale)
     frame2_ru=frame1_ru+Vector3D(2.5/0.5*zoomscale,2.5/0.5*zoomscale)#由内框线生成外框线
 
-    t1=acad.doc.modelspace.addline(APoint(frame1_ld.x,frame1_ld.y),APoint(frame1_ru.x,frame1_ld.y))
-    t2=acad.doc.modelspace.addline(APoint(frame1_ru.x,frame1_ld.y),APoint(frame1_ru.x,frame1_ru.y))
-    t3=acad.doc.modelspace.addline(APoint(frame1_ru.x,frame1_ru.y),APoint(frame1_ld.x,frame1_ru.y))
-    t4=acad.doc.modelspace.addline(APoint(frame1_ld.x,frame1_ru.y),APoint(frame1_ld.x,frame1_ld.y))
+    t1=acadoc.modelspace.addline(APoint(frame1_ld.x,frame1_ld.y),APoint(frame1_ru.x,frame1_ld.y))
+    t2=acadoc.modelspace.addline(APoint(frame1_ru.x,frame1_ld.y),APoint(frame1_ru.x,frame1_ru.y))
+    t3=acadoc.modelspace.addline(APoint(frame1_ru.x,frame1_ru.y),APoint(frame1_ld.x,frame1_ru.y))
+    t4=acadoc.modelspace.addline(APoint(frame1_ld.x,frame1_ru.y),APoint(frame1_ld.x,frame1_ld.y))
     for i in [t1,t2,t3,t4]:
         i.color=6#改变内框线颜色
 
-    acad.doc.modelspace.addline(APoint(frame2_ld.x,frame2_ld.y),APoint(frame2_ru.x,frame2_ld.y))
-    acad.doc.modelspace.addline(APoint(frame2_ru.x,frame2_ld.y),APoint(frame2_ru.x,frame2_ru.y))
-    acad.doc.modelspace.addline(APoint(frame2_ru.x,frame2_ru.y),APoint(frame2_ld.x,frame2_ru.y))
-    acad.doc.modelspace.addline(APoint(frame2_ld.x,frame2_ru.y),APoint(frame2_ld.x,frame2_ld.y))
+    acadoc.modelspace.addline(APoint(frame2_ld.x,frame2_ld.y),APoint(frame2_ru.x,frame2_ld.y))
+    acadoc.modelspace.addline(APoint(frame2_ru.x,frame2_ld.y),APoint(frame2_ru.x,frame2_ru.y))
+    acadoc.modelspace.addline(APoint(frame2_ru.x,frame2_ru.y),APoint(frame2_ld.x,frame2_ru.y))
+    acadoc.modelspace.addline(APoint(frame2_ld.x,frame2_ru.y),APoint(frame2_ld.x,frame2_ld.y))
 
     #移动签名
 

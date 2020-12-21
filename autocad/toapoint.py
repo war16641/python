@@ -1,6 +1,7 @@
 """
 将vector3d变转换为apoint
 """
+import time
 from math import cos, sin, pi
 from typing import Tuple
 
@@ -312,7 +313,16 @@ def my_get_selection(acad,text="")->list:
     @param text:
     @return: 对象的列表 已实现best interface
     """
-    slt = acad.get_selection(text=text)
+    errortime=0
+    while True:
+        try:
+            slt = acad.get_selection(text=text)
+            break
+        except Exception as e:
+            errortime+=1
+            time.sleep(0.2)
+            if errortime==3:
+                raise e
     lst=[]
     for i in range(slt.Count):
         try:
