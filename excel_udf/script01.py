@@ -5,7 +5,7 @@ import re
 import unittest
 import xlwings as xw
 import numpy as np
-
+import autocad.about_tz as tz
 @xw.func
 def get_mileage(label:str)->float:
     """
@@ -115,6 +115,11 @@ def arange_inteval(L,itv)->str:
             raise Exception("L太小")
         return (geshi(t)+"+%d×"+geshi(itv)+"+"+geshi(t)) % (t, n1, itv, t)
     pass
+
+
+@xw.func
+def test1(fullname):
+    return [1,1]
 
 class TestCase(unittest.TestCase):
     def test_get_mileage(self):
