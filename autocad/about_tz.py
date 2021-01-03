@@ -45,6 +45,7 @@ class TZ_result:
         self.No=-1#墩台号
         self.K=0.0#线刚度
         self.H=0.0#桩长
+        self.D=0.0#桩径
         self.caps=[]#type:list[Capacity]
         self.strs=[]#type:list[Stress]
         self.soils=[]#type:list[SoilStress]
@@ -81,6 +82,14 @@ class TZ_result:
         if len(l) == 0:
             raise ExceptionTZ("没找到墩台号")
         tz.No = int(l[0])
+
+        #读取桩径
+        pt = "设计桩身直径\s+Dz=\s*(\d+\.?\d*)"
+        l = re.findall(pt, tztxt)
+        if len(l) == 0:
+            raise ExceptionTZ("没找到桩径")
+        tz.D = int(l[0])
+
 
         # 读取纵向刚度
         pt = "纵向水平线刚度 K=\s*(\d+\.?\d*)"

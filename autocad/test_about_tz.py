@@ -20,6 +20,7 @@ class TestTZ_result(TestCase):
         self.assertEqual("主力+横向地震力",tz.strs[3].casename)
         self.assertAlmostEqual(38.26, tz.soils[1].soil_stress, delta=0.01)
         self.assertAlmostEqual(230.98, tz.soils[1].allowable_stress, delta=0.01)
+        self.assertAlmostEqual(1, tz.D, delta=0.01)
         pass
 
     def test2(self):
