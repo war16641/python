@@ -1,7 +1,7 @@
 import unittest
 from unittest import TestCase
 
-from autocad.about_tz import TZ_result
+from autocad.about_tz import TZ_result, Diagnosis, TZDiagnosis
 
 
 class TestTZ_result(TestCase):
@@ -22,6 +22,83 @@ class TestTZ_result(TestCase):
         self.assertAlmostEqual(230.98, tz.soils[1].allowable_stress, delta=0.01)
         pass
 
+    def test2(self):
+        # tz = TZ_result.load_from_file(
+        #     r"E:\我的文档\python\GoodToolPython\autocad\测试环境\19柱.RST")
+        tz = TZ_result.load_from_file(
+            r"E:\我的文档\python\GoodToolPython\autocad\测试环境\38ZJ.RST")
+        tz.run_diagnosis([Diagnosis.check_capacity,
+                          Diagnosis.check_K,
+                          Diagnosis.check_soil,
+                          Diagnosis.check_stress])
+
+        tz = TZ_result.load_from_file(
+            r"E:\我的文档\python\GoodToolPython\autocad\测试环境\38.1ZJ.RST")
+        funcs=[Diagnosis.check_capacity,
+                          Diagnosis.check_K,
+                          Diagnosis.check_soil,
+                          Diagnosis.check_stress]
+        try:
+            tz.run_diagnosis(funcs)
+            self.fail("应当抛出错误")
+        except TZDiagnosis as e:
+            self.assertEqual("刚度不足",e.brief)
+
+        tz = TZ_result.load_from_file(
+            r"E:\我的文档\python\GoodToolPython\autocad\测试环境\38.2ZJ.RST")
+        try:
+            tz.run_diagnosis(funcs)
+            self.fail("应当抛出错误")
+        except TZDiagnosis as e:
+            self.assertEqual("承载力不足", e.brief)
+
+        tz = TZ_result.load_from_file(
+            r"E:\我的文档\python\GoodToolPython\autocad\测试环境\38.3ZJ.RST")
+        try:
+            tz.run_diagnosis(funcs)
+            self.fail("应当抛出错误")
+        except TZDiagnosis as e:
+            self.assertEqual("承载力不足", e.brief)
+
+        tz = TZ_result.load_from_file(
+            r"E:\我的文档\python\GoodToolPython\autocad\测试环境\38.4ZJ.RST")
+        try:
+            tz.run_diagnosis(funcs)
+            self.fail("应当抛出错误")
+        except TZDiagnosis as e:
+            self.assertEqual("承载力过小", e.brief)
+
+        tz = TZ_result.load_from_file(
+            r"E:\我的文档\python\GoodToolPython\autocad\测试环境\38.5ZJ.RST")
+        try:
+            tz.run_diagnosis(funcs)
+            self.fail("应当抛出错误")
+        except TZDiagnosis as e:
+            self.assertEqual("承载力过大", e.brief)
+
+        tz = TZ_result.load_from_file(
+            r"E:\我的文档\python\GoodToolPython\autocad\测试环境\38.6ZJ.RST")
+        try:
+            tz.run_diagnosis(funcs)
+            self.fail("应当抛出错误")
+        except TZDiagnosis as e:
+            self.assertEqual("砼应力超限", e.brief)
+
+        tz = TZ_result.load_from_file(
+            r"E:\我的文档\python\GoodToolPython\autocad\测试环境\38.7ZJ.RST")
+        try:
+            tz.run_diagnosis(funcs)
+            self.fail("应当抛出错误")
+        except TZDiagnosis as e:
+            self.assertEqual("砼应力超限", e.brief)
+
+        tz = TZ_result.load_from_file(
+            r"E:\我的文档\python\GoodToolPython\autocad\测试环境\38.8ZJ.RST")
+        try:
+            tz.run_diagnosis(funcs)
+            self.fail("应当抛出错误")
+        except TZDiagnosis as e:
+            self.assertEqual("砼应力超限", e.brief)
 
 if __name__ == '__main__':
     unittest.main()

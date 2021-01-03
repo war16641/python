@@ -106,7 +106,7 @@ class DataUnit:
         return self
 
     def __init__(self, model=None):
-        self.data = {}  # type: Union[int,str,float]#以字典的形式保存所有变量
+        self.data = {}  #以字典的形式保存所有变量
         if model is not None:
             assert isinstance(model, FlatDataModel), '参数错误'
         self.model = model  # type:FlatDataModel   #保存模型
@@ -727,7 +727,7 @@ class FlatDataModel:
     def sort(self,key,reverse=False):
         """
         排序
-        @param key:
+        @param key:字段名
         @param reverse: 降序为true
         @return:
         """

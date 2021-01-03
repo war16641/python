@@ -1,6 +1,10 @@
 import re
 import unittest
+from typing import List
 from unittest import TestCase
+
+from excel.excel import FlatDataModel, DataUnit
+from myfile import collect_all_filenames
 
 
 class Capacity:
@@ -33,7 +37,7 @@ class SoilStress:#桩侧土压力
         self.allowable_stress=allowable_stress
 
 
-class ExceptionTZ(Exception):
+class ExceptionTZ(Exception):#tz中产生的错误
     pass
 
 class TZ_result:
@@ -59,11 +63,17 @@ class TZ_result:
         """
         tz = TZ_result()
         # 是否是摩擦桩
-        pt = "桩            型: 钻（挖）孔摩擦桩"
+        #pt = "桩            型: 钻（挖）孔摩擦桩"
+        pt = "桩            型: .+摩擦桩"
         l = re.findall(pt, tztxt)
         if len(l) == 0:
-            raise ExceptionTZ("不是摩擦桩")
-        tz.type = "摩擦桩"
+            l1 = re.findall("桩            型: .+柱桩", tztxt)
+            if len(l1)==0:
+                raise ExceptionTZ("不是摩擦桩")
+            else:
+                tz.type="柱桩"
+        else:
+            tz.type = "摩擦桩"
 
         # 读取墩台号
         pt = "(\d+) 墩  \(台\)  桩  基  设  计  计  算  书"
@@ -138,14 +148,140 @@ class TZ_result:
             content = f.read()
         return TZ_result.load_from_string(content)
 
+    def run_diagnosis(self,funcs:List[callable]):
+        """
+        运行测试
+        @param funcs: 测试函数列表 要求每个函数 只接受一个tz参数
+        @return:
+        """
+        if not isinstance(funcs,list):
+            funcs=[funcs]
+        for i in funcs:
+            i(self)
+
+
+
+class TZDiagnosis(Exception):#如果诊断有问题，就抛出这个异常
+    def __init__(self,brief="",tz=None,msg=""):
+        """
+
+        @param brief:
+        @param tz:
+        @param msg:
+        """
+        self.brief=brief
+        self.tz=tz#type:TZ_result
+        self.msg=msg
+    pass
+
+class Diagnosis:
+    @staticmethod
+    def check_K(tz:TZ_result):
+        """
+        检查刚度
+        @param tz:
+        @return:
+        """
+        if tz.K<350.:
+            raise TZDiagnosis(brief="刚度不足",
+                              tz=tz,
+                              )
+
+    @staticmethod
+    def check_capacity(tz:TZ_result):
+        """
+        检查承载力
+        @param tz:
+        @return:
+        """
+        for i in tz.caps:
+            if i.design > i.allowable:
+                raise TZDiagnosis(brief="承载力不足", tz=tz)
+            if "主力" in i.casename and "附" not in i.casename and "地震" not in i.casename and\
+                    "特殊" not in i.casename :#主力
+                if i.safety_factor<1.05:
+                    raise TZDiagnosis(brief="承载力过小", tz=tz)
+                elif i.safety_factor > 1.2 and "摩擦桩"==tz.type:
+                    raise TZDiagnosis(brief="承载力过大", tz=tz)
 
 
 
 
 
+    @staticmethod
+    def check_stress(tz:TZ_result):
+        """
+        检查砼和钢筋应力
+        @param tz:
+        @return:
+        """
+        for i in tz.strs:
+            if "主力" in i.casename and "附" not in i.casename and "地震" not in i.casename and\
+                    "特殊" not in i.casename :#主力
+                if i.sigma_conc>=7.0:
+                    raise TZDiagnosis(brief="砼应力超限", tz=tz)
+                if i.sigma_steel1>=160 or i.sigma_steel2>=160:
+                    raise TZDiagnosis(brief="钢筋应力超限", tz=tz)
+            elif "主力" in i.casename and "附"  in i.casename:#主力+附
+                if i.sigma_conc>=7.0*1.2:
+                    raise TZDiagnosis(brief="砼应力超限", tz=tz)
+                if i.sigma_steel1>=160 or i.sigma_steel2>=160:
+                    raise TZDiagnosis(brief="钢筋应力超限", tz=tz)
+            elif "地震" in i.casename or "特殊" in i.casename:
+                if i.sigma_conc>=7.0*1.5:
+                    raise TZDiagnosis(brief="砼应力超限", tz=tz)
+                if i.sigma_steel1>=160 or i.sigma_steel2>=160:
+                    raise TZDiagnosis(brief="钢筋应力超限", tz=tz)
+            else:
+                raise Exception("其他未知工况")
 
+    @staticmethod
+    def check_soil(tz:TZ_result):
+        """
+        检查土压力
+        @param tz:
+        @return:
+        """
+        for i in tz.soils:
+            if i.soil_stress>=i.allowable_stress:
+                raise TZDiagnosis(brief="桩侧土压力超限",tz=tz)
+
+
+
+#这个函数可以删除
+#遍历一个文件夹里的所有rst文件生成tz
+#并进行诊断，通过fdm输出诊断结果
+def test1():
+    lst=[]
+    collect_all_filenames(directory=r"E:\铁二院\济枣线北段\初步设计\DK9+309.4坞西村特大桥\基础检算",
+                          rex=".+.RST",
+                          lst=lst)
+    check_results=FlatDataModel()
+    check_results.vn=['墩号','结果','简报']
+    for i,path in enumerate(lst):
+        u=DataUnit(check_results)
+        tz=TZ_result.load_from_file(path)
+        u.data['墩号']=tz.No
+        u.data['结果'] = ""
+        u.data['简报'] = ""
+        try:
+            tz.run_diagnosis([Diagnosis.check_capacity,
+                              Diagnosis.check_K,
+                              Diagnosis.check_soil,
+                              Diagnosis.check_stress])
+            u.data['结果'] = "通过"
+        except TZDiagnosis as e:
+            u.data['结果'] = "不通过"
+            u.data['简报'] = e.brief
+        except Exception:
+            u.data['结果'] = "未知错误"
+        check_results.append_unit(u)
+        print("已读取%d/%d"%(i+1,len(lst)))
+    check_results.sort(key='墩号')
+    check_results.show_in_excel()
 if __name__ == '__main__':
     tz=TZ_result.load_from_file(r"E:\我的文档\Tencent Files\973916531\FileRecv\38ZJ.RST")
+    tz.run_diagnosis([Diagnosis.check_capacity,Diagnosis.check_K,Diagnosis.check_soil,Diagnosis.check_stress])
     # pathname=r"E:\我的文档\Tencent Files\973916531\FileRecv\38ZJ.RST"
     # with open(pathname) as f:
     #     content=f.read()
