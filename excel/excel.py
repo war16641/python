@@ -13,10 +13,9 @@ from GoodToolPython.mybaseclasses.tools import is_sequence_with_specified_type
 import unittest
 
 
-
-def bisection_method(sorted_list:list,
+def bisection_method(sorted_list: list,
                      goal,
-                     func:callable):
+                     func: callable):
     """
     二分法查找
     @param sorted_list: 已经按升序排列好的列表，或者可以进行下标操作的对象 程序不会检查这个条件，请确保这个参数已经按升序排好 否则可能返回错误结果
@@ -25,30 +24,31 @@ def bisection_method(sorted_list:list,
     @return: 如果成功找到，返回id,lbound,ubound  id是基于0 如果goal完全找到，lb和ub就有两种可行的值
             如果找不到,返回None,lbound,ubound#没找到 返回最接近的两个id
     """
-    #检查goal是否在上下界之间
-    assert callable(func),'func必须为函数'
-    assert len(sorted_list)>=2,'sorted_list必须至少两个元素'
-    if goal==func(sorted_list[0]):
-        return 0,0,1
-    elif goal==func(sorted_list[-1]):
-        return len(sorted_list)-1, len(sorted_list)-2, len(sorted_list)-1
+    # 检查goal是否在上下界之间
+    assert callable(func), 'func必须为函数'
+    assert len(sorted_list) >= 2, 'sorted_list必须至少两个元素'
+    if goal == func(sorted_list[0]):
+        return 0, 0, 1
+    elif goal == func(sorted_list[-1]):
+        return len(sorted_list) - 1, len(sorted_list) - 2, len(sorted_list) - 1
     else:
-        assert func(sorted_list[0])<goal<func(sorted_list[-1]),'goal超出sorted_list的上下界'
+        assert func(sorted_list[0]) < goal < func(sorted_list[-1]), 'goal超出sorted_list的上下界'
     lbound = 0
     ubound = len(sorted_list) - 1  # 二分法的上下界
     while True:
-        #检查是否结束
-        if ubound-lbound<=1:
-            return None,lbound,ubound#没找到 返回最接近的两个id
-        midone_id=round((lbound+ubound)/2.0)
-        midone=func(sorted_list[midone_id])
-        if goal==midone:
-            return midone_id,midone_id-1,midone_id
-        elif goal<midone:
-            #在前半段
-            ubound=midone_id
-        else:#在后半段
-            lbound=midone_id
+        # 检查是否结束
+        if ubound - lbound <= 1:
+            return None, lbound, ubound  # 没找到 返回最接近的两个id
+        midone_id = round((lbound + ubound) / 2.0)
+        midone = func(sorted_list[midone_id])
+        if goal == midone:
+            return midone_id, midone_id - 1, midone_id
+        elif goal < midone:
+            # 在前半段
+            ubound = midone_id
+        else:  # 在后半段
+            lbound = midone_id
+
 
 def myunique(lst, return_firstid=False):
     """
@@ -59,11 +59,11 @@ def myunique(lst, return_firstid=False):
     @param return_firstid: 是否返回第一次出现的id
     @return:
     """
-    lst1=list(set(lst))
+    lst1 = list(set(lst))
     lst1.sort(key=lst.index)
     if return_firstid:
-        firstid=[lst.index(x) for x in lst1]
-        return lst1,firstid
+        firstid = [lst.index(x) for x in lst1]
+        return lst1, firstid
     else:
         return lst1
 
@@ -82,7 +82,7 @@ class DataUnit:
     """
 
     @staticmethod
-    def make(vn: Sequence[str], row: Sequence[Cell], model: 'FlatDataModel',mergedcells:dict):
+    def make(vn: Sequence[str], row: Sequence[Cell], model: 'FlatDataModel', mergedcells: dict):
         """
         这个函数用于从excel文件中生成数据单元
         :param vn:
@@ -98,15 +98,16 @@ class DataUnit:
         assert len(vn) == len(row), 'vn与row必须大小一致'
         self.data = {}  # type: Union[int,str,float]#以字典的形式保存所有变量
         for name, value in zip(vn, row):
-            if "MergedCell" in str(type(value)):#若是合并单元格
-                self.data[name]=value.parent.cell(mergedcells[(value.row,value.column,)][0],mergedcells[(value.row,value.column,)][1]).value
-            else:#普通单元格
+            if "MergedCell" in str(type(value)):  # 若是合并单元格
+                self.data[name] = value.parent.cell(mergedcells[(value.row, value.column,)][0],
+                                                    mergedcells[(value.row, value.column,)][1]).value
+            else:  # 普通单元格
                 self.data[name] = value.value
         self.model = model  # type:FlatDataModel   #保存模型
         return self
 
     def __init__(self, model=None):
-        self.data = {}  #以字典的形式保存所有变量
+        self.data = {}  # 以字典的形式保存所有变量
         if model is not None:
             assert isinstance(model, FlatDataModel), '参数错误'
         self.model = model  # type:FlatDataModel   #保存模型
@@ -153,7 +154,7 @@ class FlatDataModel:
         :return:
         """
         assert is_sequence_with_specified_type(vn_lst, str), '必须为str列表'
-        assert isinstance(data_lst,Iterable),"数据必须可迭代"
+        assert isinstance(data_lst, Iterable), "数据必须可迭代"
         # assert is_sequence_with_specified_type(data_lst, list) or is_sequence_with_specified_type(data_lst, tuple), '必须为列表组成的列表'
         fdm = FlatDataModel()
         fdm.vn = vn_lst
@@ -177,12 +178,14 @@ class FlatDataModel:
                              sheetname: str = None,
                              row_variable_name: int = 0,
                              row_caption: List[int] = None,
-                             row_data_start: int = None) -> 'FlatDataModel':
+                             row_data_start: int = None,
+                             max_units: int = 0) -> 'FlatDataModel':
         pass
 
     @staticmethod
     def load_from_excel_file(fullname, sheetname=None, row_variable_name=0, row_caption=None,
-                             row_data_start=None) -> 'FlatDataModel':
+                             row_data_start=None,
+                             max_units=0) -> 'FlatDataModel':
         """
         从excel'文件中载入平面数据模型
         允许单元格有竖向的合并，合并的单元格看做是后续合并行与第一行有相同数据
@@ -192,6 +195,7 @@ class FlatDataModel:
         :param row_variable_name: 变量名所在行 0-based
         :param row_caption: 注释行 可以是列表，代表多行注释 默认为空
         :param row_data_start: 数据起始行 默认为变量名行下一行
+        :@param max_units:最多读取单元个数，默认0为不限制
         :return:
         """
         self = FlatDataModel()
@@ -205,20 +209,20 @@ class FlatDataModel:
         worksheet = workbook[sheetname]
         rows = list(worksheet.rows)  # 将工作簿中所有数据转化为以行为单位的列表
 
-        #处理合并单元格 允许单元格有竖向的合并 不允许有横向的合并
-        mergecells={}
+        # 处理合并单元格 允许单元格有竖向的合并 不允许有横向的合并
+        mergecells = {}
         if worksheet.merged_cells:
-            for item in worksheet.merged_cells:#对每一处合并单元格进行循环
-                for row in range(item.min_row, item.max_row+1):
-                    for col in range(item.min_col, item.max_col+1):
-                        #用位置坐标作为key，value为首单元格坐标
-                        mergecells[(row,col)]=(item.min_row,item.min_col,)
+            for item in worksheet.merged_cells:  # 对每一处合并单元格进行循环
+                for row in range(item.min_row, item.max_row + 1):
+                    for col in range(item.min_col, item.max_col + 1):
+                        # 用位置坐标作为key，value为首单元格坐标
+                        mergecells[(row, col)] = (item.min_row, item.min_col,)
         # 读变量名
         self.vn = [cell.value for cell in rows[row_variable_name]]  # type: List[str]
         assert is_sequence_with_specified_type(self.vn, str), '变量名读取失败'
-        #检查变量名是否重复
-        t=set(self.vn)
-        if len(t)<len(self.vn):
+        # 检查变量名是否重复
+        t = set(self.vn)
+        if len(t) < len(self.vn):
             raise Exception("变量名重复")
         # 读注释行
         self.caption = []  # type:List[List[str]]
@@ -229,7 +233,6 @@ class FlatDataModel:
                 tmp = [cell.value for cell in rows[row_id]]
                 self.caption.append(tmp)
 
-
         # 读数据
         self.units = []  # type:list[DataUnit]
         if row_data_start is None:
@@ -238,8 +241,10 @@ class FlatDataModel:
             else:
                 row_data_start = row_caption[-1] + 1
         for row in rows[row_data_start:]:
-            unit = DataUnit.make(self.vn, row, self,mergecells)
+            unit = DataUnit.make(self.vn, row, self, mergecells)
             self.units.append(unit)
+            if max_units != 0 and len(self) == max_units:  # 检查最大单元个数
+                break
         return self
 
     # def __init__(self,fullname, sheetname=None, row_variable_name=0, row_caption=None, row_data_start=None):
@@ -294,8 +299,8 @@ class FlatDataModel:
         """
         # if isinstance(item,str):
         #     item=[item]
-        if isinstance(item,list) or isinstance(item,str):  # 获取所有数据点的某个变量信息
-            t=[x[item] for x in self.units]
+        if isinstance(item, list) or isinstance(item, str):  # 获取所有数据点的某个变量信息
+            t = [x[item] for x in self.units]
             return t
             # assert item in self.vn, '该变量名不存在'
             # r = []
@@ -314,14 +319,15 @@ class FlatDataModel:
                         list 长度与自身数据点个数相等
         @return:
         """
+
         def script_func():
             for u in self:
                 u.data[key] = value(u)
 
         def script_lst():
-            assert len(value)==len(self),"列表长度与自身数据点个数不一致。"
-            for i,u in enumerate(self):
-                u.data[key]=value[i]
+            assert len(value) == len(self), "列表长度与自身数据点个数不一致。"
+            for i, u in enumerate(self):
+                u.data[key] = value[i]
 
         if key in self.vn:
             print("字段(%s)被覆盖" % key)
@@ -329,7 +335,7 @@ class FlatDataModel:
             self.vn.append(key)  # 更新vn
         if callable(value):
             script_func()
-        elif isinstance(value,list):
+        elif isinstance(value, list):
             script_lst()
         else:
             raise TypeError("参数错误")
@@ -342,14 +348,15 @@ class FlatDataModel:
         # 保存文件
         wb.save(fullname)
 
-    def save_to_txt(self,fullname,txt_func,write_vn=True):
+    def save_to_txt(self, fullname, txt_func, write_vn=True):
         with open(fullname, 'w') as file_object:
-            if write_vn:#写入vn
+            if write_vn:  # 写入vn
                 file_object.write(",".join(self.vn))
                 file_object.write("\n")
             for u in self:
                 file_object.write(txt_func(u))
         pass
+
     def __iter__(self):
         # 依次返回每一个unit
         return self.units.__iter__()
@@ -724,55 +731,57 @@ class FlatDataModel:
 
         return fdm
 
-    def sort(self,key,reverse=False):
+    def sort(self, key, reverse=False):
         """
         排序
         @param key:字段名
         @param reverse: 降序为true
         @return:
         """
-        lams=[]
-        if isinstance(key,str):
-            key=[key]
+        lams = []
+        if isinstance(key, str):
+            key = [key]
         for i in key:
-            assert i in self.vn,"不存在字段%s"%i
-            lams.append(lambda x:x.data[i])#从字段名转换为取值的匿名函数
-        func=lambda x:tuple([i(x) for i in lams])#这一段是取任意字段组成tuple的匿名函数
-        self.units.sort(key=func,reverse=reverse)
+            assert i in self.vn, "不存在字段%s" % i
+            lams.append(lambda x: x.data[i])  # 从字段名转换为取值的匿名函数
+        func = lambda x: tuple([i(x) for i in lams])  # 这一段是取任意字段组成tuple的匿名函数
+        self.units.sort(key=func, reverse=reverse)
 
-    def make_bunches(self,classify_names)->Dict:
+    def make_bunches(self, classify_names) -> Dict:
         """
         分类
         不会删除或者增加数据点
         @param classify_names: 用于分类的字段列表
         @return:
         """
+
         def make_legend_names():
-            #生成图例名称
-            nonlocal  classify_names,classify_names_value_unique
-            r=[]
+            # 生成图例名称
+            nonlocal classify_names, classify_names_value_unique
+            r = []
             for i in classify_names_value_unique:
                 t = []
                 for name, value in zip(classify_names, i):
                     t.append("%s:%s" % (name, value.__str__()))
                 r.append(",".join(t))  # 添加图例名称 逗号分隔
             return r
-        r={}
-        if isinstance(classify_names,str):
-            classify_names=[classify_names]
+
+        r = {}
+        if isinstance(classify_names, str):
+            classify_names = [classify_names]
         self.sort(classify_names)
-        classify_names_value=self[classify_names]#分类名的值
+        classify_names_value = self[classify_names]  # 分类名的值
         classify_names_value_unique, firstid = myunique(classify_names_value, True)
-        legend_names=make_legend_names()
-        for i,name in enumerate(classify_names_value_unique):
-            if i != len(classify_names_value_unique)-1:
-                datas=self[firstid[i]:firstid[i+1]]
+        legend_names = make_legend_names()
+        for i, name in enumerate(classify_names_value_unique):
+            if i != len(classify_names_value_unique) - 1:
+                datas = self[firstid[i]:firstid[i + 1]]
             else:
-                datas=self[firstid[i]:]
-            r[legend_names[i]]=self.__load_from_datas(self.vn,datas)
+                datas = self[firstid[i]:]
+            r[legend_names[i]] = self.__load_from_datas(self.vn, datas)
         return r
 
-    def __load_from_datas(self,vnlist,datas)->'FlatDataModel':
+    def __load_from_datas(self, vnlist, datas) -> 'FlatDataModel':
         """
         从datas中生成fdm
         不用deepcopy
@@ -780,46 +789,46 @@ class FlatDataModel:
         @param datas:
         @return:
         """
-        assert is_sequence_with_specified_type(datas,DataUnit),'datas必须为dataunit组成的列表'
-        fdm=FlatDataModel()
-        fdm.vn=vnlist
-        fdm.units=datas#这里没有deepcopy
+        assert is_sequence_with_specified_type(datas, DataUnit), 'datas必须为dataunit组成的列表'
+        fdm = FlatDataModel()
+        fdm.vn = vnlist
+        fdm.units = datas  # 这里没有deepcopy
         return fdm
 
     @staticmethod
-    def load_from_string(stringtxt:str,vn_syle='fromstring',separator=' '):
-        stringtxt=stringtxt.strip('\n ')#去除多余的换行符
-        lns=stringtxt.split('\n')#按行划分
-        fdm=FlatDataModel()
-        if vn_syle == 'fromstring':#使用第一行的数据
+    def load_from_string(stringtxt: str, vn_syle='fromstring', separator=' '):
+        stringtxt = stringtxt.strip('\n ')  # 去除多余的换行符
+        lns = stringtxt.split('\n')  # 按行划分
+        fdm = FlatDataModel()
+        if vn_syle == 'fromstring':  # 使用第一行的数据
             eles = get_elements_from_line(lns[0], additional_separator=separator, number_only=False)
-            fdm.vn=eles
-            lns.pop(0)#去除第一个list
-        elif isinstance(vn_syle,list):
-            fdm.vn=vn_syle
+            fdm.vn = eles
+            lns.pop(0)  # 去除第一个list
+        elif isinstance(vn_syle, list):
+            fdm.vn = vn_syle
         else:
             raise TypeError("vn_style参数错误")
         for ln in lns:
-            u=DataUnit()
-            u.model=fdm
+            u = DataUnit()
+            u.model = fdm
             eles = get_elements_from_line(ln, additional_separator=separator, number_only=False)
-            for k,v in zip(fdm.vn,eles):
-                u.data[k]=v
+            for k, v in zip(fdm.vn, eles):
+                u.data[k] = v
             fdm.units.append(u)
         return fdm
 
-    def append_unit(self,u:DataUnit):
+    def append_unit(self, u: DataUnit):
         """
         从dataunit中添加
         @param u:
         @return:
         """
-        assert isinstance(u,DataUnit),'参数类型错误'
-        u=deepcopy(u)
+        assert isinstance(u, DataUnit), '参数类型错误'
+        u = deepcopy(u)
         self.units.append(u)
-        u.model=self
+        u.model = self
 
-    def merge(self,primary:str,secondary:Union[str,list],func:callable=None)->None:
+    def merge(self, primary: str, secondary: Union[str, list], func: callable = None) -> None:
         """
         合并某部分字段名
         如果中途发生错误，可能获得一个错误的fdm，且无法撤回。建议操作前备份
@@ -828,35 +837,36 @@ class FlatDataModel:
         @param func:
         @return:
         """
-        assert primary in self.vn,"未知字段%s"%primary
+        assert primary in self.vn, "未知字段%s" % primary
         if func is None:
-            func=lambda x,y:x+y#默认相加
-        assert callable(func),'func必须为二元函数'
-        if isinstance(secondary,str):
-            secondary=[secondary]
-        assert isinstance(secondary,list),'secodary(%s)参数错误,必须为str或者str列表'%secondary
+            func = lambda x, y: x + y  # 默认相加
+        assert callable(func), 'func必须为二元函数'
+        if isinstance(secondary, str):
+            secondary = [secondary]
+        assert isinstance(secondary, list), 'secodary(%s)参数错误,必须为str或者str列表' % secondary
         # fdm=deepcopy(self)#复制一份自己 并在复制里面进行操作
-        fdm=self
+        fdm = self
         for i in secondary:
-            assert i in self.vn,"未知字段%s"%i
-            for u in fdm:#操作
-                u.data[primary]=func(u.data[primary],u.data[i])
+            assert i in self.vn, "未知字段%s" % i
+            for u in fdm:  # 操作
+                u.data[primary] = func(u.data[primary], u.data[i])
             fdm.delete_variable(i)
         # return fdm
         pass
+
 
 class TestCase(unittest.TestCase):
     def test_append_unit(self):
         vnlst = ['姓名', '性别', '列表']
         datalst = [['迈克尔', '男', 1], ['丹妮', '女', 2]]
         fdm1 = FlatDataModel.load_from_list(vnlst, datalst)
-        fdm=FlatDataModel()
-        fdm.vn=['姓名', '性别', '列表']
+        fdm = FlatDataModel()
+        fdm.vn = ['姓名', '性别', '列表']
         fdm.append_unit(fdm1[0])
-        self.assertEqual(1,fdm[0]['列表'])
-        t=fdm1[0]
-        t.data['列表']=2
-        self.assertEqual(1, fdm[0]['列表'])#不跟着这个dataunit动
+        self.assertEqual(1, fdm[0]['列表'])
+        t = fdm1[0]
+        t.data['列表'] = 2
+        self.assertEqual(1, fdm[0]['列表'])  # 不跟着这个dataunit动
         # fdm = FlatDataModel()
         # fdm.vn = ['姓名', '性别', '列表']
         # fdm.append_unit(fdm1[0],flag_deepcopy=True)
@@ -864,6 +874,7 @@ class TestCase(unittest.TestCase):
         # t = fdm1[0]
         # t.data['列表'] = []
         # self.assertEqual(0, len(fdm[0]['列表']))#不会跟着这个dataunit动
+
     def test_load_from_list(self):
         vnlst = ['姓名', '性别', '年龄']
         datalst = [['迈克尔', '男', 1], ['丹妮', '女', 3]]
@@ -913,6 +924,11 @@ class TestCase(unittest.TestCase):
         self.assertEqual(len(fdm.vn), 8)
         self.assertAlmostEqual(fdm.units[-2]['data2'], -113001.148438)
 
+    def test_load_from_file3(self):
+        fdm = FlatDataModel.load_from_excel_file(
+            r"E:\我的文档\python\GoodToolPython\excel\test1.xlsx", 'Sheet1', max_units=10)
+        self.assertEqual("m10", fdm.units[-1].data["工况名"])
+
     def test_flhz(self):  # 测试flhz
         fdm = FlatDataModel.load_from_excel_file(r"E:\我的文档\python\GoodToolPython\excel\test1.xlsx", 'Sheet1')
         o = fdm.flhz("拉杆屈服强度", [["P1底轴力", lambda x: len(x)]])
@@ -928,33 +944,32 @@ class TestCase(unittest.TestCase):
 
     def test_getitem_setitem(self):
         vnlst = ['姓名', '性别', '年龄']
-        datalst = [['迈克尔', '男', 1], ['丹妮', '女', 3],['雪落','男',11]]
+        datalst = [['迈克尔', '男', 1], ['丹妮', '女', 3], ['雪落', '男', 11]]
         fdm = FlatDataModel.load_from_list(vnlst, datalst)
         print(fdm['姓名'])
-        self.assertEqual(['迈克尔', '丹妮', '雪落'],fdm['姓名'])
-        fdm['年龄2']=lambda x:-1*x['年龄']
-        self.assertEqual([-1, -3, -11],fdm['年龄2'])
-        fdm['年龄2'] = lambda x: 10+ x['年龄']
+        self.assertEqual(['迈克尔', '丹妮', '雪落'], fdm['姓名'])
+        fdm['年龄2'] = lambda x: -1 * x['年龄']
+        self.assertEqual([-1, -3, -11], fdm['年龄2'])
+        fdm['年龄2'] = lambda x: 10 + x['年龄']
         print(fdm['年龄2'])
         self.assertEqual([11, 13, 21], fdm['年龄2'])
-        fdm['年龄2'] =[1,1,1]
-        self.assertEqual([1,1,1], fdm['年龄2'])
-
+        fdm['年龄2'] = [1, 1, 1]
+        self.assertEqual([1, 1, 1], fdm['年龄2'])
 
     def test_sort(self):
-        vnlst = ['姓名', '性别', '年龄','身高']
-        datalst = [['迈克尔', '男', 4,2], ['丹妮', '女', 3,2],['雪落','男',11,3]]
+        vnlst = ['姓名', '性别', '年龄', '身高']
+        datalst = [['迈克尔', '男', 4, 2], ['丹妮', '女', 3, 2], ['雪落', '男', 11, 3]]
         fdm = FlatDataModel.load_from_list(vnlst, datalst)
-        fdm.sort(key=['身高','年龄'])
-        self.assertEquals('丹妮',fdm[0]['姓名'])
+        fdm.sort(key=['身高', '年龄'])
+        self.assertEquals('丹妮', fdm[0]['姓名'])
 
     def test_makebunches(self):
-        vnlst = ['姓名', '性别', '年龄','身高']
-        datalst = [['迈克尔', '男', 4,2], ['丹妮', '女', 3,2],['雪落','男',11,3],['卓哥','男',11,3.5]]
+        vnlst = ['姓名', '性别', '年龄', '身高']
+        datalst = [['迈克尔', '男', 4, 2], ['丹妮', '女', 3, 2], ['雪落', '男', 11, 3], ['卓哥', '男', 11, 3.5]]
         fdm = FlatDataModel.load_from_list(vnlst, datalst)
-        r=fdm.make_bunches(['性别','年龄'])
-        self.assertEquals(3,len(r))
-        self.assertEquals(2,len(r['性别:男,年龄:11']))
+        r = fdm.make_bunches(['性别', '年龄'])
+        self.assertEquals(3, len(r))
+        self.assertEquals(2, len(r['性别:男,年龄:11']))
         pass
 
     def test_loadfromstring(self):
@@ -973,11 +988,11 @@ class TestCase(unittest.TestCase):
         90000	250	3778.943963	545.8375741
         90000	300	3801.283942	544.9070614
         """
-        fdm=FlatDataModel.load_from_string(st,separator='\t')
+        fdm = FlatDataModel.load_from_string(st, separator='\t')
         # fdm.show_in_excel()
-        self.assertEqual(4,len(fdm.vn))
+        self.assertEqual(4, len(fdm.vn))
         self.assertEqual(13, len(fdm))
-        self.assertEqual(1,fdm[0]['拉杆刚度'])
+        self.assertEqual(1, fdm[0]['拉杆刚度'])
 
         st = """
         1	50	3678.027091	570.7248771
@@ -994,35 +1009,34 @@ class TestCase(unittest.TestCase):
         90000	250	3778.943963	545.8375741
         90000	300	3801.283942	544.9070614
         """
-        fdm=FlatDataModel.load_from_string(st,vn_syle=['1','2','3','4'],separator='\t')
-        self.assertEquals(4,len(fdm.vn))
+        fdm = FlatDataModel.load_from_string(st, vn_syle=['1', '2', '3', '4'], separator='\t')
+        self.assertEquals(4, len(fdm.vn))
         self.assertEquals(13, len(fdm))
-        self.assertAlmostEqual(70000, fdm[2]['1'],delta=0.1)
+        self.assertAlmostEqual(70000, fdm[2]['1'], delta=0.1)
 
     def test_readxls_with_mergedcells(self):
-        fdm=FlatDataModel.load_from_excel_file(r"E:\我的文档\python\GoodToolPython\excel\test_合并单元格.xlsx")
-        self.assertEqual("跨绕城高速大桥",fdm.units[2]['桥梁'])
+        fdm = FlatDataModel.load_from_excel_file(r"E:\我的文档\python\GoodToolPython\excel\test_合并单元格.xlsx")
+        self.assertEqual("跨绕城高速大桥", fdm.units[2]['桥梁'])
         self.assertEqual("跨绕城高速大桥", fdm.units[3]['桥梁'])
-        self.assertAlmostEqual(2031, fdm.units[3]['全长'],delta=1)
-
+        self.assertAlmostEqual(2031, fdm.units[3]['全长'], delta=1)
 
     def test_merge(self):
-        vnlst = ['姓名', '性别', '年龄','身高']
-        datalst = [['迈克尔', '男', 4,2], ['丹妮', '女', 3,2],['雪落','男',11,3],['卓哥','男',11,3.5]]
+        vnlst = ['姓名', '性别', '年龄', '身高']
+        datalst = [['迈克尔', '男', 4, 2], ['丹妮', '女', 3, 2], ['雪落', '男', 11, 3], ['卓哥', '男', 11, 3.5]]
         fdm = FlatDataModel.load_from_list(vnlst, datalst)
-        fdm.merge('年龄','身高')
-        self.assertEqual(6,fdm[0]['年龄'])
+        fdm.merge('年龄', '身高')
+        self.assertEqual(6, fdm[0]['年龄'])
         self.assertEqual(14.5, fdm[-1]['年龄'])
 
-    def test_eff(self):#测试二分法
-        vnlst = ['姓名', '性别', '年龄','身高']
-        datalst = [['迈克尔', '男', 4,2], ['丹妮', '女', 3,2],['雪落','男',11,3],['卓哥','男',10,3.5]]
+    def test_eff(self):  # 测试二分法
+        vnlst = ['姓名', '性别', '年龄', '身高']
+        datalst = [['迈克尔', '男', 4, 2], ['丹妮', '女', 3, 2], ['雪落', '男', 11, 3], ['卓哥', '男', 10, 3.5]]
         fdm = FlatDataModel.load_from_list(vnlst, datalst)
         fdm.sort(key='年龄')
-        i,lb,ub=bisection_method(sorted_list=fdm.units,
-                                 goal=4,
-                                 func=lambda x:x['年龄'])
-        self.assertEqual(1,i)
+        i, lb, ub = bisection_method(sorted_list=fdm.units,
+                                     goal=4,
+                                     func=lambda x: x['年龄'])
+        self.assertEqual(1, i)
         self.assertEqual(0, lb)
         i, lb, ub = bisection_method(sorted_list=fdm.units,
                                      goal=11,
@@ -1044,23 +1058,13 @@ class TestCase(unittest.TestCase):
                                      func=lambda x: x['年龄'])
         self.assertEqual(2, lb)
         self.assertEqual(3, ub)
-        self.assertRaises(Exception,bisection_method,sorted_list=fdm.units,
-                                     goal=2,
-                                     func=lambda x: x['年龄'])
+        self.assertRaises(Exception, bisection_method, sorted_list=fdm.units,
+                          goal=2,
+                          func=lambda x: x['年龄'])
+
+
 if __name__ == '__main__':
     unittest.main()
-
-
-
-
-
-
-
-
-
-
-
-
 
     # fdm = FlatDataModel.load_from_excel_file(r"E:\我的文档\python\GoodToolPython\excel\OnLbvnclassChar.xlsx", 'Sheet1')
     # fdm.show_in_excel()
