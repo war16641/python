@@ -88,7 +88,7 @@ class TZ_result:
         l = re.findall(pt, tztxt)
         if len(l) == 0:
             raise ExceptionTZ("没找到桩径")
-        tz.D = int(l[0])
+        tz.D = float(l[0])
 
 
         # 读取纵向刚度
