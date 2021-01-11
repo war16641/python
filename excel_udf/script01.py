@@ -3,6 +3,8 @@
 """
 import re
 import unittest
+from typing import Tuple
+
 import xlwings as xw
 import numpy as np
 import autocad.about_tz as tz
@@ -18,12 +20,30 @@ def get_mileage(label:str)->float:
     if isinstance(label,(float,int)):
         return label#如果已经是数字了，直接返回这个数字
     assert isinstance(label,str),'参数必须为str'
-    p1 = re.compile(r'K(\d+)\+(\d+\.?\d+)', re.S)
+    p1 = re.compile(r'[kK](\d+)\+(\d+\.?\d+)', re.S)
     rt = re.findall(p1, label)
     if len(rt)==0:
         raise Exception("错误的里程格式")
     rt=rt[0]
     return float(rt[0])*1000+float(rt[1])
+    pass
+
+def get_mileages(label:str)->Tuple[float,float]:
+    """
+    从里程范围文本中识别出两个里程
+    m1,m2=get_mileages("D1K892+123.345-DK892+123.345")
+    @param label:
+    @return:
+    """
+    assert isinstance(label,str),'参数必须为str'
+    p1 = re.compile(r'[kK](\d+)\+(\d+\.?\d+)', re.S)
+    rt = re.findall(p1, label)
+    if len(rt) == 0:
+        raise Exception("错误的里程格式")
+    elif len(rt)==1:
+        raise Exception("只找到一个里程")
+    else:
+        return (float(rt[0][0])*1000+float(rt[0][1]),float(rt[1][0])*1000+float(rt[1][1]),)
     pass
 
 @xw.func
@@ -141,5 +161,15 @@ class TestCase(unittest.TestCase):
         self.assertEqual("12.5+46×15+12.5",t)
         t = arange_inteval(45, 15)
         self.assertEqual("3×15", t)
+
+    def test_get_mileages(self):
+        m1,m2=get_mileages("D1K892+123.345-DK892+123.345")
+        self.assertEqual(892*1000+123.345,m1)
+        self.assertEqual(892 * 1000 + 123.345, m2)
+
+        m1,m2=get_mileages("D1K892+123.345 - DK892+123.")
+        self.assertEqual(892*1000+123.345,m1)
+        self.assertEqual(892 * 1000 + 123., m2)
+
 if __name__ == '__main__':
     unittest.main()

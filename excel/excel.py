@@ -560,7 +560,8 @@ class FlatDataModel:
         print(sys.modules[xl.__module__].__file__)
         以上代码给出了临时文件路径，删除gen_py下所有长数字文件夹即可解决
         """
-        xl_app = win32com.client.gencache.EnsureDispatch("Excel.Application")  # 若想引用常数的话使用此法调用Excel
+        # xl_app = win32com.client.gencache.EnsureDispatch("Excel.Application")  # 若想引用常数的话使用此法调用Excel
+        xl_app = win32com.client.DispatchEx('Excel.Application')#这两句都可以 之前用的上面一句，但是报了个错 百度给出了这一句的答案
         xl_app.Visible = False  # 是否显示Excel文件
         wb = xl_app.Workbooks.Add()
         sht = wb.Worksheets(1)
