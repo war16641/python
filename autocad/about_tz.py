@@ -168,6 +168,36 @@ class TZ_result:
         for i in funcs:
             i(self)
 
+    def run_TZDiagnosis(self,funcs:List[callable])->List['TZDiagnosisResult']:
+        lst=[]
+        if not isinstance(funcs,list):
+            funcs=[funcs]
+        for i in funcs:
+            lst.append(i(self))
+        return lst
+
+    @staticmethod
+    def run_TZDiagnosis_batch(tzs:List['TZ_result'],funcs:List[callable])->FlatDataModel:
+        """
+        对批量的tz执行批量的诊断
+        这是一个模板
+        每一行代表对一个tz的诊断
+        有问题的会写入brief信息，没问题的为空
+        @param tzs:
+        @param funcs:
+        @return: 返回fdm
+        """
+        fdm=FlatDataModel()
+        for thistz in tzs:
+            thisre=thistz.run_TZDiagnosis(funcs)
+            u=DataUnit(fdm)
+            u.data["桩号"]=thistz.No
+            for ree in thisre:
+                u.data[ree.topic]=ree.brief
+            fdm.units.append(u)
+        #添加字段名 由于事先不知道具体会产生哪些字段，因此从第一个u中读取
+        fdm.vn=[x for x in fdm[0].data.keys()]
+        return fdm
 
 
 class TZDiagnosis(Exception):#如果诊断有问题，就抛出这个异常
@@ -183,114 +213,233 @@ class TZDiagnosis(Exception):#如果诊断有问题，就抛出这个异常
         self.msg=msg
     pass
 
-class Diagnosis:
+class TZDiagnosisResult:
+    def __init__(self):
+        self.topic=""#检查的主题 比如刚度 承载力等等
+        self.result=False
+        self.brief=""#简要描述
+        self.tz=None#type:TZ_result
+        self.msg=""#详细信息
+
     @staticmethod
-    def check_K(tz:TZ_result):
+    def make_good_one()->'TZDiagnosisResult':
+        """生成一个好的结果"""
+        rt=TZDiagnosisResult()
+        rt.result=True
+        return rt
+class TZDiagnosisMethods:
+    @staticmethod
+    def check_K(tz:TZ_result)->TZDiagnosisResult:
         """
         检查刚度
         @param tz:
         @return:
         """
+        rt = TZDiagnosisResult.make_good_one()
+        rt.topic="刚度"
+        rt.tz = tz
         if tz.K<350.:
-            raise TZDiagnosis(brief="刚度不足",
-                              tz=tz,
-                              )
+            rt.result=False
+            rt.brief="刚度不足"
+        return rt
 
     @staticmethod
-    def check_capacity(tz:TZ_result):
+    def check_capacity(tz:TZ_result)->TZDiagnosisResult:
         """
         检查承载力
         @param tz:
         @return:
         """
+        rt = TZDiagnosisResult.make_good_one()
+        rt.topic="承载力"
+        rt.tz = tz
         for i in tz.caps:
             if i.design > i.allowable:
-                raise TZDiagnosis(brief="承载力不足", tz=tz)
+                rt.brief="承载力不足"
+                rt.result=False
+                return rt
             if "主力" in i.casename and "附" not in i.casename and "地震" not in i.casename and\
                     "特殊" not in i.casename :#主力
                 if i.safety_factor<1.05:
-                    raise TZDiagnosis(brief="承载力过小", tz=tz)
+                    rt.brief = "承载力过小"
+                    rt.result = False
+                    return rt
                 elif i.safety_factor > 1.2 and "摩擦桩"==tz.type:
-                    raise TZDiagnosis(brief="承载力过大", tz=tz)
-
-
-
-
+                    rt.brief = "承载力过大"
+                    rt.result = False
+                    return rt
+        return rt
 
     @staticmethod
-    def check_stress(tz:TZ_result):
+    def check_stress(tz:TZ_result)->TZDiagnosisResult:
         """
         检查砼和钢筋应力
         @param tz:
         @return:
         """
+        rt = TZDiagnosisResult.make_good_one()
+        rt.topic="砼和钢筋应力"
+        rt.tz = tz
         for i in tz.strs:
             if "主力" in i.casename and "附" not in i.casename and "地震" not in i.casename and\
                     "特殊" not in i.casename :#主力
                 if i.sigma_conc>=7.0:
-                    raise TZDiagnosis(brief="砼应力超限", tz=tz)
+                    rt.brief="砼应力超限"
+                    rt.result=False
+                    return rt
                 if i.sigma_steel1>=160 or i.sigma_steel2>=160:
-                    raise TZDiagnosis(brief="钢筋应力超限", tz=tz)
+                    rt.brief = "钢筋应力超限"
+                    rt.result = False
+                    return rt
             elif "主力" in i.casename and "附"  in i.casename:#主力+附
                 if i.sigma_conc>=7.0*1.2:
-                    raise TZDiagnosis(brief="砼应力超限", tz=tz)
+                    rt.brief = "砼应力超限"
+                    rt.result = False
+                    return rt
                 if i.sigma_steel1>=160 or i.sigma_steel2>=160:
-                    raise TZDiagnosis(brief="钢筋应力超限", tz=tz)
+                    rt.brief = "钢筋应力超限"
+                    rt.result = False
+                    return rt
             elif "地震" in i.casename or "特殊" in i.casename:
                 if i.sigma_conc>=7.0*1.5:
-                    raise TZDiagnosis(brief="砼应力超限", tz=tz)
+                    rt.brief = "砼应力超限"
+                    rt.result = False
+                    return rt
                 if i.sigma_steel1>=160 or i.sigma_steel2>=160:
-                    raise TZDiagnosis(brief="钢筋应力超限", tz=tz)
+                    rt.brief = "钢筋应力超限"
+                    rt.result = False
+                    return rt
             else:
                 raise Exception("其他未知工况")
+        return  rt
 
     @staticmethod
-    def check_soil(tz:TZ_result):
+    def check_soil(tz:TZ_result)->TZDiagnosisResult:
         """
         检查土压力
         @param tz:
         @return:
         """
+        rt = TZDiagnosisResult.make_good_one()
+        rt.topic="土压力"
+        rt.tz = tz
         for i in tz.soils:
             if i.soil_stress>=i.allowable_stress:
-                raise TZDiagnosis(brief="桩侧土压力超限",tz=tz)
+                rt.brief="桩侧土压力超限"
+                rt.result=False
+                return rt
+        return rt
+
+#
+# class Diagnosis:
+#     @staticmethod
+#     def check_K(tz:TZ_result):
+#         """
+#         检查刚度
+#         @param tz:
+#         @return:
+#         """
+#         if tz.K<350.:
+#             raise TZDiagnosis(brief="刚度不足",
+#                               tz=tz,
+#                               )
+#
+#     @staticmethod
+#     def check_capacity(tz:TZ_result):
+#         """
+#         检查承载力
+#         @param tz:
+#         @return:
+#         """
+#         for i in tz.caps:
+#             if i.design > i.allowable:
+#                 raise TZDiagnosis(brief="承载力不足", tz=tz)
+#             if "主力" in i.casename and "附" not in i.casename and "地震" not in i.casename and\
+#                     "特殊" not in i.casename :#主力
+#                 if i.safety_factor<1.05:
+#                     raise TZDiagnosis(brief="承载力过小", tz=tz)
+#                 elif i.safety_factor > 1.2 and "摩擦桩"==tz.type:
+#                     raise TZDiagnosis(brief="承载力过大", tz=tz)
+#
+#
+#
+#
+#
+#     @staticmethod
+#     def check_stress(tz:TZ_result):
+#         """
+#         检查砼和钢筋应力
+#         @param tz:
+#         @return:
+#         """
+#         for i in tz.strs:
+#             if "主力" in i.casename and "附" not in i.casename and "地震" not in i.casename and\
+#                     "特殊" not in i.casename :#主力
+#                 if i.sigma_conc>=7.0:
+#                     raise TZDiagnosis(brief="砼应力超限", tz=tz)
+#                 if i.sigma_steel1>=160 or i.sigma_steel2>=160:
+#                     raise TZDiagnosis(brief="钢筋应力超限", tz=tz)
+#             elif "主力" in i.casename and "附"  in i.casename:#主力+附
+#                 if i.sigma_conc>=7.0*1.2:
+#                     raise TZDiagnosis(brief="砼应力超限", tz=tz)
+#                 if i.sigma_steel1>=160 or i.sigma_steel2>=160:
+#                     raise TZDiagnosis(brief="钢筋应力超限", tz=tz)
+#             elif "地震" in i.casename or "特殊" in i.casename:
+#                 if i.sigma_conc>=7.0*1.5:
+#                     raise TZDiagnosis(brief="砼应力超限", tz=tz)
+#                 if i.sigma_steel1>=160 or i.sigma_steel2>=160:
+#                     raise TZDiagnosis(brief="钢筋应力超限", tz=tz)
+#             else:
+#                 raise Exception("其他未知工况")
+#
+#     @staticmethod
+#     def check_soil(tz:TZ_result):
+#         """
+#         检查土压力
+#         @param tz:
+#         @return:
+#         """
+#         for i in tz.soils:
+#             if i.soil_stress>=i.allowable_stress:
+#                 raise TZDiagnosis(brief="桩侧土压力超限",tz=tz)
 
 
 
-#这个函数可以删除
-#遍历一个文件夹里的所有rst文件生成tz
-#并进行诊断，通过fdm输出诊断结果
-def test1():
-    lst=[]
-    collect_all_filenames(directory=r"E:\铁二院\济枣线北段\初步设计\DK9+309.4坞西村特大桥\基础检算",
-                          rex=".+.RST",
-                          lst=lst)
-    check_results=FlatDataModel()
-    check_results.vn=['墩号','结果','简报']
-    for i,path in enumerate(lst):
-        u=DataUnit(check_results)
-        tz=TZ_result.load_from_file(path)
-        u.data['墩号']=tz.No
-        u.data['结果'] = ""
-        u.data['简报'] = ""
-        try:
-            tz.run_diagnosis([Diagnosis.check_capacity,
-                              Diagnosis.check_K,
-                              Diagnosis.check_soil,
-                              Diagnosis.check_stress])
-            u.data['结果'] = "通过"
-        except TZDiagnosis as e:
-            u.data['结果'] = "不通过"
-            u.data['简报'] = e.brief
-        except Exception:
-            u.data['结果'] = "未知错误"
-        check_results.append_unit(u)
-        print("已读取%d/%d"%(i+1,len(lst)))
-    check_results.sort(key='墩号')
-    check_results.show_in_excel()
+# #这个函数可以删除
+# #遍历一个文件夹里的所有rst文件生成tz
+# #并进行诊断，通过fdm输出诊断结果
+# def test1():
+#     lst=[]
+#     collect_all_filenames(directory=r"E:\铁二院\济枣线北段\初步设计\DK9+309.4坞西村特大桥\基础检算",
+#                           rex=".+.RST",
+#                           lst=lst)
+#     check_results=FlatDataModel()
+#     check_results.vn=['墩号','结果','简报']
+#     for i,path in enumerate(lst):
+#         u=DataUnit(check_results)
+#         tz=TZ_result.load_from_file(path)
+#         u.data['墩号']=tz.No
+#         u.data['结果'] = ""
+#         u.data['简报'] = ""
+#         try:
+#             tz.run_diagnosis([Diagnosis.check_capacity,
+#                               Diagnosis.check_K,
+#                               Diagnosis.check_soil,
+#                               Diagnosis.check_stress])
+#             u.data['结果'] = "通过"
+#         except TZDiagnosis as e:
+#             u.data['结果'] = "不通过"
+#             u.data['简报'] = e.brief
+#         except Exception:
+#             u.data['结果'] = "未知错误"
+#         check_results.append_unit(u)
+#         print("已读取%d/%d"%(i+1,len(lst)))
+#     check_results.sort(key='墩号')
+#     check_results.show_in_excel()
 if __name__ == '__main__':
-    tz=TZ_result.load_from_file(r"E:\我的文档\Tencent Files\973916531\FileRecv\38ZJ.RST")
-    tz.run_diagnosis([Diagnosis.check_capacity,Diagnosis.check_K,Diagnosis.check_soil,Diagnosis.check_stress])
+    pass
+    # tz=TZ_result.load_from_file(r"E:\我的文档\Tencent Files\973916531\FileRecv\38ZJ.RST")
+    # tz.run_diagnosis([Diagnosis.check_capacity,Diagnosis.check_K,Diagnosis.check_soil,Diagnosis.check_stress])
     # pathname=r"E:\我的文档\Tencent Files\973916531\FileRecv\38ZJ.RST"
     # with open(pathname) as f:
     #     content=f.read()
