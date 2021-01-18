@@ -330,6 +330,17 @@ class TZDiagnosisMethods:
                 return rt
         return rt
 
+    @staticmethod
+    def check_zhuangchang(tz: TZ_result) -> TZDiagnosisResult:
+        rt = TZDiagnosisResult.make_good_one()
+        rt.topic = "摩擦桩桩长"
+        rt.tz = tz
+        if tz.type=="摩擦桩" and tz.H<15:
+            rt.brief="桩长过短"
+            rt.result=False
+            return rt
+        return rt
+
 #
 # class Diagnosis:
 #     @staticmethod
