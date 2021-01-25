@@ -336,6 +336,24 @@ class Vector3D(Generic[T_Vector]):
         assert len(arr)==3
         return Vector3D(arr[0],arr[1],arr[2])
 
+    @staticmethod
+    def make_from_list(arr)->T_Vector:
+        """
+        从FLOAT的llist中生成向量
+        要求arr的长度为3
+        :param arr:
+        :return:
+        """
+        assert isinstance(arr,(tuple,list))
+        if len(arr)==0:
+            return Vector3D(0,0,0)
+        elif len(arr)==1:
+            return Vector3D(arr[0])
+        elif len(arr)==2:
+            return Vector3D(arr[0],arr[1])
+        else:
+            return Vector3D(arr[0],arr[1],arr[2])
+
     def __getitem__(self, item):
         """
         使用索引访问xyz
