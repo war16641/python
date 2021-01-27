@@ -1,4 +1,5 @@
 import math
+from math import cos, sin, pi
 import random
 import copy
 import unittest
@@ -792,6 +793,49 @@ class Line3D(Generic[T_Line]):
         alpha1=self.get_parameter(m)
         alpha2=self.get_parameter(n)#积分上下限
         return sp.integrate(P*self.direction.x+Q*self.direction.y,(alpha,alpha1,alpha2))
+
+
+
+def get_trans_func(p:Vector3D=None,theta=0.0):
+    """
+    得到坐标系平移旋转后的坐标变化函数
+    坐标变化
+    仅支持平面内的变化 z恒=0
+    @param p: 在原坐标系下的从原坐标系原点指向新坐标系原点的向量
+    @param theta: 旋转角度 逆时针为正
+    @return: 函数和逆函数
+    """
+    class transfunc:
+        def __init__(self,p:Vector3D=None,theta=0.):
+            if p is None:
+                p=Vector3D(0,0,0)
+            self.p=p
+            self.theta=theta
+
+        def calc(self,v):
+            """
+
+            @param v: 在原始坐标系下的坐标
+            @return: 在新坐标系下坐标
+            """
+
+            return Vector3D(x=cos(self.theta)*v.x+sin(self.theta)*v.y-self.p.x*cos(self.theta)-self.p.y*sin(self.theta),
+                            y=-sin(self.theta) * v.x + cos(self.theta) * v.y + self.p.x * sin(self.theta) - self.p.y * cos(self.theta))
+
+        def calci(self,v):
+            """
+            逆变换
+            @param v:
+            @return:
+            """
+            return Vector3D(
+                x=cos(self.theta) * v.x - sin(self.theta) * v.y + self.p.x ,
+                y=sin(self.theta) * v.x + cos(self.theta) * v.y + self.p.y )
+
+    t=transfunc(p=p,theta=theta)
+    return t.calc,t.calci
+
+
 
 class TestCase(unittest.TestCase):
     def test1(self):
