@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Tuple
 from math import cos, sin, pi
 from vector3d import Vector3D, get_trans_func
@@ -28,7 +29,7 @@ class Rect:
         @param height:
         @param rotation: 旋转角 逆时针为正
         """
-        self.xy=xy
+        self.xy=deepcopy(xy)
         self.width=width
         self.height=height
         self.rotation=rotation
@@ -53,6 +54,9 @@ class Rect:
     @property
     def bound_corners(self)->Tuple[Vector3D,Vector3D]:
         return self._bound_corners
+    @property
+    def area(self):
+        return self.height*self.width
 
 
     def __contains__(self, item,tol=0.0):

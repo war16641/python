@@ -11,12 +11,14 @@ class Test(TestCase):
 
         a1 float 12.32
         s1 string iam a dog
-        v1 vector 123,23.1,3"""
+        v1 vector 123,23.1,3
+        r1 rect v1,10,5,0
+        """
         d = make_data_from_paragraph(paragraph)
         self.assertEqual(12.32,d['a1'])
         self.assertEqual("iam a dog", d['s1'])
         self.assertEqual(Vector3D(123,23.1,3), d['v1'])
-
+        self.assertEqual(10*5.0, d['r1'].area)
 
 if __name__ == '__main__':
     main()

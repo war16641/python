@@ -1,6 +1,7 @@
 
 import re
 
+from code2021.MyGeometric.rect import Rect
 from vector3d import Vector3D
 
 
@@ -12,6 +13,8 @@ def make_data_from_paragraph(paragraph:str,ignore_lines=3)->dict:
     for i,cur_line in enumerate(paragraph.split("\n")):
         if i<ignore_lines:
             continue#忽略的行
+        if len(cur_line.replace(' ',''))==0:
+            continue#空行跳过
         rert = re.findall(stringPatern, cur_line)
         if len(rert)==0:
             raise Exception("错误的行：%s"%cur_line)
@@ -24,6 +27,15 @@ def make_data_from_paragraph(paragraph:str,ignore_lines=3)->dict:
             nbs=rert[2].split(",")
             nbs=[float(x) for x in nbs]
             rt[rert[0]]=Vector3D.make_from_list(nbs)
+        elif rert[1]=="rect":
+            parts = rert[2].split(",")
+            assert len(parts)==4,"rect的数据格式不正确 %s"%rert[2]
+            assert parts[0] in rt.keys(),"rect引用了一个不存在的vector %s"%parts[0]
+            width=float(parts[1])
+            height=float(parts[2])
+            rotation=float(parts[3])
+            rt[rert[0]]=Rect(xy=rt[parts[0]],width=width,height=height,
+                             rotation=rotation)
         else:
             raise Exception("未知的数据类型%s"%rert[1])
     return rt
