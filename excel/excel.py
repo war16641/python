@@ -340,10 +340,18 @@ class FlatDataModel:
         else:
             raise TypeError("参数错误")
 
-    def save(self, fullname, sheetname=None):
+    def save(self, fullname, sheetname=None,merge_cell=None):
+        """
+        保存excel文件
+        @param fullname:
+        @param sheetname:
+        @param merge_cell: 合并相同内容的单元格 指定需要合并的列的范围
+        如第2列到第5列为： (2，5)   fdm.save(fullname=r"d:\xieru.xlsx",merge_cell=(2,5))
+        @return:
+        """
         # 保存到excel文件中
         wb = Workbook()
-        self.__add_to_workbook(wb, 'Sheet')
+        self.__add_to_workbook(wb, 'Sheet',merge_cell=merge_cell)
 
         # 保存文件
         wb.save(fullname)
@@ -443,12 +451,69 @@ class FlatDataModel:
         self.__add_to_workbook(workbook, sheetname)
         workbook.save(fullname)
 
-    def __add_to_workbook(self, wb, sheetname):
+    def __add_to_workbook(self, wb, sheetname,merge_cell=None):
         """
         将自身以sheet的形式添加到wb中，
         :param wb:
         :return:
         """
+        def script_merge(cur_col,startrow,endrow):
+            """
+            合并单元格的脚本
+            @param cur_col:
+            @param startrow:
+            @param endrow:
+            @return:
+            """
+            nonlocal ws,sheet,merge_cell
+            lastcell_value=None
+            lastcell_value_row=-1
+            for i in range(startrow,endrow+1):
+                thiscell_value=sheet.cell(row=i,column=cur_col).value
+                if lastcell_value is None:
+                    lastcell_value=thiscell_value
+                    lastcell_value_row=i
+                    continue
+                if thiscell_value == lastcell_value:
+                    continue
+                else:
+                    #不同内容 尝试合并之前的内容
+                    if i-lastcell_value_row==1:#只有一行 之前的内容
+                        #放弃合并
+                        lastcell_value=thiscell_value
+                        lastcell_value_row=i
+                        continue
+                    else:#有多行开始合并
+                        ws.merge_cells(start_row=lastcell_value_row,
+                                       end_row=i-1,
+                                       start_column=cur_col,
+                                       end_column=cur_col)
+                        #检查是否是最后一列
+                        if cur_col==merge_cell[1]:
+                            pass
+                        else:#后面还有列
+                            script_merge(cur_col=cur_col+1,
+                                         startrow=lastcell_value_row,
+                                         endrow=i-1)
+                        lastcell_value=thiscell_value
+                        lastcell_value_row=i
+                        continue
+            if lastcell_value_row<endrow:#最后一部分 需要手动merge
+                ws.merge_cells(start_row=lastcell_value_row,
+                               end_row=endrow,
+                               start_column=cur_col,
+                               end_column=cur_col)
+                # 检查是否是最后一列
+                if cur_col == merge_cell[1]:
+                    pass
+                else:  # 后面还有列
+                    script_merge(cur_col=cur_col + 1,
+                                 startrow=lastcell_value_row,
+                                 endrow=endrow)
+
+
+
+
         assert isinstance(wb, Workbook), 'wb为workbook对象'
         if sheetname in wb.sheetnames:
             # raise Exception("该工作簿已存在")
@@ -481,6 +546,17 @@ class FlatDataModel:
                 col_rd += 1
             row_rd += 1
             col_rd = 1
+
+        #合并单元格
+        if merge_cell is not None:
+            ws=wb.active
+            cur_col=1#要合并的列
+            startrow=2
+            endrow=len(self)+1
+            script_merge(cur_col=merge_cell[0],
+                         startrow=startrow,
+                         endrow=endrow)
+            pass
 
     def add_variables_from_other_model(self,
                                        other: 'FlatDataModel',
@@ -584,6 +660,7 @@ class FlatDataModel:
             row_rd += 1
             col_rd = 1
         xl_app.Visible = True
+        a=1
 
     def __str__(self):
         s1 = '%d个变量' % len(self.vn)
