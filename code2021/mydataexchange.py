@@ -1,6 +1,6 @@
 
 import re
-
+import os
 from code2021.MyGeometric.rect import Rect
 from vector3d import Vector3D
 
@@ -50,6 +50,10 @@ def make_data_from_paragraph(paragraph:str,ignore_lines=3)->dict:
             raise Exception("未知的数据类型%s"%rert[1])
     return rt
 
+def make_data_from_file(filepath,ignore_lines=3)->dict:
+    assert os.path.isfile(filepath),"%s不存在"%filepath
+    with open(filepath,'r') as f:
+        return make_data_from_paragraph(f.read(),ignore_lines)
 
 
 if __name__ == '__main__':

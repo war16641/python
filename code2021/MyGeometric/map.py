@@ -12,7 +12,7 @@ from .rect import Rect
 mylogger=MyLogger('mapmesh12873d')
 mylogger.hide_level=True
 mylogger.hide_name=True
-mylogger.setLevel('debug')
+mylogger.setLevel('info')
 class MeshedMap:
     def __init__(self, leftdown: Vector3D, rightup:Vector3D):
         self.leftdown,self.rightup=leftdown,rightup
