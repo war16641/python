@@ -29,13 +29,23 @@ def make_data_from_paragraph(paragraph:str,ignore_lines=3)->dict:
             rt[rert[0]]=Vector3D.make_from_list(nbs)
         elif rert[1]=="rect":
             parts = rert[2].split(",")
-            assert len(parts)==4,"rect的数据格式不正确 %s"%rert[2]
-            assert parts[0] in rt.keys(),"rect引用了一个不存在的vector %s"%parts[0]
-            width=float(parts[1])
-            height=float(parts[2])
-            rotation=float(parts[3])
-            rt[rert[0]]=Rect(xy=rt[parts[0]],width=width,height=height,
-                             rotation=rotation)
+            #rect 有两种格式
+            if len(parts)==4:# 已有vector的标识，长，宽，转角
+                assert parts[0] in rt.keys(), "rect引用了一个不存在的vector %s" % parts[0]
+                width = float(parts[1])
+                height = float(parts[2])
+                rotation = float(parts[3])
+                rt[rert[0]] = Rect(xy=rt[parts[0]], width=width, height=height,
+                                   rotation=rotation)
+                continue
+            elif len(parts)==6:# x，y，z，长，宽，转角
+                rt[rert[0]] = Rect(xy=Vector3D(float(parts[0]),float(parts[1]),float(parts[2])),
+                                   width=float(parts[3]), height=float(parts[4]),
+                                   rotation=float(parts[5]))
+                continue
+            else:
+                raise Exception("rect的数据格式不正确 %s"%rert[2])
+
         else:
             raise Exception("未知的数据类型%s"%rert[1])
     return rt
