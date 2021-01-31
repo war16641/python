@@ -190,7 +190,7 @@ class Algo1:
                     additional_valve=None,
                     coeffs=(1, 1),
                     dist_func=None,
-                    coeff_for_mesh=1 / 8.0,
+                    coeff_for_mesh=1 / 5.0,
                     delete_used_bk=False) -> List[Rect]:
         """
         多个target在bk中的求解
@@ -203,13 +203,13 @@ class Algo1:
         @param coeffs:
         @param dist_func:
         @param coeff_for_mesh:
-        @param delete_used_bk: true时 计算完一个 删除这个target用到的bk 
+        @param delete_used_bk: true时 计算完一个 删除这个target用到的bk
         @return:
         """
         rt = []
         for cur_job, target in enumerate(targets):
-            mylogger.debug("计算第%d个。。。"%cur_job)
-            mylogger.debug("当前bks数量：%d"%len(bks))
+            mylogger.debug("计算第%d个。。。" % cur_job)
+            mylogger.debug("当前bks数量：%d" % len(bks))
             start_time = time.time()
 
             # 计算当前target的map范围
@@ -222,10 +222,14 @@ class Algo1:
             for bk in bks:
                 if bk.center in thismaprect:
                     thisbk.append(bk)
-            a = Algo1(target, thisbk, coeff_for_mesh=0.2)
+            a = Algo1(target, thisbk, coeff_for_mesh=coeff_for_mesh)
             a.set_bk()
             rt1 = a.solve(dist_func=dist_func,
-                          valve_func=valve_func)
+                          valve_func=valve_func,
+                          additional_valve=additional_valve,
+                          coeffs=coeffs
+
+                          )
             # #下面三行为测试
             # ax=a.show()
             # a.add_rect_to_axes(rt1,ax,'b')
