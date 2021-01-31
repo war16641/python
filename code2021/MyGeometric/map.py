@@ -4,6 +4,7 @@ from typing import List
 import pickle
 import matplotlib.pyplot as plt
 import numpy as np
+from mybaseclasses.emptyclass import EmptyClass
 from mybaseclasses.mylogger import MyLogger
 from vector3d import Vector3D
 from .rect import Rect
@@ -12,7 +13,7 @@ from .rect import Rect
 mylogger=MyLogger('mapmesh12873d')
 mylogger.hide_level=True
 mylogger.hide_name=True
-mylogger.setLevel('info')
+mylogger.setLevel('debug')
 class MeshedMap:
     def __init__(self, leftdown: Vector3D, rightup:Vector3D):
         self.leftdown,self.rightup=leftdown,rightup
@@ -41,13 +42,22 @@ class MeshedMap:
         #         nc=Rect(Vector3D(x,y),celllength,celllength,0.0)
         #         nc.facecolor='g'#额外添加一个颜色变量
         #         self.cells.append(nc)
-        for y in np.arange(self.leftdown.y, self.rightup.y, celllength):
-            for x in np.arange(self.leftdown.x,self.rightup.x,celllength):
+        ys=np.arange(self.leftdown.y, self.rightup.y, celllength)
+        xs=np.arange(self.leftdown.x,self.rightup.x,celllength)
+        for y in ys:
+            for x in xs:
                 nc=Rect(Vector3D(x,y),celllength,celllength,0.0)
                 nc.facecolor='g'#额外添加一个颜色变量
                 self.cells.append(nc)
         self.array=np.array(self.cells)
-        self.array=self.array.reshape((t2,t1))
+        self.array=self.array.reshape((len(ys),len(xs)))
+
+
+    def change_color_in_rects(self,rects:List[Rect],color):
+        #改变rects内的cell的颜色
+        for r in rects:
+            for c in self.get_cells_in_rect_fast(r):
+                c.facecolor=color
 
     def get_cells_in_rect_fast(self,rect:Rect,precise=False)->List[Rect]:
         """
@@ -61,9 +71,11 @@ class MeshedMap:
                 x=0
             return x
         #为了提高速度 一旦执行了这个命令 rect中会保留生成的cell列表
-        if hasattr(rect,'cells_in_mm'):
-            mylogger.debug('rect之前执行过此命令。')
-            return rect.cells_in_mm
+        if hasattr(rect,'last_cells'):
+            #检查是否是相同的调用
+            if rect.last_cells.meshedmap==self:
+                mylogger.debug('rect之前执行过此命令。')
+                return rect.last_cells.cells
         ld,ru=rect.bound_corners#使用
         t1=int(round((ld.x-self.leftdown.x)/self.cell_length))
         t2=int(round((ru.x-self.leftdown.x)/self.cell_length))
@@ -80,9 +92,16 @@ class MeshedMap:
                 if i.center in rect:
                     lst.append(i)
             rv= lst
-        if not hasattr(rect,'cells_in_mm'):
-            rect.cells_in_mm=rv#在rect中保留结果
-            mylogger.debug('在rect中保留此命令结果。')
+
+        #写入last_cells
+        ec=EmptyClass()
+        ec.meshedmap=self
+        ec.cells=rv
+        rect.last_cells=ec
+        mylogger.debug('在rect中保留此命令结果。')
+        # if not hasattr(rect,'cells_in_mm'):
+        #     rect.cells_in_mm=rv#在rect中保留结果
+        #     mylogger.debug('在rect中保留此命令结果。')
         return rv
     def show(self,additional_rect:Rect=None):
         fig = plt.figure()  # 创建图

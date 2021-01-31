@@ -21,6 +21,7 @@ class MyLogger:
 
     """
     only=None #type:MyLogger#如果设置了only只有only能够输出debug信息
+    disable_all_logger=False #当这个值为true时 没有人能输出debug消息
     fortxt={(False,False):"%(name)s:[%(levelname)10s] %(message)s",#第一个代表是否隐藏name 第二个代表是否隐藏levelname
             (False,True):"%(name)s:%(message)s",
             (True,False):"[%(levelname)10s] %(message)s",
@@ -50,6 +51,8 @@ class MyLogger:
         self.logger.setLevel(MyLogger.levelname[lv])
 
     def debug(self, txt):
+        if MyLogger.disable_all_logger:
+            return
         if MyLogger.only is not None and MyLogger.only != self:
             return#设置了only，只有only才能输出debug信息
         self.logger.debug(Fore.BLACK + txt.__str__() + Style.RESET_ALL)
