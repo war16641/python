@@ -794,6 +794,14 @@ class Line3D(Generic[T_Line]):
         alpha2=self.get_parameter(n)#积分上下限
         return sp.integrate(P*self.direction.x+Q*self.direction.y,(alpha,alpha1,alpha2))
 
+    @property
+    def dangle(self):
+        """
+        直线的方向角
+        @return:
+        """
+        return Vector3D.calculate_angle_in_xoy(self.direction.x,self.direction.y)
+
 
 
 def get_trans_func(p:Vector3D=None,theta=0.0):
