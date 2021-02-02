@@ -345,13 +345,12 @@ class FlatDataModel:
         保存excel文件
         @param fullname:
         @param sheetname:
-        @param merge_cell: 合并相同内容的单元格 指定需要合并的列的范围
-        如第2列到第5列为： (2，5)   fdm.save(fullname=r"d:\xieru.xlsx",merge_cell=(2,5))
+        @param merge_cell:合并相同内容的单元格 指定需要合并的列的范围
+        如第2列到第5列为： (2，5)   fdm.save(fullname=r"",merge_cell=(2,5))
         @return:
         """
-        # 保存到excel文件中
         wb = Workbook()
-        self.__add_to_workbook(wb, 'Sheet',merge_cell=merge_cell)
+        self.__add_to_workbook(wb, 'Sheet',merge_cell=merge_cell)# 保存到excel文件中
 
         # 保存文件
         wb.save(fullname)
@@ -932,6 +931,26 @@ class FlatDataModel:
         # return fdm
         pass
 
+    def __eq__(self, other):
+        """
+        相等
+        判断两个fdm是否一模一样
+        仅比较vn中的键和值
+        比较耗费时间
+        @param other:
+        @return:
+        """
+        assert isinstance(other,FlatDataModel),"类型错误"
+        if len(self)!=len(other):
+            return False
+        if self.vn!=other.vn:
+            return False
+        for u,u1 in zip(self,other):
+            for i in self.vn:
+                if u.data[i] !=u1.data[i]:
+                    return False
+        return True
+
 
 class TestCase(unittest.TestCase):
     def test_append_unit(self):
@@ -1140,6 +1159,42 @@ class TestCase(unittest.TestCase):
                           goal=2,
                           func=lambda x: x['年龄'])
 
+    def test_eq(self):
+        st = """拉杆刚度	拉杆屈服强度	P1底轴力	P1底剪力
+        1	50	3678.027091	570.7248771
+        70000	50	3682.18235	558.0163549
+        70000	100	3725.238945	554.0071293
+        70000	150	3763.116878	551.450626
+        70000	200	3795.721789	550.3307469
+        70000	250	3821.993015	549.582025
+        70000	300	3851.3423	548.9927673
+        90000	50	3664.146017	557.0739193
+        90000	100	3701.476992	552.4944948
+        90000	150	3733.630435	548.1569784
+        90000	200	3759.021624	546.8723534
+        90000	250	3778.943963	545.8375741
+        90000	300	3801.283942	544.9070614
+        """
+        fdm = FlatDataModel.load_from_string(st, separator='\t')
+        fdm1 = FlatDataModel.load_from_string(st, separator='\t')
+        st = """拉杆刚度	拉杆屈服强度	P1底轴力	P1底剪力
+        1	50	3678.027091	570.7248771
+        70000	50	3682.18235	558.0163549
+        70000	100	3725.238935	554.0071293
+        70000	150	3763.116878	551.450626
+        70000	200	3795.721789	550.3307469
+        70000	250	3821.993015	549.582025
+        70000	300	3851.3423	548.9927673
+        90000	50	3664.146017	557.0739193
+        90000	100	3701.476992	552.4944948
+        90000	150	3733.630435	548.1569784
+        90000	200	3759.021624	546.8723534
+        90000	250	3778.943963	545.8375741
+        90000	300	3801.283942	544.9070614
+        """
+        fdm2 = FlatDataModel.load_from_string(st, separator='\t')
+        self.assertTrue(fdm==fdm1)
+        self.assertFalse(fdm==fdm2)
 
 if __name__ == '__main__':
     unittest.main()
