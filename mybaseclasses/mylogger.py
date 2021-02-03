@@ -29,6 +29,19 @@ class MyLogger:
     levelname={'debug':logging.DEBUG,
                'info':logging.INFO,
                'warning':logging.WARNING,}
+
+    _instance_dic={}
+
+    @staticmethod
+    def make(name='nyh'):
+        """建议使用make获得mylogger 否则可能会导致在多次import后出错"""
+        if name in MyLogger._instance_dic.keys():
+            return MyLogger._instance_dic[name]#已经有了就返回这个实例
+        else:
+            t=MyLogger(name)
+            MyLogger._instance_dic[name]=t
+            return t
+
     def __init__(self,name='nyh'):
         self.logger = logging.getLogger(name)
         if len(self.logger.handlers) !=0:

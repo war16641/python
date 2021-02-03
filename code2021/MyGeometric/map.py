@@ -10,7 +10,7 @@ from vector3d import Vector3D
 from .rect import Rect
 
 
-mylogger=MyLogger('mapmesh12873d')
+mylogger=MyLogger.make('mapmesh12873d')
 mylogger.hide_level=True
 mylogger.hide_name=True
 mylogger.setLevel('debug')
