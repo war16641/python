@@ -389,6 +389,31 @@ class Vector3D(Generic[T_Vector]):
         t3b=max(t3)
         return Vector3D(t1a,t2a,t3a),Vector3D(t1b,t2b,t3b)
 
+    @property
+    def own_angle(self):
+        """自己在xoy平面内的向量
+        计算平面内的点(x,y)与原点连线 和 x轴形成的夹角 以x轴正向转向y轴正向为正
+        :return:-pi,pi
+        """
+        x=self.x
+        y=self.y
+        if x == 0:
+            if y == 0:
+                return 0.0  # 0向量与x轴夹角为0
+            elif y > 0:
+                return math.pi / 2
+            else:
+                return -math.pi / 2
+
+        t = math.atan(y / x)
+
+        if x < 0:
+            if y > 0:
+                return t + math.pi
+            else:
+                return t - math.pi
+
+        return t
 
 class Plane3D(Generic[T_Plane]):
     """平面"""
@@ -802,6 +827,40 @@ class Line3D(Generic[T_Line]):
         """
         return Vector3D.calculate_angle_in_xoy(self.direction.x,self.direction.y)
 
+def get_trans_func_polar(p:Vector3D=None,theta=0.0):
+    """
+    极坐标转换函数
+    先平移 后旋转
+    仅支持平面内的变化 z恒=0
+    @param p: 在原坐标系下的从原坐标系原点指向新坐标系原点的向量
+    @param theta: 旋转角度 逆时针为正
+    @return: 函数和逆函数
+    """
+    class transfuncpolar:
+        def __init__(self, p: Vector3D = None, theta=0.):
+            if p is None:
+                p = Vector3D(0, 0, 0)
+            self.p = p
+            self.theta = theta
+
+        def calc(self, v: Vector3D):
+            sl = v - self.p
+            # 计算半径 rou
+            rou = abs(sl)
+
+            # 计算角度
+            theta = (sl.own_angle - self.theta)
+
+            return Vector3D(theta, rou)
+
+        def calci(self, v: Vector3D):
+            theta1 = v.x + self.theta
+            x = v.y * cos(theta1)
+            y = v.y * sin(theta1)
+            return Vector3D(x + self.p.x, y + self.p.y)
+
+    tfp=transfuncpolar(p=p,theta=theta)
+    return tfp.calc,tfp.calci
 
 
 def get_trans_func(p:Vector3D=None,theta=0.0):
@@ -1056,5 +1115,15 @@ class TestCase(unittest.TestCase):
                                                         P=P,
                                                         Q=Q)
         self.assertAlmostEqual(t,24.1666666666667, delta=1e-5)
+
+
+    def test3(self):
+        tran,trani=get_trans_func_polar(Vector3D(2, 1), 0)
+        p1 = Vector3D(2 + 1.73205080756888, 1 + 1)
+        Vector3D.tol_for_eq = 0.0001
+        v1 = Vector3D(30.0 / 180.0 * pi, 2)
+        v2 = tran(p1)
+        self.assertTrue(v1 == v2)
+        self.assertTrue(p1 == trani(tran(p1)))
 if __name__ == '__main__':
     unittest.main()
