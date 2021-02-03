@@ -25,7 +25,8 @@ def get_number_of_span(txt:str)->int:
     return rt
 
 def collect_girder_type(txt:str)->Tuple[dict,int]:
-    pt0 = "[^\(（](\d+)×(\d+\.?\d*)" #简支梁
+    #pt0 = "[^\(（](\d+)×(\d+\.?\d*)" #简支梁
+    pt0=r'(?:(?:（|\()[^（\(]*(?:）|\)))|(\d+×\d+(?:\.\d+)?)'#虎哥的超级表达式 会捕获空字符串 不会捕获()内的
     pt1 = "[\(（](\d+\+\d*×?\d+\+\d+)[\)）]"#三孔连续梁
     pt2 = "[\(（](\d+×\d+\.?\d*)[\)）]"#几×几的连续梁
     pt3="(\d+)m?系杆拱"#系杆拱
@@ -42,7 +43,23 @@ def collect_girder_type(txt:str)->Tuple[dict,int]:
 
     dic={}
     #开始按类型识别
-    for nb,lx in jianzhi:
+    # for nb,lx in jianzhi:
+    #     lx="简支"+lx
+    #     if lx not in dic.keys():
+    #         #没有这个跨度的
+    #         dic[lx]=float(nb)
+    #         ct0+=float(nb)
+    #     else:#已经有这个类型了
+    #         dic[lx] = float(nb)+dic[lx]
+    #         ct0+=float(nb)
+    for longstr in jianzhi:
+        if len(longstr)==0:
+            continue
+        t=longstr.find('×')
+        if t==-1:
+            raise Exception("错误 未能捕获× %s"%longstr)
+        lx=longstr[t+1:]
+        nb=int(longstr[0:t])
         lx="简支"+lx
         if lx not in dic.keys():
             #没有这个跨度的
