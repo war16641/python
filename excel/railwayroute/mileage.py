@@ -94,7 +94,7 @@ class Mileage:
                 continue
             if u.data["等号右里程数"]<=self.number<=self.duanlianbiao[i+1].data["等号左里程数"]:
                 return i
-        raise ErrorMileage("并未在断链表中找到这个里程：%s"%self)
+        raise ErrorMileage("并未在断链表中找到这个里程：%s\n 断链表和里程不匹配"%self)
         pass
 
     @staticmethod
@@ -115,9 +115,54 @@ class Mileage:
             rt[2] = "0"
         return rt[0], float(rt[1]) * 1000 + float(rt[2]),
 
-    pass
+    def __gt__(self, other):
+        assert isinstance(other,Mileage),"类型错误"
+        if self.duanlianbiao is not None or other.duanlianbiao is not None :
+            assert self.duanlianbiao==other.duanlianbiao,"断链表不一致"
+        zid=self.find_chain_in_duanlianbiao()
+        oid=other.find_chain_in_duanlianbiao()
+        if zid>oid:
+            return True
+        elif zid<oid:
+            return False
+        else:#在同一个区间内
+            return self.number>other.number
 
+    def __lt__(self, other):
+        assert isinstance(other,Mileage),"类型错误"
+        if self.duanlianbiao is not None or other.duanlianbiao is not None :
+            assert self.duanlianbiao==other.duanlianbiao,"断链表不一致"
+        zid=self.find_chain_in_duanlianbiao()
+        oid=other.find_chain_in_duanlianbiao()
+        if zid>oid:
+            return False
+        elif zid<oid:
+            return True
+        else:#在同一个区间内
+            return self.number<other.number
 
+    def __eq__(self, other):
+        assert isinstance(other,Mileage),"类型错误"
+        if self.duanlianbiao is not None or other.duanlianbiao is not None :
+            assert self.duanlianbiao==other.duanlianbiao,"断链表不一致"
+        return self.guanhao==other.guanhao and self.number==other.number
+        # zid=self.find_chain_in_duanlianbiao()
+        # oid=other.find_chain_in_duanlianbiao()
+        # return zid==oid and self.number==other.number
+
+    def __ge__(self, other):
+        if self==other:
+            return True
+        if self>other:
+            return True
+        return False
+
+    def __le__(self, other):
+        if self==other:
+            return True
+        if self<other:
+            return True
+        return False
 if __name__ == '__main__':
     string="""ID	等号左里程冠号	等号左里程数	等号右里程冠号	等号右里程数	断链长度
 0	DK	199500	DK	199500	0

@@ -3,6 +3,13 @@ from unittest import TestCase,main
 
 
 class FiniteRangeFunction:
+    """
+    有限值域函数
+    即：其函数值域为有限的、几个值的集合 其函数图像为多个水平线
+    在这里 用pts描述这个函数
+    pts的格式为：List[Tuple(object1,object2)、、、]
+    其中要求object1实现了 ==  > < >= <=等比较运算，可以不为float
+    """
     def __init__(self,pts):
         self.pts=pts #关键点列表 存储(X,Y)
         self.qidian=pts[0][0]

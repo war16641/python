@@ -940,6 +940,8 @@ class FlatDataModel:
         @param other:
         @return:
         """
+        if id(self)==id(other):
+            return True
         assert isinstance(other,FlatDataModel),"类型错误"
         if len(self)!=len(other):
             return False

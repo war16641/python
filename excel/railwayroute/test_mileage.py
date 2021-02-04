@@ -73,5 +73,29 @@ class TestMileage(TestCase):
 
         self.assertRaises(ErrorMileage,m.__add__,90000)
 
+    def test5(self):
+        string = """ID	等号左里程冠号	等号左里程数	等号右里程冠号	等号右里程数	断链长度
+        0	DK	199500	DK	199500	0
+        1	DK	236600	D1K	236600	0
+        2	D1K	246000.3155	DK	248000	1999.6845
+        3	DK	286259.754	DK	286259.754	0
+        """
+        fdm = FlatDataModel.load_from_string(stringtxt=string,
+                                             vn_syle='fromstring',
+                                             separator=' ')
+        m = Mileage("DK200")
+        m.duanlianbiao = fdm
+        m1 = Mileage("DK201")
+        m1.duanlianbiao = fdm
+        # print(m1 > m)
+        self.assertTrue(m1>m)
+        m2 = Mileage("D1K237+800")
+        m2.duanlianbiao = fdm
+        # print(m2 > m)
+        self.assertFalse(m2 < m)
+        m3 = Mileage("D1K237+800")
+        m3.duanlianbiao = fdm
+        # print(m2 == m3)
+        self.assertTrue(m2==m3)
 if __name__ == '__main__':
     unittest.main()
