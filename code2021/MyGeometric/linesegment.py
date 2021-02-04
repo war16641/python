@@ -1,7 +1,10 @@
+from code2021.MyGeometric.basegeometric import BaseGeometric
 from vector3d import Vector3D, Line3D, get_trans_func
+import matplotlib.pyplot as plt
+import numpy as np
 
 
-class LineSegment:
+class LineSegment(BaseGeometric):
     def __init__(self,p1:Vector3D=None,p2:Vector3D=None):
         self._p1=None #type:Vector3D
         self._p2=None#type:Vector3D
@@ -84,7 +87,7 @@ class LineSegment:
         else:
             return False
 
-    def clac_nearest_point(self,target:Vector3D,tol=1e-5):
+    def calc_nearest_point(self, target:Vector3D, tol=1e-5):
         """
         计算点在线段上最近的点
         @param target:
@@ -98,4 +101,18 @@ class LineSegment:
         return p,p1.x,abs(target-p)<tol
         pass
 
+    def draw_in_axes(self,axes=None):
+        if axes is None:
+            fig1, axes = plt.subplots()
+
+        line=axes.plot([self.p1.x,self.p2.x],[self.p1.y,self.p2.y],'k-')
+        return line,axes
+
+
+    @property
+    def start_point(self):
+        return self.p1
+    @property
+    def end_point(self):
+        return self.p2
     pass

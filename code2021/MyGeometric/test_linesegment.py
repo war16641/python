@@ -38,7 +38,7 @@ class TestLineSegment(TestCase):
         goal=Vector3D(g3/2,0.5)
         d30=30/180.0*pi
         te=Vector3D(g3/2-sin(d30),0.5+cos(d30))
-        r1,r2,r3=elo.clac_nearest_point(te)
+        r1,r2,r3=elo.calc_nearest_point(te)
         self.assertEqual(goal,r1)
         self.assertAlmostEqual(1,r2,delta=1e-5)
         self.assertFalse(r3)
