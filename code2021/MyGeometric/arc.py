@@ -1,10 +1,46 @@
-from math import pi
+from math import pi, sqrt
 import matplotlib.patches as mpatches
 
 from code2021.MyGeometric.basegeometric import BaseGeometric
 from vector3d import Vector3D,get_trans_func_polar
 import matplotlib.pyplot as plt
 from code2021.MyGeometric.angletool import AngleTool
+
+class CircleLineIntersecionProblem:
+    """
+    圆和直线交点问题
+    (x-a)**2+(y-b)**2+r**2=0
+    A*x+B*y+C=0
+    """
+    def __init__(self):
+        self.a=self.b=0
+        self.r=0
+        self.A=self.B=self.C=0
+
+    def solve(self):
+        """
+        相离时 返回none
+        相切时 返回[(交点坐标)] 当圆心到直线距离与r相对误差补不足1e-6时 认为相切
+        相交时 返回 [(交点1坐标),(交点2坐标)]
+        @return:
+        """
+        a,b,r=self.a,self.b,self.r
+        A,B,C=self.A,self.B,self.C
+        #检查根的个数
+        dist=abs((A*a+B*b+C)/sqrt(A**2+B**2))
+        if dist>r:
+            return None
+        else:
+            t= [(-(B*(-A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2)/(A**2 + B**2) - (-A**2*b + A*B*a + B*C)/(A**2 + B**2)) + C)/A,
+                     -A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2)/(A**2 + B**2) - (-A**2*b + A*B*a + B*C)/(A**2 + B**2),),
+                    (-(B*(A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2)/(A**2 + B**2) - (-A**2*b + A*B*a + B*C)/(A**2 + B**2)) + C)/A,
+                     A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2)/(A**2 + B**2) - (-A**2*b + A*B*a + B*C)/(A**2 + B**2),)]
+            if abs(dist-r)/dist<1e-5:#相切
+                return [t[0]]
+            else:#相交
+                return t
+
+
 class Arc(BaseGeometric):
 
     def __init__(self,center:Vector3D,radius,angle1:float,da):

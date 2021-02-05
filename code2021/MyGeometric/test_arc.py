@@ -1,6 +1,6 @@
 from unittest import TestCase,main
 from code2021.MyGeometric.angletool import *
-from code2021.MyGeometric.arc import Arc
+from code2021.MyGeometric.arc import Arc, CircleLineIntersecionProblem
 from vector3d import Vector3D
 
 
@@ -20,5 +20,24 @@ class TestArc(TestCase):
         self.assertEqual(Vector3D(-1,1),arc.end_point)
         self.assertTrue(Vector3D(0,0) in arc)
 
+    def test_CircleLineIntersecionProblem(self):
+        p = CircleLineIntersecionProblem()
+        p.a = p.b = 1
+        p.r = 1
+        g3 = 3 ** 0.5
+        p.A = p.B = 1
+        p.C = -(1 + 2.414213562)
+        r=p.solve()
+        self.assertEqual(1,len(r))
+        self.assertAlmostEqual(1.707123023470,r[0][0])
+
+
+        p.C = -(1 + 1.414213562)
+        r = p.solve()
+        self.assertEqual(2,len(r))
+
+        p.C = -(1 + 3.414213562)
+        r = p.solve()
+        self.assertEqual(None, r)
 if __name__ == '__main__':
     main()
