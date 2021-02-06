@@ -22,3 +22,6 @@ class PolyLine:
             t,axes=seg.draw_in_axes(axes)
             lst.append(t)
         return lst,axes
+
+    def __iter__(self):
+        return self.segs.__iter__()

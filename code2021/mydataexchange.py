@@ -4,64 +4,99 @@ import os
 
 from code2021.MyGeometric.arc import Arc
 from code2021.MyGeometric.linesegment import LineSegment
+from code2021.MyGeometric.polyline import PolyLine
 from code2021.MyGeometric.rect import Rect
 from vector3d import Vector3D
 
 
 def make_data_from_paragraph(paragraph:str,ignore_lines=3)->dict:
-    hanghao_start=ignore_lines+1
-    hanghao=0
-    rt={}
-    stringPatern="^\s*(\S+)\s+(\S+)\s+(.+)$"
-    for i,cur_line in enumerate(paragraph.split("\n")):
-        if i<ignore_lines:
-            continue#忽略的行
-        if len(cur_line.replace(' ',''))==0:
-            continue#空行跳过
+    def read_single_line(cur_line):
+        nonlocal stringPatern
         rert = re.findall(stringPatern, cur_line)
-        if len(rert)==0:
-            raise Exception("错误的行：%s"%cur_line)
-        rert=rert[0]
-        if rert[1]=="float":
-            rt[rert[0]]=float(rert[2])
-        elif rert[1]=="string":
-            rt[rert[0]] = rert[2]
-        elif rert[1]=="vector":
-            nbs=rert[2].split(",")
-            nbs=[float(x) for x in nbs]
-            rt[rert[0]]=Vector3D.make_from_list(nbs)
-        elif rert[1]=="rect":
+        if len(rert) == 0:
+            raise Exception("错误的行：%s" % cur_line)
+        rert = rert[0]
+        if rert[1] == "float":
+            # rt[rert[0]] = float(rert[2])
+            return 's',rert[0],float(rert[2])
+        elif rert[1] == "string":
+            # rt[rert[0]] = rert[2]
+            return 's',rert[0],rert[2]
+        elif rert[1] == "vector":
+            nbs = rert[2].split(",")
+            nbs = [float(x) for x in nbs]
+            # rt[rert[0]] = Vector3D.make_from_list(nbs)
+            return 's',rert[0],Vector3D.make_from_list(nbs)
+        elif rert[1] == "rect":
             parts = rert[2].split(",")
-            #rect 有两种格式
-            if len(parts)==4:# 已有vector的标识，长，宽，转角
+            # rect 有两种格式
+            if len(parts) == 4:  # 已有vector的标识，长，宽，转角
                 assert parts[0] in rt.keys(), "rect引用了一个不存在的vector %s" % parts[0]
                 width = float(parts[1])
                 height = float(parts[2])
                 rotation = float(parts[3])
-                rt[rert[0]] = Rect(xy=rt[parts[0]], width=width, height=height,
+                # rt[rert[0]] = Rect(xy=rt[parts[0]], width=width, height=height,
+                #                    rotation=rotation)
+                return 's',rert[0],Rect(xy=rt[parts[0]], width=width, height=height,
                                    rotation=rotation)
-                continue
-            elif len(parts)==6:# x，y，z，长，宽，转角
-                rt[rert[0]] = Rect(xy=Vector3D(float(parts[0]),float(parts[1]),float(parts[2])),
+            elif len(parts) == 6:  # x，y，z，长，宽，转角
+                # rt[rert[0]] = Rect(xy=Vector3D(float(parts[0]), float(parts[1]), float(parts[2])),
+                #                    width=float(parts[3]), height=float(parts[4]),
+                #                    rotation=float(parts[5]))
+                return 's',rert[0],Rect(xy=Vector3D(float(parts[0]), float(parts[1]), float(parts[2])),
                                    width=float(parts[3]), height=float(parts[4]),
                                    rotation=float(parts[5]))
-                continue
             else:
-                raise Exception("rect的数据格式不正确 %s"%rert[2])
+                raise Exception("rect的数据格式不正确 %s" % rert[2])
 
-        elif rert[1]=="lineseg":
-            nbs=rert[2].split(",")
-            nbs=[float(x) for x in nbs]
-            assert len(nbs)==6,"linesegment格式错误 %s"%rert[2]
-            rt[rert[0]] =LineSegment(Vector3D(nbs[0],nbs[1],nbs[2]),Vector3D(nbs[3],nbs[4],nbs[5]))
-        elif rert[1]=="arc":
-            nbs=rert[2].split(",")
-            nbs=[float(x) for x in nbs]
-            assert len(nbs)==6,"arc格式错误 %s"%rert[2]
-            rt[rert[0]] = Arc(Vector3D(nbs[0], nbs[1], nbs[2]), nbs[3], nbs[4], nbs[5])
+        elif rert[1] == "lineseg":
+            nbs = rert[2].split(",")
+            nbs = [float(x) for x in nbs]
+            assert len(nbs) == 6, "linesegment格式错误 %s" % rert[2]
+            # rt[rert[0]] = LineSegment(Vector3D(nbs[0], nbs[1], nbs[2]), Vector3D(nbs[3], nbs[4], nbs[5]))
+            return 's',rert[0],LineSegment(Vector3D(nbs[0], nbs[1], nbs[2]), Vector3D(nbs[3], nbs[4], nbs[5]))
+        elif rert[1] == "arc":
+            nbs = rert[2].split(",")
+            nbs = [float(x) for x in nbs]
+            assert len(nbs) == 6, "arc格式错误 %s" % rert[2]
+            # rt[rert[0]] = Arc(Vector3D(nbs[0], nbs[1], nbs[2]), nbs[3], nbs[4], nbs[5])
+            return 's',rert[0],Arc(Vector3D(nbs[0], nbs[1], nbs[2]), nbs[3], nbs[4], nbs[5])
+        elif rert[1] == "polyline":
+            nb=int(rert[2])
+            return 'm',rert[0],nb#返回name和行数
         else:
-            raise Exception("未知的数据类型%s"%rert[1])
+            raise Exception("未知的数据类型%s" % rert[1])
+    hanghao_start=ignore_lines+1
+    hanghao=0
+    rt={}
+    stringPatern="^\s*(\S+)\s+(\S+)\s+(.+)$"
+    lines=paragraph.split("\n")
+    num_of_line=0
+    cur_line=""
+    while True:
+        cur_line=lines[num_of_line]
+        num_of_line+=1
+        if num_of_line<=ignore_lines:
+            continue#忽略的行
+        if len(cur_line.replace(' ',''))==0:
+            continue#空行跳过
+        out=read_single_line(cur_line)
+        if out[0] is 's':
+            rt[out[1]]=out[2]
+        else:
+            name,cd=out[1:]
+            segs=[]
+            for i in range(1,cd+1):
+                cur_line = lines[num_of_line]
+                num_of_line += 1
+                out1 = read_single_line(cur_line)
+                assert  's' is out1[0],"已经是多行数据了，不允许在读取多行数据的时候，返回另一个多行数据"
+                segs.append(out1[2])
+            rt[name]=PolyLine(segs)
+        if num_of_line==len(lines)-1:
+            break
     return rt
+
 
 def make_data_from_file(filepath,ignore_lines=3)->dict:
     assert os.path.isfile(filepath),"%s不存在"%filepath

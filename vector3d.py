@@ -708,7 +708,7 @@ class Line3D(Generic[T_Line]):
                 tmp1+=self.direction#处理当两个直线的点重合时的意外情况
             if Vector3D.is_parallel(tmp1, self.direction):  # 共线
                 return self.PositionRelation.collinear
-            return self.PositionRelation.intersect
+            return self.PositionRelation.parallel
         if self.distance_between_two_lines(self, other) < Vector3D.tol_for_eq:  # 共面
             if self.direction.is_perpendicular(other.direction):
                 return self.PositionRelation.perpendicular

@@ -4,6 +4,7 @@
 """
 from code2021.MyGeometric.arc import Arc, CircleLineIntersecionProblem
 from code2021.MyGeometric.linesegment import LineSegment
+from code2021.MyGeometric.polyline import PolyLine
 from vector3d import Vector3D
 
 
@@ -14,6 +15,12 @@ class Entitytool:
 
     @staticmethod
     def _intersection_point_line_line(a:LineSegment,b:LineSegment)->Vector3D:
+        """
+        返回交点 没有就返回none
+        @param a:
+        @param b:
+        @return:
+        """
         t=a.line.get_intersect_point(b.line)
         if t is None:
             return None
@@ -25,6 +32,15 @@ class Entitytool:
 
     @staticmethod
     def _intersection_point_line_arc(a,b)->Vector3D:
+        """
+        直线与圆弧
+        返回none
+        或者vector
+        或者[vector,vector]
+        @param a:
+        @param b:
+        @return:
+        """
         if isinstance(a,LineSegment):
             elo=a
             arc=b
@@ -61,6 +77,23 @@ class Entitytool:
             return fa
         else:
             return None
+
+    @staticmethod
+    def _intersection_point_line_polyline(a,b):
+        if isinstance(a,LineSegment):
+            elo=a
+            pl=b
+        else:
+            elo=b
+            pl=a
+        for seg in pl:
+            t=Entitytool.intersection_point(elo,seg)
+            if isinstance(t,Vector3D):
+                return t
+            elif isinstance(t,list) and isinstance(t[0],Vector3D):#如果遇到返回两个交点 那就返回第一个
+                return t[0]
+        return None
+
     @staticmethod
     def intersection_point(a,b)->Vector3D:
         """
@@ -75,5 +108,9 @@ class Entitytool:
         if isinstance(a, LineSegment) and isinstance(b, Arc) or \
                 isinstance(b, LineSegment) and isinstance(a, Arc):
             return Entitytool._intersection_point_line_arc(a,b)
+        if isinstance(a, LineSegment) and isinstance(b, PolyLine) or \
+                isinstance(b, LineSegment) and isinstance(a, PolyLine):
+            return Entitytool._intersection_point_line_polyline(a,b)
         else:
             raise Exception("未知类型")
+

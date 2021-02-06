@@ -35,7 +35,7 @@ class CircleLineIntersecionProblem:
                      -A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2)/(A**2 + B**2) - (-A**2*b + A*B*a + B*C)/(A**2 + B**2),),
                     (-(B*(A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2)/(A**2 + B**2) - (-A**2*b + A*B*a + B*C)/(A**2 + B**2)) + C)/A,
                      A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2)/(A**2 + B**2) - (-A**2*b + A*B*a + B*C)/(A**2 + B**2),)]
-            if abs(dist-r)/dist<1e-5:#相切
+            if abs(dist-r)/r<1e-5:#相切
                 return [t[0]]
             else:#相交
                 return t

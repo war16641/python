@@ -1,9 +1,11 @@
+from math import pi
 from unittest import TestCase,main
 
 from code2021.MyGeometric.angletool import AngleTool
 from code2021.MyGeometric.arc import Arc
 from code2021.MyGeometric.entitytool import Entitytool
 from code2021.MyGeometric.linesegment import LineSegment
+from code2021.MyGeometric.polyline import PolyLine
 from vector3d import Vector3D
 class TestEntitytool(TestCase):
     def test__intersection_point_line_line(self):
@@ -35,7 +37,25 @@ class TestEntitytool(TestCase):
         self.assertTrue(Entitytool.intersection_point(elo, arc) == goal)
         Vector3D.tol_for_eq = 1e-5
 
+    def test__intersection_point_line_polyline(self):
+        elo1=LineSegment(Vector3D(0,0),Vector3D(1,0))
+        elo2 = LineSegment(Vector3D(1, 0), Vector3D(1, 1))
+        a=Arc(Vector3D(0,1),1,0,pi)
+        pl=PolyLine([elo1,elo2,a])
+        elo=LineSegment(Vector3D(0,0.5),Vector3D(10,0.5))
+        goal=Vector3D(1,0.5)
+        self.assertTrue(goal==Entitytool.intersection_point(pl,elo))
 
+        elo = LineSegment(Vector3D(0, -0.5), Vector3D(10, -0.5))
+        self.assertTrue(None == Entitytool.intersection_point(pl, elo))
+
+        elo1=LineSegment(Vector3D(0.1,0),Vector3D(1,0))
+        elo2 = LineSegment(Vector3D(1, 0), Vector3D(1, 1))
+        a=Arc(Vector3D(0,1),1,0,pi)
+        pl=PolyLine([elo1,elo2,a])
+        elo=LineSegment(Vector3D(0,0),Vector3D(0,10))
+        goal=Vector3D(0,2)
+        self.assertTrue(goal==Entitytool.intersection_point(pl,elo))
 
 if __name__ == '__main__':
     main()
