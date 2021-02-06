@@ -1,6 +1,9 @@
 
 import re
 import os
+
+from code2021.MyGeometric.arc import Arc
+from code2021.MyGeometric.linesegment import LineSegment
 from code2021.MyGeometric.rect import Rect
 from vector3d import Vector3D
 
@@ -46,6 +49,16 @@ def make_data_from_paragraph(paragraph:str,ignore_lines=3)->dict:
             else:
                 raise Exception("rect的数据格式不正确 %s"%rert[2])
 
+        elif rert[1]=="lineseg":
+            nbs=rert[2].split(",")
+            nbs=[float(x) for x in nbs]
+            assert len(nbs)==6,"linesegment格式错误 %s"%rert[2]
+            rt[rert[0]] =LineSegment(Vector3D(nbs[0],nbs[1],nbs[2]),Vector3D(nbs[3],nbs[4],nbs[5]))
+        elif rert[1]=="arc":
+            nbs=rert[2].split(",")
+            nbs=[float(x) for x in nbs]
+            assert len(nbs)==6,"arc格式错误 %s"%rert[2]
+            rt[rert[0]] = Arc(Vector3D(nbs[0], nbs[1], nbs[2]), nbs[3], nbs[4], nbs[5])
         else:
             raise Exception("未知的数据类型%s"%rert[1])
     return rt

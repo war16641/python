@@ -115,4 +115,10 @@ class LineSegment(BaseGeometric):
     @property
     def end_point(self):
         return self.p2
-    pass
+
+    def __eq__(self, other):
+        assert isinstance(other,LineSegment),"类型错误"
+        if self.p1==other.p1 and self.p2 ==other.p2:
+            return True
+        else:
+            return False

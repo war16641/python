@@ -137,3 +137,15 @@ class Arc(BaseGeometric):
         #     and abs(t.y-self.radius)<Vector3D.tol_for_eq:
         #     return True
         # return False
+
+    def __eq__(self, other):
+        assert isinstance(other,Arc),"类型错误"
+        if self.center!=other.center:
+            return False
+        if abs(self.radius-other.radius)>Vector3D.tol_for_eq:
+            return False
+        if abs(self._angle1-other._angle1)>Vector3D.tol_for_eq:
+            return  False
+        if abs(self.da-other.da)>Vector3D.tol_for_eq:
+            return False
+        return True
