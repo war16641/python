@@ -827,6 +827,18 @@ class Line3D(Generic[T_Line]):
         """
         return Vector3D.calculate_angle_in_xoy(self.direction.x,self.direction.y)
 
+    def expression(self):
+        """一般表达式
+        Ax+By+C=0
+        返回 A,B,C
+        """
+        if abs(self.direction.x)>1e-6:
+            k=self.direction.y/self.direction.x
+            b=self.point.y-k*self.point.x
+            return k,-1,b
+        else:#k为无穷大 竖直线
+            return 1,0,-self.point.x
+
 def get_trans_func_polar(p:Vector3D=None,theta=0.0):
     """
     极坐标转换函数
@@ -1115,6 +1127,11 @@ class TestCase(unittest.TestCase):
                                                         P=P,
                                                         Q=Q)
         self.assertAlmostEqual(t,24.1666666666667, delta=1e-5)
+
+        elo = Line3D(point=Vector3D(0, 0), direction=Vector3D(1, 0))
+        self.assertAlmostEqual((0,-1,0),elo.expression())
+        elo = Line3D(point=Vector3D(0, 0), direction=Vector3D(0, 1))
+        self.assertAlmostEqual((1, 0, 0), elo.expression())
 
 
     def test3(self):
