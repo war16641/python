@@ -3,9 +3,13 @@ from code2021.MyGeometric.basegeometric import BaseGeometric
 from code2021.MyGeometric.linesegment import LineSegment
 from typing import List
 
+from vector3d import Vector3D
+
+
 class PolyLine:
     def __init__(self,segs):
         self.segs=[]#type:List[BaseGeometric]
+        self._length=None #type:float
         for i,seg in enumerate(segs):
             assert isinstance(seg,BaseGeometric),"类型错误"
             if i==0:
@@ -25,3 +29,20 @@ class PolyLine:
 
     def __iter__(self):
         return self.segs.__iter__()
+
+    @property
+    def length(self):
+        if self._length is None:#没有计算就计算
+            t=0.0
+            for seg in self:
+                t+=seg.length
+            self._length=t
+        return  self._length
+
+    def __contains__(self, item):
+        assert isinstance(item,Vector3D),"类型错误"
+        for i,seg in enumerate(self.segs):
+            t= item in seg
+            if t is True:
+                return True
+        return False

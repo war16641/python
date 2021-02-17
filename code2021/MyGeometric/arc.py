@@ -127,7 +127,7 @@ class Arc(BaseGeometric):
         #计算t点到mp点转过的角度 并放入0到2pi
         need=AngleTool.format(t.x-mp)
         #need与da比较
-        if abs(self._da)<need+Vector3D.tol_for_eq:
+        if abs(self._da)<need-Vector3D.tol_for_eq:
             return False
         if abs(t.y-self.radius)<Vector3D.tol_for_eq:
             return True

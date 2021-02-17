@@ -82,6 +82,8 @@ class LineSegment(BaseGeometric):
         """
         assert isinstance(item,Vector3D),"类型错误"
         p=self.tf(item)
+        if abs(p.y)>Vector3D.tol_for_eq:
+            return False
         if -tol<=p.x<=self.length+tol:
             return True
         else:
