@@ -15,7 +15,7 @@ class TestPolyLine(TestCase):
         a=Arc(Vector3D(0,1),1,0,pi)
         pl=PolyLine([elo1,elo2,a])
         _,ax=pl.draw_in_axes()
-        # plt.show()
+        plt.show()
 
     def test_2(self):
         elo1=LineSegment(Vector3D(0,0),Vector3D(1,0))

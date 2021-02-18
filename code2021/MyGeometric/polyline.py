@@ -46,3 +46,8 @@ class PolyLine:
             if t is True:
                 return True
         return False
+
+    def calc_nearest_point(self, target: Vector3D, tol=1e-5):
+        assert isinstance(target, Vector3D), "类型错误"
+        
+        pass

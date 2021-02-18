@@ -2,7 +2,7 @@ from unittest import TestCase,main
 from code2021.MyGeometric.angletool import *
 from code2021.MyGeometric.arc import Arc, CircleLineIntersecionProblem
 from vector3d import Vector3D
-
+import matplotlib.pyplot as plt
 
 class TestArc(TestCase):
     def test1(self):
@@ -39,5 +39,28 @@ class TestArc(TestCase):
         p.C = -(1 + 3.414213562)
         r = p.solve()
         self.assertEqual(None, r)
+
+    def test_calc_nearest_point(self):
+        arc = Arc(Vector3D(0, 1), radius=1., angle1=0, da=AngleTool.toR(90))
+        arc.draw_in_axes()
+        # plt.autoscale(enable=True, axis='both', tight=True)
+        # plt.show()
+        ta=Vector3D(1,1)
+        goal,le,on=arc.calc_nearest_point(ta)
+        self.assertTrue(ta==goal)
+        self.assertAlmostEqual(0,le,delta=1e-5)
+        self.assertTrue(on)
+
+        ta=Vector3D(1.1,1)
+        goal,le,on=arc.calc_nearest_point(ta)
+        self.assertTrue(Vector3D(1,1)==goal)
+        self.assertAlmostEqual(0,le,delta=1e-5)
+        self.assertFalse(on)
+
+        ta=Vector3D(0,2.1)
+        goal,le,on=arc.calc_nearest_point(ta)
+        self.assertTrue(Vector3D(0,2)==goal)
+        self.assertAlmostEqual(pi*0.5,le,delta=1e-5)
+        self.assertFalse(on)
 if __name__ == '__main__':
     main()

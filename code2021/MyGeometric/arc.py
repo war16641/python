@@ -149,3 +149,37 @@ class Arc(BaseGeometric):
         if abs(self.da-other.da)>Vector3D.tol_for_eq:
             return False
         return True
+
+    def calc_nearest_point(self, target: Vector3D, tol=1e-5):
+        """
+        计算点在线段上最近的点
+        @param target:
+        @param tol:
+        @return: 最近点，该点的长度坐标(可以为负 也可以超过长度),target是否在直线上
+        长度坐标：=0 起点，=长度 终点
+        """
+        assert isinstance(target,Vector3D),"类型错误"
+        p=self.tf(target)
+        p1=Vector3D(p.x,self.radius)#计算最近点
+        rt=self.tfi(p1)
+        #计算长度坐标
+        le=abs(p.x-self._angle1)*self.radius
+        #判断是否在arc上
+        on=False
+        #计算小的端点
+        if self._da>0:
+            mp=self._angle1
+        else:
+            mp=self._angle2
+        #计算t点到mp点转过的角度 并放入0到2pi
+        need=AngleTool.format(p.x-mp)
+        #need与da比较
+        if abs(self._da)<need-tol:
+            on= False
+        else:
+            if abs(p.y-self.radius)<tol:
+                on= True
+            else:
+                on= False
+
+        return rt,le,on
