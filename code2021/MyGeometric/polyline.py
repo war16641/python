@@ -48,6 +48,45 @@ class PolyLine:
         return False
 
     def calc_nearest_point(self, target: Vector3D, tol=1e-5):
+        """
+        算法：
+        如果发现target在某个seg上 好办
+        如果不在，将最近点到target的距离排序 取最低值
+        @param target:
+        @param tol:
+        @return: 最近点，该点的长度坐标,target是否在直线上
+        """
+        def script1(i):#计算第1到第i个的长度和
+            t=0.0
+            for id in range(i):
+                t+=self.segs[id].length
+            return t
         assert isinstance(target, Vector3D), "类型错误"
-        
-        pass
+        hangs=[]#存储 每个seg的最近点,编号i,到target距离,le
+        target_id=None
+        potential=None
+        flag=False
+        for i,seg in enumerate(self.segs):
+            t,le,on=seg.calc_nearest_point(target,tol)
+            if on is True:#如果在改个seg上 直接结束了
+                target_id=i
+                potential=t
+                final_on=True
+                flag=True
+                break
+            else:
+                #加入hangs 最后进行比较
+                hangs.append((t,i,abs(target-t),le))
+        if target_id is None:#没有发现在seg上
+            #对hangs排序 取最近的
+            hangs.sort(key=lambda x:x[2])
+            target_id=hangs[0][1]
+            potential=hangs[0][0]
+            final_on=False
+        #计算长度坐标
+        t=script1(target_id)
+        if flag:
+            t=t+le#没有加入到hangs 直接使用le
+        else:
+            t=t+hangs[0][3]
+        return potential,t,final_on

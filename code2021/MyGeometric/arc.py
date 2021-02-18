@@ -1,3 +1,4 @@
+from copy import deepcopy
 from math import pi, sqrt
 import matplotlib.patches as mpatches
 
@@ -153,6 +154,7 @@ class Arc(BaseGeometric):
     def calc_nearest_point(self, target: Vector3D, tol=1e-5):
         """
         计算点在线段上最近的点
+        如果最近点不在圆弧两个端点内部 最近点取两个端点的一个 长度坐标会加上本身长度
         @param target:
         @param tol:
         @return: 最近点，该点的长度坐标(可以为负 也可以超过长度),target是否在直线上
@@ -174,12 +176,25 @@ class Arc(BaseGeometric):
         #计算t点到mp点转过的角度 并放入0到2pi
         need=AngleTool.format(p.x-mp)
         #need与da比较
+        inner=False#判断这个rt点是否在圆弧内部
         if abs(self._da)<need-tol:
             on= False
         else:
+            inner=True
             if abs(p.y-self.radius)<tol:
                 on= True
             else:
                 on= False
+
+
+        if inner is False:#如果不在arc上 长度坐标失去意义 这里加上自身长度
+            le+=self.length
+            t1=AngleTool.format(p.x-self._angle1)
+            t2=AngleTool.format(p.x-self._angle2)
+            if t1<t2:#此时最近点也失去意义 只能是两个端点
+                rt=deepcopy(self.start_point)
+            else:
+                rt=deepcopy(self.end_point)
+
 
         return rt,le,on
