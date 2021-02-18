@@ -57,5 +57,12 @@ class TestEntitytool(TestCase):
         goal=Vector3D(0,2)
         self.assertTrue(goal==Entitytool.intersection_point(pl,elo))
 
+    def test__intersection_point_polyline_polyline(self):
+        elo1 = LineSegment(Vector3D(0, 0), Vector3D(1, 0))
+        elo2 = LineSegment(Vector3D(1, 0), Vector3D(1, 1))
+        a = Arc(Vector3D(0, 1), 1, 0, pi)
+        pl = PolyLine([elo1, elo2, a])
+
+
 if __name__ == '__main__':
     main()

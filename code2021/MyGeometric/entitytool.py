@@ -95,6 +95,14 @@ class Entitytool:
         return None
 
     @staticmethod
+    def _intersection_point_polyline_polyline(a,b):
+        for seg1 in a:
+            t=Entitytool.intersection_point(seg1,b)
+            if t is not None:
+                return t
+        return None
+
+    @staticmethod
     def intersection_point(a,b)->Vector3D:
         """
         求两个图素交点
@@ -111,6 +119,8 @@ class Entitytool:
         if isinstance(a, LineSegment) and isinstance(b, PolyLine) or \
                 isinstance(b, LineSegment) and isinstance(a, PolyLine):
             return Entitytool._intersection_point_line_polyline(a,b)
+        if isinstance(a,PolyLine) and isinstance(b,PolyLine):
+            return Entitytool._intersection_point_polyline_polyline(a,b)
         else:
             raise Exception("未知类型")
 
