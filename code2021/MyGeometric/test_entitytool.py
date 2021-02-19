@@ -62,6 +62,11 @@ class TestEntitytool(TestCase):
         elo2 = LineSegment(Vector3D(1, 0), Vector3D(1, 1))
         a = Arc(Vector3D(0, 1), 1, 0, pi)
         pl = PolyLine([elo1, elo2, a])
+        elo1 = LineSegment(Vector3D(0, -0.10), Vector3D(1, -0.1))
+        a = Arc(Vector3D(0.5, -0.1), 0.5, 0, pi / 2)
+        pl2 = PolyLine([elo1, a])
+        t=Entitytool.intersection_point(pl,pl2)
+        self.assertTrue(t==Vector3D(0.989898,0.000000))
 
 
 if __name__ == '__main__':

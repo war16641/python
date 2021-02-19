@@ -32,14 +32,27 @@ class CircleLineIntersecionProblem:
         if dist>r:
             return None
         else:
-            t= [(-(B*(-A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2)/(A**2 + B**2) - (-A**2*b + A*B*a + B*C)/(A**2 + B**2)) + C)/A,
-                     -A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2)/(A**2 + B**2) - (-A**2*b + A*B*a + B*C)/(A**2 + B**2),),
-                    (-(B*(A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2)/(A**2 + B**2) - (-A**2*b + A*B*a + B*C)/(A**2 + B**2)) + C)/A,
-                     A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2)/(A**2 + B**2) - (-A**2*b + A*B*a + B*C)/(A**2 + B**2),)]
+            #若A不等于0
+            if abs(A)>1e-7:
+                y1=(A**2*b - A*B*a - A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2) - B*C)/(A**2 + B**2)
+                y2= (A**2*b - A*B*a + A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2) - B*C)/(A**2 + B**2)
+                x1=-(B*y1 + C)/A
+                x2 = -(B * y2 + C) / A
+            elif abs(B)>1e-7:#若B不等于0
+                x1=(-A*B*b - A*C + B**2*a - B*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2))/(A**2 + B**2)
+                x2= (-A*B*b - A*C + B**2*a + B*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2))/(A**2 + B**2)
+                y1=-(A*x1 + C)/B
+                y2 = -(A * x2 + C) / B
+            else:
+                raise Exception("A B近似为0 放弃计算")
+            # t= [(-(B*(-A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2)/(A**2 + B**2) - (-A**2*b + A*B*a + B*C)/(A**2 + B**2)) + C)/A,
+            #          -A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2)/(A**2 + B**2) - (-A**2*b + A*B*a + B*C)/(A**2 + B**2),),
+            #         (-(B*(A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2)/(A**2 + B**2) - (-A**2*b + A*B*a + B*C)/(A**2 + B**2)) + C)/A,
+            #          A*sqrt(-A**2*a**2 + A**2*r**2 - 2*A*B*a*b - 2*A*C*a - B**2*b**2 + B**2*r**2 - 2*B*C*b - C**2)/(A**2 + B**2) - (-A**2*b + A*B*a + B*C)/(A**2 + B**2),)]
             if abs(dist-r)/r<1e-5:#相切
-                return [t[0]]
+                return [(x1,y1,)]
             else:#相交
-                return t
+                return [(x1,y1,),(x2,y2,)]
 
 
 class Arc(BaseGeometric):
