@@ -62,5 +62,26 @@ class TestArc(TestCase):
         self.assertTrue(Vector3D(0,2)==goal)
         self.assertAlmostEqual(pi*0.5,le,delta=1e-5)
         self.assertFalse(on)
+
+    def test_make_by_3_points(self):
+        arc=Arc.make_by_3_points(Vector3D(0,0),Vector3D(0,1),Vector3D(-0.1,0))
+        self.assertTrue(Vector3D(0,1)==arc.start_point)
+        self.assertTrue(Vector3D(-1,0) == arc.end_point)
+        self.assertAlmostEqual(pi/2,arc.length,delta=0.0001)
+
+        arc = Arc.make_by_3_points(Vector3D(0, 0), Vector3D(0, 1), Vector3D(-0.1, 0),direction=-1.0)
+        self.assertTrue(Vector3D(0, 1) == arc.start_point)
+        self.assertTrue(Vector3D(-1, 0) == arc.end_point)
+        self.assertAlmostEqual(3*pi / 2, arc.length, delta=0.0001)
+
+        arc=Arc.make_by_3_points(Vector3D(0,0),Vector3D(-1,0),Vector3D(0,0.1))
+        self.assertTrue(Vector3D(-1,0)==arc.start_point)
+        self.assertTrue(Vector3D(0,1) == arc.end_point)
+        self.assertAlmostEqual(3*pi/2,arc.length,delta=0.0001)
+
+        arc=Arc.make_by_3_points(Vector3D(0,0),Vector3D(-1,0),Vector3D(0,0.1),direction=-1.0)
+        self.assertTrue(Vector3D(-1,0)==arc.start_point)
+        self.assertTrue(Vector3D(0,1) == arc.end_point)
+        self.assertAlmostEqual(1*pi/2,arc.length,delta=0.0001)
 if __name__ == '__main__':
     main()

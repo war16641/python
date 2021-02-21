@@ -211,3 +211,29 @@ class Arc(BaseGeometric):
 
 
         return rt,le,on
+
+    @staticmethod
+    def make_by_3_points(p0:Vector3D,p1:Vector3D,p2:Vector3D,direction=1.0)->'Arc':
+        """
+        从三个点中生成arc
+
+        @param p0:圆心
+        @param p1: 圆弧起点
+        @param p2: 圆弧终点到圆心 上的任何一点
+        @param direction: 1.0为逆时针 -1.0为顺时针
+        @return:
+        """
+
+        direction=1.0 if direction>=0 else -1.0
+        if not (isinstance(p0,Vector3D),isinstance(p1,Vector3D),isinstance(p2,Vector3D)):
+            raise Exception("参数类型错误")
+        vec1=p1-p0#圆心到圆弧起点
+        vec2=p2-p0
+        radius=abs(vec1)
+
+        angle1=AngleTool.format(vec1.own_angle)
+        angle2=AngleTool.format(vec2.own_angle)
+        delta_angle=AngleTool.format((angle2-angle1)*direction)
+        return Arc(p0,radius,angle1,delta_angle*direction)
+
+
