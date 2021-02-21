@@ -90,3 +90,16 @@ class PolyLine:
         else:
             t=t+hangs[0][3]
         return potential,t,final_on
+
+
+    def __eq__(self, other):
+        if id(self)==id(other):
+            return True
+        if not isinstance(other,PolyLine):
+            return False
+        if len(self.segs)!=len(other.segs):
+            return False
+        for seg1,seg2 in zip(self,other):
+            if seg1!=seg2:
+                return False
+        return True
