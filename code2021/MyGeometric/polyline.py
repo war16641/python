@@ -103,3 +103,13 @@ class PolyLine:
             if seg1!=seg2:
                 return False
         return True
+
+    @staticmethod
+    def make1(points)->'PolyLine':
+        """从一堆点中生成多段线"""
+        lst=[]
+        for i in range(len(points)-1):
+            p1,p2=points[i],points[i+1]
+            lst.append(LineSegment(p1,p2))
+        pl=PolyLine(lst)
+        return pl
