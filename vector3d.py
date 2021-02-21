@@ -14,6 +14,8 @@ T_Vector = TypeVar('T_Vector')
 T_Plane = TypeVar('T_Plane')
 T_Line = TypeVar('T_Line')
 
+class Line3D:
+    pass
 
 class Vector3D(Generic[T_Vector]):
     tol_for_eq = 1e-6  # 判断相等时的误差
@@ -121,6 +123,10 @@ class Vector3D(Generic[T_Vector]):
         r = copy.deepcopy(self)
         r.modulus = 1
         return r
+
+    def copy(self)->'Vector3D':
+        """复制一个新的"""
+        return Vector3D(self.x,self.y,self.z)
 
     def distance_to_plane(self, p: T_Plane) -> float:
         """
@@ -414,6 +420,27 @@ class Vector3D(Generic[T_Vector]):
                 return t - math.pi
 
         return t
+
+    def mirror(self,elo:Line3D)->'Vector3D':
+        assert isinstance(elo,Line3D),"类型错误"
+        A,B,C=elo.expression()
+        x0,y0=self.x,self.y
+        return Vector3D(-(A*(A*x0 + B*y0 + 2*C) + B*(A*y0 - B*x0))/(A**2 + B**2),
+                        (A*(A*y0 - B*x0) - B*(A*x0 + B*y0 + 2*C))/(A**2 + B**2))
+
+    def rotate(self,base_point:'Vector3D',angle:float)->'Vector3D':
+        """
+        绕base point逆时针旋转angle
+        @param base_point:
+        @param angle:
+        @return:
+        """
+        assert isinstance(base_point,Vector3D) and isinstance(angle,(float,int))\
+        ,"类型错误"
+        tf,tfi=get_trans_func_polar(base_point,(self-base_point).own_angle)
+        rou=abs(base_point-self)
+        p2_new=Vector3D(angle,rou)#待求点在新坐标系下的坐标
+        return tfi(p2_new)
 
 class Plane3D(Generic[T_Plane]):
     """平面"""
@@ -1142,5 +1169,32 @@ class TestCase(unittest.TestCase):
         v2 = tran(p1)
         self.assertTrue(v1 == v2)
         self.assertTrue(p1 == trani(tran(p1)))
+
+    def test_vector_mirror(self):
+        p0=Vector3D(0,0)
+        elo=Line3D(Vector3D(0,1),Vector3D(0.5,0))
+        goal=Vector3D(1,0)
+        t=p0.mirror(elo)
+        self.assertTrue(goal==t)
+
+        p0=Vector3D(1,2)
+        elo=Line3D(Vector3D(1,1),Vector3D(0,0))
+        goal=Vector3D(2,1)
+        t=p0.mirror(elo)
+        self.assertTrue(goal==t)
+
+    def test_rotate(self):
+        p1=Vector3D(1,0)
+        p2=p1.rotate(base_point=Vector3D(0,0),angle=pi/2)
+        goal=Vector3D(0,1)
+        self.assertTrue(goal==p2)
+        p2=p1.rotate(base_point=Vector3D(0,0),angle=-pi/2)
+        goal=Vector3D(0,-1)
+        self.assertTrue(goal==p2)
+
+        p1=Vector3D(2,0)
+        p2=p1.rotate(base_point=Vector3D(1,0),angle=pi/2)
+        goal=Vector3D(1,1)
+        self.assertTrue(goal==p2)
 if __name__ == '__main__':
     unittest.main()

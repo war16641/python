@@ -3,7 +3,7 @@ from code2021.MyGeometric.basegeometric import BaseGeometric
 from code2021.MyGeometric.linesegment import LineSegment
 from typing import List
 
-from vector3d import Vector3D
+from vector3d import Vector3D, Line3D
 
 
 class PolyLine:
@@ -113,3 +113,31 @@ class PolyLine:
             lst.append(LineSegment(p1,p2))
         pl=PolyLine(lst)
         return pl
+
+    def mirror(self, elo: Line3D) -> 'PolyLine':
+        """镜像"""
+        assert isinstance(elo, Line3D), "类型错误"
+        lst=[x.mirror(elo) for x in self]
+        return PolyLine(lst)
+
+    def reverse(self)->'PolyLine':
+        lst=[x.reverse() for x in self]
+        lst.reverse()
+        return PolyLine(lst)
+
+    def move(self,base_point:Vector3D,target_point:Vector3D)->'PolyLine':
+        """平移 得到新的"""
+        lst=[x.copy().move(base_point,target_point) for x in self]
+        return PolyLine(lst)
+
+    def rotate(self,base_point:Vector3D,angle:float)->'PolyLine':
+        lst = [x.copy().rotate(base_point, angle) for x in self]
+        return PolyLine(lst)
+
+    @property
+    def start_point(self):
+        return self.segs[0].start_point
+
+    @property
+    def end_point(self):
+        return self.segs[-1].end_point

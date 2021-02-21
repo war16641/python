@@ -18,7 +18,7 @@ class TestAlgo1(TestCase):
         # plt.show()
         r=a.solve(dist_func=Algo1.default_dist_func1,
                 valve_func=Algo1.default_valve_func1)
-        print(r)
+        # print(r)
         diff=Vector3D(1924.023975,1353.127288)-r.xy
         # axes = a.show()
         # a.add_rect_to_axes(r, axes, color='b')
@@ -26,7 +26,7 @@ class TestAlgo1(TestCase):
         self.assertTrue(abs(diff)<a.sense_size)
 
     def test_batch(self):
-        MyLogger.disable_all_logger = False
+        # MyLogger.disable_all_logger = False
         MyLogger.only = algorithm.mylogger
         rts,_=Algo1.solve_batch_from_batch(filepath=os.path.join(os.getcwd()+"/测试文件/","2.txt"),delete_used_bk=True)
         self.assertTrue(abs(Vector3D(54.241140,-817.864460)-rts[0].xy)<1 or abs(Vector3D(51.952740,-817.864460)-rts[0].xy)<1)

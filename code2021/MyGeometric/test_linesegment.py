@@ -43,5 +43,17 @@ class TestLineSegment(TestCase):
         self.assertAlmostEqual(1,r2,delta=1e-5)
         self.assertFalse(r3)
 
+    def test_move(self):
+        elo = LineSegment(Vector3D(0, 0), Vector3D(10, 0))
+        elo1=elo.move(Vector3D(0,0),Vector3D(0,1))
+        goal=LineSegment(Vector3D(0,1),Vector3D(10,1))
+        self.assertTrue(goal==elo1)
+
+    def test_rotate(self):
+        elo = LineSegment(Vector3D(1, 0), Vector3D(10, 0))
+        elo1=elo.rotate(Vector3D(0,0),pi/2)
+        goal=LineSegment(Vector3D(0, 1), Vector3D(0, 10))
+        self.assertTrue(goal==elo1)
+
 if __name__ == '__main__':
         main()

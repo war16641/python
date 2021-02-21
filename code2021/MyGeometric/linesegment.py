@@ -23,6 +23,7 @@ class LineSegment(BaseGeometric):
     def p1(self,v):
         if v is not None:
             assert isinstance(v,Vector3D),"类型错误"
+            v=v.copy()
         self._p1=v
         self._tf=None
         self._tfi=None
@@ -37,7 +38,7 @@ class LineSegment(BaseGeometric):
     def p2(self,v):
         if v is not None:
             assert isinstance(v,Vector3D),"类型错误"
-
+            v = v.copy()
         self._p2=v
         self._tf=None
         self._tfi=None
@@ -124,3 +125,33 @@ class LineSegment(BaseGeometric):
             return True
         else:
             return False
+
+    def mirror(self,elo:Line3D)->'LineSegment':
+        """镜像"""
+        assert isinstance(elo,Line3D),"类型错误"
+        p1=self.p1.mirror(elo)
+        p2 = self.p2.mirror(elo)
+        return LineSegment(p1,p2)
+
+    @property
+    def mid_point(self):
+        return (self.p1+self.p2)*0.5
+
+    def reverse(self)->'LineSegment':
+        """逆向 返回一个新的
+        """
+        return LineSegment(self.p2,self.p1)
+
+    def copy(self):
+        """复制一个新的"""
+        return LineSegment(self.p1,self.p2)
+
+    def move(self,base_point:Vector3D,target_point:Vector3D)->'LineSegment':
+        assert isinstance(base_point,Vector3D) and isinstance(target_point,Vector3D),\
+        "类型错误"
+        vec=target_point-base_point
+        return LineSegment(self.p1+vec,self.p2+vec)
+
+    def rotate(self,base_point:Vector3D,angle:float)->'LineSegment':
+        """旋转 得到一个新的"""
+        return LineSegment(self.p1.rotate(base_point,angle),self.p2.rotate(base_point,angle))

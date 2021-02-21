@@ -1,7 +1,7 @@
 from unittest import TestCase,main
 from code2021.MyGeometric.angletool import *
 from code2021.MyGeometric.arc import Arc, CircleLineIntersecionProblem
-from vector3d import Vector3D
+from vector3d import Vector3D, Line3D
 import matplotlib.pyplot as plt
 
 class TestArc(TestCase):
@@ -83,5 +83,28 @@ class TestArc(TestCase):
         self.assertTrue(Vector3D(-1,0)==arc.start_point)
         self.assertTrue(Vector3D(0,1) == arc.end_point)
         self.assertAlmostEqual(1*pi/2,arc.length,delta=0.0001)
+
+    def test_move(self):
+        arc = Arc(Vector3D(0, 1), radius=1., angle1=0, da=AngleTool.toR(90))
+        vec=Vector3D(1,0)
+        arc1=arc.move(Vector3D(0,0),vec)
+        self.assertTrue(arc.start_point+vec==arc1.start_point)
+        self.assertTrue(arc.end_point+vec==arc1.end_point)
+
+    def test_rotate(self):
+        arc = Arc(Vector3D(0, 1), radius=1., angle1=0, da=AngleTool.toR(90))
+        arc1=arc.rotate(Vector3D(0,1),pi/2)
+        goal = Arc(Vector3D(0, 1), radius=1., angle1=pi/2, da=AngleTool.toR(90))
+        self.assertTrue(goal==arc1)
+
+    def test_mirror(self):
+        arc = Arc(Vector3D(0, 1), radius=1., angle1=0, da=AngleTool.toR(90))
+        arc1=arc.mirror(Line3D.make_line_by_2_points(Vector3D(0,0),Vector3D(1,0)))
+        self.assertTrue(Vector3D(1,-1)==arc1.start_point)
+        self.assertTrue(Vector3D(0,-2)==arc1.end_point)
+        # _,ax=arc.draw_in_axes()
+        # arc1.draw_in_axes(ax)
+        # plt.autoscale(enable=True, axis='both', tight=True)
+        # plt.show()
 if __name__ == '__main__':
     main()

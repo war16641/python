@@ -3,7 +3,7 @@ from math import pi, sqrt
 import matplotlib.patches as mpatches
 
 from code2021.MyGeometric.basegeometric import BaseGeometric
-from vector3d import Vector3D,get_trans_func_polar
+from vector3d import Vector3D, get_trans_func_polar, Line3D
 import matplotlib.pyplot as plt
 from code2021.MyGeometric.angletool import AngleTool
 
@@ -123,6 +123,9 @@ class Arc(BaseGeometric):
     @property
     def end_point(self):
         return self.tfi(Vector3D(self._angle2,self.radius))
+    @property
+    def mid_point(self):
+        return self.tfi(Vector3D(0.5*(self._angle2+self._angle1),self.radius))
 
     def __contains__(self, item):
         """
@@ -236,4 +239,36 @@ class Arc(BaseGeometric):
         delta_angle=AngleTool.format((angle2-angle1)*direction)
         return Arc(p0,radius,angle1,delta_angle*direction)
 
+    def mirror(self, elo: Line3D) -> 'Arc':
+        """镜像"""
+        assert isinstance(elo, Line3D), "类型错误"
+        center=self.center.mirror(elo)
+        sp=self.start_point.mirror(elo)
+        ep=self.end_point.mirror(elo)
+        return Arc.make_by_3_points(center,sp,ep,-1*self.da)
 
+
+    def reverse(self)->'Arc':
+        """
+        逆向 返回一个新的
+        @return:
+        """
+        return Arc.make_by_3_points(self.center,self.end_point,self.start_point)
+
+    def copy(self)->'Arc':
+        """复制一个新的"""
+        return Arc(self.center.copy(),self.radius,self._angle1,self.da)
+
+    def move(self,base_point:Vector3D,target_point:Vector3D)->'Arc':
+        """移动 得到一个新的"""
+        vec=target_point-base_point
+        return Arc(self.center+vec,
+                   self.radius,
+                   self._angle1,
+                   self.da)
+
+    def rotate(self,base_point:Vector3D,angle:float)->'Arc':
+        """旋转 得到一个新的"""
+        return Arc.make_by_3_points(p0=self.center.rotate(base_point,angle),
+                                    p1=self.start_point.rotate(base_point,angle),
+                                    p2=self.end_point.rotate(base_point,angle))
