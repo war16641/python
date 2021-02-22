@@ -1,10 +1,12 @@
-from math import sqrt,cos,sin
+from math import sqrt, cos, sin, pi
+from typing import Tuple
 from unittest import TestCase,main
 
 from vector3d import Vector3D, Line3D
 import numpy as np
 from code2021.MyGeometric.arc import Arc
 from code2021.MyGeometric.polyline import PolyLine
+from code2021.MyGeometric.linesegment import LineSegment
 from code2021.MyGeometric.angletool import AngleTool
 from code2021.mydataexchange import make_data_from_paragraph,toline,read_single_line
 import matplotlib.pyplot as plt
@@ -21,6 +23,9 @@ class Huanhe:
         self.elo1=0
         self.length=0
         self._rotate_direction='L'#默认左转
+
+
+        self._mirror_axes=None#type:LineSegment#对称轴 无边界条件下
 
     @property
     def rotate_direction(self):
@@ -46,6 +51,7 @@ class Huanhe:
     def arc_angle(self):#圆弧段的角度
         return (self.length-self.elo1*2)/self.r1
 
+
     def get_polyline(self,num_of_huanhexian=50)->PolyLine:
         """
         生成缓和线+圆弧+缓和线 对应的polyline
@@ -70,9 +76,11 @@ class Huanhe:
         lst=[x for x in hh1]
         lst.append(arc)
         lst.extend(hh2.segs)
+        #保存对称轴的方向角
+        self._mirror_axes=LineSegment(mirror_axes.point,mirror_axes.point+mirror_axes.direction)
         return PolyLine(lst)
 
-    def get_polyline_jiexu(self,num_of_huanhexian=50,HZ:Vector3D=None,angle0:float=0.0)->PolyLine:
+    def get_polyline_jiexu(self,num_of_huanhexian=50,HZ:Vector3D=None,angle0:float=0.0)->Tuple[PolyLine,Vector3D,float,Vector3D,float]:
         """
         设定边界条件
         @param num_of_huanhexian:
@@ -85,19 +93,26 @@ class Huanhe:
         assert isinstance(HZ,Vector3D),"类型错误"
         assert isinstance(angle0,(float,int)),"类型错误"
         pl=self.get_polyline(num_of_huanhexian)
+        ma=self._mirror_axes
         #处理左转右转
         if 'R'==self.rotate_direction:
+            ma=ma.mirror(Line3D.make_line_by_2_points(Vector3D(0,0),Vector3D(1,0)))
             pl=pl.mirror(Line3D.make_line_by_2_points(Vector3D(0,0),Vector3D(1,0)))
         #把pl变换到HZ上
         if Vector3D(0,0)!=HZ:
+            ma=ma.move(Vector3D(0,0),HZ)
             pl1=pl.move(Vector3D(0,0),HZ)
         else:
             pl1=pl
         if 0.0!=angle0:
+            ma=ma.rotate(base_point=HZ,angle=angle0)
             pl2=pl1.rotate(base_point=HZ,angle=angle0)
         else:
             pl2=pl1
-        return pl2
+        #计算其他信息
+        ZH=pl2.end_point.copy()#HZ点 也是本曲线结束的点
+        angle_1=3*angle0+pi-2*ma.dangle#HZ点出对应的方向角
+        return pl2,HZ,angle0,ZH,angle_1
 
 class TestLineSegment(TestCase):
     def test_1(self):
@@ -106,7 +121,7 @@ class TestLineSegment(TestCase):
         hhx.r1 = 8000
         hhx.length = 2126.127582
         hhx.rotate_direction = 'R'
-        pl = hhx.get_polyline_jiexu()
+        pl,_,_,_,_ = hhx.get_polyline_jiexu()
         self.assertTrue(pl.end_point==Vector3D(2111.603384,-203.355960))
 
 

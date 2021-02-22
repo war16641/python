@@ -97,5 +97,39 @@ class TestMileage(TestCase):
         m3.duanlianbiao = fdm
         # print(m2 == m3)
         self.assertTrue(m2==m3)
+
+    def test_sub(self):
+        m = Mileage("DZ1k100")
+        m1 = Mileage("DZ1k100+200.1")
+        self.assertAlmostEqual(200.1,m1-m,delta=0.001)
+
+        string = """ID	等号左里程冠号	等号左里程数	等号右里程冠号	等号右里程数	断链长度
+        0	DK	199500	DK	199500	0
+        1	DK	236600	D1K	236600	0
+        2	D1K	246000.3155	DK	248000	1999.6845
+        3	DK	286259.754	DK	286259.754	0
+        """
+        fdm = FlatDataModel.load_from_string(stringtxt=string,
+                                             vn_syle='fromstring',
+                                             separator=' ')
+        m = Mileage("DK200")
+        m.duanlianbiao = fdm
+        m1 = Mileage("DK201")
+        m1.duanlianbiao = fdm
+        self.assertAlmostEqual(1000,m1-m,delta=0.1)
+
+        m = Mileage("DK200+101")
+        m.duanlianbiao = fdm
+        m1 = Mileage("D1K240+001")
+        m1.duanlianbiao = fdm
+        self.assertAlmostEqual(240001-200101,m1-m,delta=0.1)
+
+        m = Mileage("DK200+101")
+        m.duanlianbiao = fdm
+        m1 = Mileage("DK248+100")
+        m1.duanlianbiao = fdm
+        self.assertAlmostEqual(45999.3155,m1-m,delta=0.0001)
+        self.assertAlmostEqual(-45999.3155, m - m1, delta=0.0001)
+
 if __name__ == '__main__':
     unittest.main()

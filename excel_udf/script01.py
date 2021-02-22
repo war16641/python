@@ -8,6 +8,9 @@ from typing import Tuple
 import xlwings as xw
 import numpy as np
 import autocad.about_tz as tz
+from mybaseclasses.tools import linear_interpolation
+
+
 @xw.func
 def get_mileage(label:str)->float:
     """
@@ -46,6 +49,10 @@ def get_mileages(label:str)->Tuple[float,float]:
         return (float(rt[0][0])*1000+float(rt[0][1]),float(rt[1][0])*1000+float(rt[1][1]),)
     pass
 
+@xw.func
+def linear_inter(x1,y1,x2,y2,goal):
+    """x1,y1,x2,y2,goal"""
+    return linear_interpolation(goal,[[x1,y1],[x2,y2]])
 @xw.func
 def get_cp_fp(data):
     """

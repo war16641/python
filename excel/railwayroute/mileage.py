@@ -79,7 +79,57 @@ class Mileage:
             raise ErrorMileage("相加后的里程超出了断链表：%s+%f" % (self, other))
 
 
-
+    def __sub__(self, other)->float:
+        """
+        两个里程标相减
+        @param other:
+        @return:返回距离
+        """
+        assert isinstance(other,Mileage),"类型错误"
+        if self.duanlianbiao is None and other.duanlianbiao is None:#均无断链表
+            if self.guanhao!=other.guanhao:
+                raise ErrorMileage("冠号不同不能相减")
+            return self.number-other.number
+        if self.duanlianbiao !=other.duanlianbiao:
+            raise ErrorMileage("两者具有不同的断链表")
+        #开始相减
+        i=self.find_chain_in_duanlianbiao()
+        j=other.find_chain_in_duanlianbiao()
+        if i==j:
+            return self.number-other.number
+        #不同的冠号时
+        #区分大小
+        if i<j:
+            xiao=self.copy()
+            da=other.copy()
+            sc=-1
+        else:
+            xiao=other.copy()
+            da=self.copy()
+            sc=1
+            i,j=j,i#让i为小的
+        #以xiao为基准 去慢慢靠近大
+        i_cur=i
+        dist=0.0
+        while True:
+            #计算i_cur到下一个断链点的距离
+            t=xiao.duanlianbiao[i_cur+1].data['等号左里程数']-xiao.number
+            dist+=t
+            xiao.number=xiao.duanlianbiao[i_cur+1].data['等号右里程数']
+            xiao.guanhao = xiao.duanlianbiao[i_cur + 1].data['等号右里程冠号']
+            i_cur+=1
+            if i_cur==j:
+                break
+        #计算da到自己左端点的距离
+        dist1=da.number-da.duanlianbiao[j].data['等号右里程数']
+        return sc*(dist1+dist)
+    def copy(self)->'Mileage':
+        """复制一个新的"""
+        rt=Mileage()
+        rt.guanhao=self.guanhao
+        rt.number=self.number
+        rt.duanlianbiao=self.duanlianbiao
+        return rt
 
     def __str__(self):
         return "%s%f"%(self.guanhao,self.number)
