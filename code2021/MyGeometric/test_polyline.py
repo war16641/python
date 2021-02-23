@@ -86,5 +86,13 @@ class TestPolyLine(TestCase):
         # plt.autoscale(enable=True, axis='both', tight=True)
         # plt.show()
 
+    def test_init(self):
+        elo1 = LineSegment(Vector3D(0, 0), Vector3D(1, 0))
+        elo2 = LineSegment(Vector3D(1, 0), Vector3D(1, 1))
+        a = Arc(Vector3D(0, 1), 1, 0, pi)
+        pl = PolyLine([elo1, elo2, a])
+        elo=LineSegment(Vector3D(-1, 1), Vector3D(0, 0))
+        pl1=PolyLine([pl,elo])
+
 if __name__ == '__main__':
     main()

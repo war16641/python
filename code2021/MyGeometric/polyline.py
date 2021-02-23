@@ -11,14 +11,17 @@ class PolyLine:
         self.segs=[]#type:List[BaseGeometric]
         self._length=None #type:float
         for i,seg in enumerate(segs):
-            assert isinstance(seg,BaseGeometric),"类型错误"
-            if i==0:
-                self.segs.append(seg)
+            assert isinstance(seg,BaseGeometric) or isinstance(seg,PolyLine),"类型错误"
+            if i!=0:#检查首尾
+                assert self.segs[-1].end_point == seg.start_point,"首尾不能连接\n%s\n\%s"\
+                                    %(self.segs[i-1].__str__(),seg.__str__())
+            #添加到自身
+            if isinstance(seg,PolyLine):
+                for i1 in seg:
+                    self.segs.append(i1.copy())
             else:
-                if self.segs[i-1].end_point != seg.start_point:
-                    raise Exception("首尾不能连接\n%s\n\%s"
-                                    %(self.segs[i-1].__str__(),seg.__str__()))
                 self.segs.append(seg)
+
 
     def draw_in_axes(self,axes=None):
         lst=[]

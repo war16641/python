@@ -219,7 +219,7 @@ class Arc(BaseGeometric):
     def make_by_3_points(p0:Vector3D,p1:Vector3D,p2:Vector3D,direction=1.0)->'Arc':
         """
         从三个点中生成arc
-
+        只能生成逆时针的弧线
         @param p0:圆心
         @param p1: 圆弧起点
         @param p2: 圆弧终点到圆心 上的任何一点
@@ -269,6 +269,9 @@ class Arc(BaseGeometric):
 
     def rotate(self,base_point:Vector3D,angle:float)->'Arc':
         """旋转 得到一个新的"""
-        return Arc.make_by_3_points(p0=self.center.rotate(base_point,angle),
-                                    p1=self.start_point.rotate(base_point,angle),
-                                    p2=self.end_point.rotate(base_point,angle))
+        center=self.center.rotate(base_point,angle)
+        angle1=self._angle1+angle
+        return Arc(center,self.radius,angle1,self.da)
+        # return Arc.make_by_3_points(p0=self.center.rotate(base_point,angle),
+        #                             p1=self.start_point.rotate(base_point,angle),
+        #                             p2=self.end_point.rotate(base_point,angle))
