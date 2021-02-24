@@ -111,21 +111,22 @@ def make_data_from_file(filepath,ignore_lines=3)->dict:
     with open(filepath,'r') as f:
         return make_data_from_paragraph(f.read(),ignore_lines)
 
-def toline(geomtric,name:str):
+def toline(geomtric,name:str,digits=6):
     assert isinstance(name,str),"类型错误"
+    gesi="%."+str(digits)+"f"
     if isinstance(geomtric,Vector3D):
-        return "%s vector %f,%f,%f"%(name,geomtric.x,geomtric.y,geomtric.z)
+        return ("%s vector "+",".join([gesi for i in range(3)]))%(name,geomtric.x,geomtric.y,geomtric.z)
     elif isinstance(geomtric,LineSegment):
-        return "%s lineseg %f,%f,%f,%f,%f,%f"%(name,
+        return ("%s lineseg "+",".join([gesi for i in range(6)]))%(name,
                                                geomtric.p1.x,geomtric.p1.y,geomtric.p1.z,
                                                geomtric.p2.x,geomtric.p2.y,geomtric.p2.z)
     elif isinstance(geomtric,Arc):
-        return "%s arc %f,%f,%f,%f,%f,%f"%(name,geomtric.center.x,geomtric.center.y,geomtric.center.z,
+        return ("%s arc "+",".join([gesi for i in range(6)]))%(name,geomtric.center.x,geomtric.center.y,geomtric.center.z,
                                            geomtric.radius,geomtric._angle1,geomtric.da)
     elif isinstance(geomtric,PolyLine):
         rt="%s polyline %d"%(name,len(geomtric.segs))
         for seg in geomtric:
-            t=toline(seg,"_")
+            t=toline(seg,"_",digits)
             rt+="\n"+t
         return rt
     else:

@@ -111,7 +111,7 @@ class Huanhe:
             pl2=pl1
         #计算其他信息
         HZ=pl2.end_point.copy()#HZ点 也是本曲线结束的点
-        angle_1=3*angle0+pi-2*ma.dangle#HZ点出对应的方向角
+        angle_1=-angle0-pi+2*ma.dangle#HZ点出对应的方向角
         return pl2, ZH, angle0, HZ, angle_1
 
 class TestLineSegment(TestCase):
@@ -126,7 +126,7 @@ class TestLineSegment(TestCase):
 
         pl, _, _, _, angle1 = hhx.get_polyline_jiexu(ZH=Vector3D(1000, 2000), angle0=AngleTool.toR(30))
         self.assertTrue(pl.end_point == Vector3D(2930.380153,2879.690265,0.000000))
-
+        self.assertAlmostEqual(18.99829659472041,AngleTool.toD(angle1),delta=0.0001)
 
 
 if __name__ == '__main__':
