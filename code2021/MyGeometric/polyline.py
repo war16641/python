@@ -1,5 +1,6 @@
 from code2021.MyGeometric.arc import Arc
 from code2021.MyGeometric.basegeometric import BaseGeometric
+import code2021.MyGeometric.entitytool as ET
 from code2021.MyGeometric.linesegment import LineSegment
 from typing import List
 
@@ -144,3 +145,64 @@ class PolyLine:
     @property
     def end_point(self):
         return self.segs[-1].end_point
+
+    def offset(self,distance:float,direction='L')->'LineSegment':
+        """
+        偏移
+        返回新的
+        @param distance:
+        @param direction:  L R
+        @return:
+        """
+        lst=[]
+        for seg in self:
+            lst.append(seg.offset(distance,direction))
+        #处理相邻两个seg的交点
+        for i in range(len(lst)-1):
+            seg1,seg2=lst[i],lst[i+1]
+            if isinstance(seg1,LineSegment) and isinstance(seg2,LineSegment):
+                pt=ET.Entitytool.intersection_point(seg1.line,seg2.line)
+                #调整点
+                seg1.end_point=pt.copy()
+                seg2.start_point=pt.copy()
+            elif isinstance(seg1,LineSegment) and isinstance(seg2,Arc):
+                t=seg2.intersec_point_with_line_as_circle(seg1.line)
+                if t is None:
+                    raise Exception("直线与圆无交点")
+                if len(t)==1:
+                    pt=Vector3D(t[0][0],t[0][1])
+                else:#有两个交点 近的那个点才是真的交点
+                    pt1=Vector3D(t[0][0],t[0][1])
+                    pt2 = Vector3D(t[1][0], t[1][1])
+                    pt0=seg1.end_point#这里可能出差 这里以offset后的seg1的终点作为判断“近”的标准
+                    dist1=abs(pt1-pt0)
+                    dist2=abs(pt2-pt0)
+                    if dist1<=dist2:
+                        pt=pt1
+                    else:
+                        pt=pt2
+                    # 调整点
+                    seg1.end_point = pt.copy()
+                    seg2.start_point = pt.copy()
+            elif isinstance(seg2,LineSegment) and isinstance(seg1,Arc):
+                t=seg1.intersec_point_with_line_as_circle(seg2.line)
+                if t is None:
+                    raise Exception("直线与圆无交点")
+                if len(t)==1:
+                    pt=Vector3D(t[0][0],t[0][1])
+                else:#有两个交点 近的那个点才是真的交点
+                    pt1=Vector3D(t[0][0],t[0][1])
+                    pt2 = Vector3D(t[1][0], t[1][1])
+                    pt0=seg1.end_point#这里可能出差 这里以offset后的seg1的终点作为判断“近”的标准
+                    dist1=abs(pt1-pt0)
+                    dist2=abs(pt2-pt0)
+                    if dist1<=dist2:
+                        pt=pt1
+                    else:
+                        pt=pt2
+                    # 调整点
+                    seg1.end_point = pt.copy()
+                    seg2.start_point = pt.copy()
+            else:
+                raise Exception("未知的seg1 seg2 类型组合")
+        return PolyLine(lst)

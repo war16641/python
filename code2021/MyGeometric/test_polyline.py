@@ -94,5 +94,14 @@ class TestPolyLine(TestCase):
         elo=LineSegment(Vector3D(-1, 1), Vector3D(0, 0))
         pl1=PolyLine([pl,elo])
 
+    def test_offset(self):
+        elo1 = LineSegment(Vector3D(0, 0), Vector3D(1, 0))
+        elo2 = LineSegment(Vector3D(1, 0), Vector3D(1, 1))
+        a = Arc(Vector3D(0, 1), 1, 0, pi)
+        pl = PolyLine([elo1, elo2, a])
+        pl1 = pl.offset(1, 'r')
+        self.assertTrue(Vector3D(0.000000,-1.000000)==pl1.start_point)
+        self.assertTrue(Vector3D(-2.000000,1.000000) == pl1.end_point)
+
 if __name__ == '__main__':
     main()

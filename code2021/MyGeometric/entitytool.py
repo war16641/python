@@ -4,8 +4,10 @@
 """
 from code2021.MyGeometric.arc import Arc, CircleLineIntersecionProblem
 from code2021.MyGeometric.linesegment import LineSegment
-from code2021.MyGeometric.polyline import PolyLine
-from vector3d import Vector3D
+# from code2021.MyGeometric.polyline import PolyLine
+import code2021.MyGeometric.polyline as plm
+from vector3d import Vector3D, Line3D
+
 
 
 # class NoIntersectionPoint(Exception):#无交点时抛出这个错误
@@ -103,6 +105,18 @@ class Entitytool:
         return None
 
     @staticmethod
+    def _intersection_point_line3d_line3d(a:Line3D,b:Line3D)->Vector3D:
+        """
+        两个直线交点
+        返回交点 没有就返回none
+        @param a:
+        @param b:
+        @return:
+        """
+        t=a.get_intersect_point(b)
+        return t
+
+    @staticmethod
     def intersection_point(a,b)->Vector3D:
         """
         求两个图素交点
@@ -113,13 +127,15 @@ class Entitytool:
         """
         if isinstance(a,LineSegment) and isinstance(b,LineSegment):
             return Entitytool._intersection_point_line_line(a,b)
+        if isinstance(a,Line3D) and isinstance(b,Line3D):
+            return Entitytool._intersection_point_line3d_line3d(a,b)
         if isinstance(a, LineSegment) and isinstance(b, Arc) or \
                 isinstance(b, LineSegment) and isinstance(a, Arc):
             return Entitytool._intersection_point_line_arc(a,b)
-        if isinstance(a, LineSegment) and isinstance(b, PolyLine) or \
-                isinstance(b, LineSegment) and isinstance(a, PolyLine):
+        if isinstance(a, LineSegment) and isinstance(b, plm.PolyLine) or \
+                isinstance(b, LineSegment) and isinstance(a, plm.PolyLine):
             return Entitytool._intersection_point_line_polyline(a,b)
-        if isinstance(a,PolyLine) and isinstance(b,PolyLine):
+        if isinstance(a,plm.PolyLine) and isinstance(b,plm.PolyLine):
             return Entitytool._intersection_point_polyline_polyline(a,b)
         else:
             raise Exception("未知类型")

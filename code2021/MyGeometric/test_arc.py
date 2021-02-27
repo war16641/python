@@ -103,9 +103,63 @@ class TestArc(TestCase):
         self.assertTrue(Vector3D(1,-1)==arc1.start_point)
         self.assertTrue(Vector3D(0,-2)==arc1.end_point)
         self.assertAlmostEqual(pi/2,arc1.length,delta=0.0001)
-        _,ax=arc.draw_in_axes()
-        arc1.draw_in_axes(ax)
-        plt.autoscale(enable=True, axis='both', tight=True)
-        plt.show()
+        # _,ax=arc.draw_in_axes()
+        # arc1.draw_in_axes(ax)
+        # plt.autoscale(enable=True, axis='both', tight=True)
+        # plt.show()
+
+    def test_offset(self):
+        arc = Arc(Vector3D(4313.55631273, -689.66607504), radius=782.54781885,
+                  angle1=AngleTool.toR(3.554659), da=AngleTool.toR(141.118385))
+        arc1=arc.offset(100,'r')
+        arc2 = Arc(Vector3D(4313.55631273, -689.66607504), radius=882.54781885,
+                  angle1=AngleTool.toR(3.554659), da=AngleTool.toR(141.118385))
+        self.assertTrue(arc2==arc1)
+
+        arc = Arc(Vector3D(4313.55631273, -689.66607504), radius=782.54781885,
+                  angle1=AngleTool.toR(3.554659), da=AngleTool.toR(-141.118385))
+        arc1=arc.offset(100,'r')
+        arc2 = Arc(Vector3D(4313.55631273, -689.66607504), radius=682.54781885,
+                  angle1=AngleTool.toR(3.554659), da=AngleTool.toR(-141.118385))
+        self.assertTrue(arc2==arc1)
+
+    def test_pt_change(self):
+        arc = Arc(Vector3D(0, 1), radius=1., angle1=0, da=AngleTool.toR(90))
+        arc.start_point=Vector3D(0,0)
+        self.assertAlmostEqual(1,arc.radius,delta=0.001)
+        self.assertTrue(Vector3D(0,0)==arc.start_point)
+        self.assertTrue(Vector3D(0, 2) == arc.end_point)
+        self.assertAlmostEqual(pi,arc.da,delta=0.0001)
+        self.assertAlmostEqual(pi,arc.length,delta=0.001)
+        self.assertTrue(Vector3D(0,0) in arc)
+
+        arc = Arc(Vector3D(0, 1), radius=1., angle1=0, da=AngleTool.toR(-90))
+        arc.start_point=Vector3D(0,2)
+        self.assertAlmostEqual(1,arc.radius,delta=0.001)
+        self.assertTrue(Vector3D(0,2)==arc.start_point)
+        self.assertTrue(Vector3D(0, 0) == arc.end_point)
+        self.assertAlmostEqual(-pi,arc.da,delta=0.0001)
+        self.assertAlmostEqual(pi,arc.length,delta=0.001)
+        self.assertTrue(Vector3D(0,0) in arc)
+
+        arc = Arc(Vector3D(0, 1), radius=1., angle1=0, da=AngleTool.toR(90))
+        arc.end_point=Vector3D(-1,1)
+        self.assertAlmostEqual(1,arc.radius,delta=0.001)
+        self.assertTrue(Vector3D(1,1)==arc.start_point)
+        self.assertTrue(Vector3D(-1, 1) == arc.end_point)
+        self.assertAlmostEqual(pi,arc.da,delta=0.0001)
+        self.assertAlmostEqual(pi,arc.length,delta=0.001)
+        self.assertTrue(Vector3D(-1,1) in arc)
+
+        arc = Arc(Vector3D(0, 1), radius=1., angle1=0, da=AngleTool.toR(-90))
+        arc.end_point=Vector3D(-1,1)
+        self.assertAlmostEqual(1,arc.radius,delta=0.001)
+        self.assertTrue(Vector3D(1,1)==arc.start_point)
+        self.assertTrue(Vector3D(-1, 1) == arc.end_point)
+        self.assertAlmostEqual(-pi,arc.da,delta=0.0001)
+        self.assertAlmostEqual(pi,arc.length,delta=0.001)
+        self.assertTrue(Vector3D(-1,1) in arc)
+
+
 if __name__ == '__main__':
     main()

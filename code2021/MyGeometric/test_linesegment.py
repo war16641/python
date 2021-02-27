@@ -55,5 +55,22 @@ class TestLineSegment(TestCase):
         goal=LineSegment(Vector3D(0, 1), Vector3D(0, 10))
         self.assertTrue(goal==elo1)
 
+    def test_offset(self):
+        elo=LineSegment(Vector3D(1664.60224689 , 681.10226583 ),Vector3D(3029.44978319,1183.63587211 ))
+        elo1=elo.offset(10,'L')
+        elog=LineSegment(Vector3D(1661.14703955 , 690.48637699 ),Vector3D(3025.99457585  , 1193.01998327))
+        self.assertTrue(elog==elo1)
+        elo1=elo.offset(10,'r')
+        elog=LineSegment(Vector3D(1668.05745422    ,671.71815467 ),Vector3D( 3032.90499053 ,1174.25176095))
+        self.assertTrue(elog==elo1)
+
+        elo=LineSegment(Vector3D(1794.06164258  , 274.18655991 ),Vector3D(2357.52943508 ,-272.51042640 ))
+        elo1=elo.offset(20,'L')
+        elog=LineSegment(Vector3D( 1807.98854970 ,288.54069722    ),Vector3D(2371.45634220 , -258.15628909))
+        self.assertTrue(elog==elo1)
+        elo1=elo.offset(20,'r')
+        elog=LineSegment(Vector3D( 1780.13473546 , 259.83242259  ),Vector3D( 2343.60252796 ,-286.86456372 ))
+        self.assertTrue(elog==elo1)
+
 if __name__ == '__main__':
         main()

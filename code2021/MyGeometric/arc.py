@@ -120,10 +120,39 @@ class Arc(BaseGeometric):
     @property
     def start_point(self):
         return self.tfi(Vector3D(self._angle1,self.radius))
+    @start_point.setter
+    def start_point(self,v):
+        assert isinstance(v,Vector3D),"类型错误"
+        if abs(abs(v-self.center)-self.radius)>Vector3D.tol_for_eq:
+            raise Exception("点%s不在圆上"%v.__str__())
+        vec=v-self.center
+        self._angle1=AngleTool.format(vec.own_angle)
+        #修改弧度角 逻辑比较混乱 分为正负两种
+        if self._da>=0:
+            self._da=AngleTool.format(self._angle2-self._angle1)
+        else:
+            self._da=-AngleTool.format(self._angle1-self._angle2)
+
+
+
     @property
     def end_point(self):
         return self.tfi(Vector3D(self._angle2,self.radius))
+    @end_point.setter
+    def end_point(self,v):
+        assert isinstance(v,Vector3D),"类型错误"
+        if abs(abs(v-self.center)-self.radius)>Vector3D.tol_for_eq:
+            raise Exception("点%s不在圆上"%v.__str__())
+        vec = v - self.center
+        self._angle2 = AngleTool.format(vec.own_angle)
+        # 修改弧度角 逻辑比较混乱 分为正负两种
+        if self._da >= 0:
+            self._da = AngleTool.format(self._angle2 - self._angle1)
+        else:
+            self._da = -AngleTool.format(self._angle1 - self._angle2)
+
     @property
+
     def mid_point(self):
         return self.tfi(Vector3D(0.5*(self._angle2+self._angle1),self.radius))
 
@@ -275,3 +304,44 @@ class Arc(BaseGeometric):
         # return Arc.make_by_3_points(p0=self.center.rotate(base_point,angle),
         #                             p1=self.start_point.rotate(base_point,angle),
         #                             p2=self.end_point.rotate(base_point,angle))
+
+    def offset(self,distance:float,direction='L')->'Arc':
+        """
+        偏移
+        返回新的
+        @param distance:
+        @param direction:  L R
+        @return:
+        """
+        direction=direction.upper()
+        if self._da>0:
+            if direction=='R':
+                r=abs(distance)+self.radius
+            elif direction=='L':
+                r = self.radius - abs(distance)
+            else:
+                raise Exception("参数错误")
+        else:
+            if direction=='R':
+                r=self.radius-abs(distance)
+            elif direction=='L':
+                r = abs(distance) + self.radius
+            else:
+
+                raise Exception("参数错误")
+
+        return Arc(self.center,r,self._angle1,self.da)
+
+    def intersec_point_with_line_as_circle(self,elo:Line3D):
+        """
+        计算圆与直线elo的交点
+        本身为弧 但此时作为圆
+        @param elo:
+        @return:
+        """
+        assert isinstance(elo,Line3D),"类型错误"
+        clp=CircleLineIntersecionProblem()
+        clp.A,clp.B,clp.C=elo.expression()
+        clp.a,clp.b=self.center.x,self.center.y
+        clp.r=self.radius
+        return clp.solve()

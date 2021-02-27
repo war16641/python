@@ -115,9 +115,15 @@ class LineSegment(BaseGeometric):
     @property
     def start_point(self):
         return self.p1
+    @start_point.setter
+    def start_point(self,v):
+        self.p1=v
     @property
     def end_point(self):
         return self.p2
+    @end_point.setter
+    def end_point(self,v):
+        self.p2=v
 
     def __eq__(self, other):
         assert isinstance(other,LineSegment),"类型错误"
@@ -155,3 +161,25 @@ class LineSegment(BaseGeometric):
     def rotate(self,base_point:Vector3D,angle:float)->'LineSegment':
         """旋转 得到一个新的"""
         return LineSegment(self.p1.rotate(base_point,angle),self.p2.rotate(base_point,angle))
+
+    def offset(self,distance:float,direction='L')->'LineSegment':
+        """
+        偏移
+        返回新的
+        @param distance:
+        @param direction:  L R
+        @return:
+        """
+        direction=direction.upper()
+        if 'L'==direction:
+            distance=abs(distance)
+        elif 'R'==direction:
+            distance=-abs(distance)
+        else:
+            raise Exception("参数错误")
+
+        p1=Vector3D(0,distance)
+        p2=Vector3D(self.length,distance)
+        p1=self.tfi(p1)
+        p2=self.tfi(p2)
+        return LineSegment(p1,p2)
