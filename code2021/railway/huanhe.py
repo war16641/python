@@ -17,6 +17,9 @@ class Huanhe:
     边界条件 也即HZ前的条件：
     1.HZ点为0,0
     2.HZ点的斜率为0
+
+    注意：cos(fai)使用3项=1-fai**2/2+fai**4/24
+         sin(fai)使用2项=fai-fai**3/6
     """
     def __init__(self):
         self.r1=0
@@ -41,7 +44,9 @@ class Huanhe:
             raise Exception("参数错误")
 
     def get_coordiantes(self, elo):
-        return Vector3D(elo - elo ** 5 / (40.0 * self.elo1 ** 2 * self.r1 ** 2), elo ** 3 / (6.0 * self.r1 * self.elo1))
+        C=1/(2.0*self.r1*self.elo1)
+        return Vector3D(elo - elo ** 5 *C**2/ 10+elo**9*C**4/216,
+                        C/3*elo**3-elo**7*C**3/42)
 
     @property
     def HY_point(self):#HY点
@@ -122,10 +127,10 @@ class TestLineSegment(TestCase):
         hhx.length = 2126.127582
         hhx.rotate_direction = 'R'
         pl,_,_,_,_ = hhx.get_polyline_jiexu()
-        self.assertTrue(pl.end_point==Vector3D(2111.603384,-203.355960))
+        self.assertTrue(pl.end_point==Vector3D(2111.603260,-203.355948))
 
         pl, _, _, _, angle1 = hhx.get_polyline_jiexu(ZH=Vector3D(1000, 2000), angle0=AngleTool.toR(30))
-        self.assertTrue(pl.end_point == Vector3D(2930.380153,2879.690265,0.000000))
+        self.assertTrue(pl.end_point == Vector3D(2930.380040,2879.690213,0.000000))
         self.assertAlmostEqual(18.99829659472041,AngleTool.toD(angle1),delta=0.0001)
 
 
