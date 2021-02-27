@@ -1,5 +1,7 @@
 from copy import deepcopy
 from math import pi, sqrt
+from typing import Tuple
+
 import matplotlib.patches as mpatches
 
 from code2021.MyGeometric.basegeometric import BaseGeometric
@@ -345,3 +347,26 @@ class Arc(BaseGeometric):
         clp.a,clp.b=self.center.x,self.center.y
         clp.r=self.radius
         return clp.solve()
+
+    def point_by_length_coord(self, length: float) -> Tuple['Vector3D',float]:
+        """
+        通过长度坐标获取线上的点
+        @param length:长度坐标 只能在0到长度之间
+        @return:点,该点处曲线的切向角
+        """
+        assert isinstance(length,(int,float)),"类型错误"
+        assert 0<=length<=self.length,"参数值不在合理范围类%s"%length.__str__()
+        theta=length/self.radius
+        if self.da>=0:
+            pass
+        else:
+            theta=-theta
+        alpha=self._angle1+theta
+        # 计算切向角
+        if self.da>=0:
+            beta=alpha+pi/2
+        else:
+            beta=3*pi/2+alpha
+        t=Vector3D(alpha,self.radius)
+        return self.tfi(t),beta
+

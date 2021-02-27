@@ -2,7 +2,7 @@ from code2021.MyGeometric.arc import Arc
 from code2021.MyGeometric.basegeometric import BaseGeometric
 import code2021.MyGeometric.entitytool as ET
 from code2021.MyGeometric.linesegment import LineSegment
-from typing import List
+from typing import List, Tuple
 
 from vector3d import Vector3D, Line3D
 
@@ -146,7 +146,7 @@ class PolyLine:
     def end_point(self):
         return self.segs[-1].end_point
 
-    def offset(self,distance:float,direction='L')->'LineSegment':
+    def offset(self,distance:float,direction='L')->'PolyLine':
         """
         偏移
         返回新的
@@ -206,3 +206,22 @@ class PolyLine:
             else:
                 raise Exception("未知的seg1 seg2 类型组合")
         return PolyLine(lst)
+
+
+    def point_by_length_coord(self, length: float) -> Tuple['Vector3D',float]:
+        """
+        通过长度坐标获取线上的点
+        @param length:长度坐标 只能在0到长度之间
+        @return:点,该点处曲线的切向角
+        """
+        assert isinstance(length,(int,float)),"类型错误"
+        assert 0<=length<=self.length,"参数值不在合理范围类%s"%length.__str__()
+        #需要确定是在哪一个seg内
+        dist=0.0
+        for i,seg in enumerate(self):
+            if length<=dist+seg.length:
+                break
+            else:
+                dist+=seg.length
+        return seg.point_by_length_coord(length-dist)
+

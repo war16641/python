@@ -1,3 +1,5 @@
+from typing import Tuple
+
 from code2021.MyGeometric.basegeometric import BaseGeometric
 from vector3d import Vector3D, Line3D, get_trans_func
 import matplotlib.pyplot as plt
@@ -183,3 +185,15 @@ class LineSegment(BaseGeometric):
         p1=self.tfi(p1)
         p2=self.tfi(p2)
         return LineSegment(p1,p2)
+
+    def point_by_length_coord(self,length:float)->Tuple['Vector3D',float]:
+        """
+        通过长度坐标获取线上的点
+        @param length:长度坐标 只能在0到长度之间
+        @return:
+        """
+        assert isinstance(length,(int,float)),"类型错误"
+        assert 0<=length<=self.length,"参数值不在合理范围类%s"%length.__str__()
+        t=Vector3D(length,0)
+        return self.tfi(t),self.dangle
+

@@ -160,6 +160,19 @@ class TestArc(TestCase):
         self.assertAlmostEqual(pi,arc.length,delta=0.001)
         self.assertTrue(Vector3D(-1,1) in arc)
 
+    def test_point_by_length_coord(self):
+        arc = Arc(Vector3D(0, 1), radius=1., angle1=0, da=AngleTool.toR(90))
+        g2=2**0.5
+        goal=Vector3D(g2/2,1+g2/2)
+        t,beta=arc.point_by_length_coord(pi/4)
+        self.assertTrue(goal==t)
+        self.assertAlmostEqual(pi*3/4,beta,delta=0.0001)
 
+        arc = Arc(Vector3D(0, 1), radius=1., angle1=0, da=AngleTool.toR(-90))
+        g2=2**0.5
+        goal=Vector3D(g2/2,1-g2/2)
+        t,beta=arc.point_by_length_coord(pi/4)
+        self.assertTrue(goal==t)
+        self.assertAlmostEqual(AngleTool.format1(pi * -3 / 4), AngleTool.format1(beta), delta=0.0001)
 if __name__ == '__main__':
     main()

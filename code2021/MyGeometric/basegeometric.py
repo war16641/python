@@ -41,3 +41,7 @@ class BaseGeometric(metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def copy(self):
         pass
+
+    @abc.abstractmethod
+    def offset(self):
+        pass

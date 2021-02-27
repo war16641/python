@@ -72,5 +72,12 @@ class TestLineSegment(TestCase):
         elog=LineSegment(Vector3D( 1780.13473546 , 259.83242259  ),Vector3D( 2343.60252796 ,-286.86456372 ))
         self.assertTrue(elog==elo1)
 
+    def test_point_by_length_coord(self):
+        g3=3**0.5
+        elo=LineSegment(Vector3D(0,0),Vector3D(g3,1))
+        goal=Vector3D(g3/2,0.5)
+        t,_=elo.point_by_length_coord(1)
+        self.assertTrue(t==goal)
+
 if __name__ == '__main__':
         main()
