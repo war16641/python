@@ -116,5 +116,15 @@ class TestPolyLine(TestCase):
         goal=Vector3D(0,2)
         self.assertTrue(goal==t)
         self.assertAlmostEqual(pi , beta, delta=0.0001)
+
+    def test_trim(self):
+        elo1 = LineSegment(Vector3D(0, 0), Vector3D(1, 0))
+        elo2 = LineSegment(Vector3D(1, 0), Vector3D(1, 1))
+        a = Arc(Vector3D(0, 1), 1, 0, pi)
+        pl = PolyLine([elo1, elo2, a])
+        pl1=pl.trim(Vector3D(0.5,0),pl.start_point)
+        self.assertAlmostEqual(pl.length-0.5,pl1.length,delta=0.001)
+        pl1=pl.trim(Vector3D(0.5,0),pl.end_point)
+        self.assertAlmostEqual(0.5,pl1.length,delta=0.001)
 if __name__ == '__main__':
     main()

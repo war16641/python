@@ -21,7 +21,7 @@ class PolyLine:
                 for i1 in seg:
                     self.segs.append(i1.copy())
             else:
-                self.segs.append(seg)
+                self.segs.append(seg.copy())
 
 
     def draw_in_axes(self,axes=None):
@@ -163,8 +163,11 @@ class PolyLine:
             if isinstance(seg1,LineSegment) and isinstance(seg2,LineSegment):
                 pt=ET.Entitytool.intersection_point(seg1.line,seg2.line)
                 #调整点
-                seg1.end_point=pt.copy()
-                seg2.start_point=pt.copy()
+                if pt is None:#没有交点 即seg1 seg2共线 直接改变seg2起点=seg1终点
+                    seg2.start_point=seg1.end_point.copy()
+                else:
+                    seg1.end_point=pt.copy()
+                    seg2.start_point=pt.copy()
             elif isinstance(seg1,LineSegment) and isinstance(seg2,Arc):
                 t=seg2.intersec_point_with_line_as_circle(seg1.line)
                 if t is None:
@@ -181,9 +184,9 @@ class PolyLine:
                         pt=pt1
                     else:
                         pt=pt2
-                    # 调整点
-                    seg1.end_point = pt.copy()
-                    seg2.start_point = pt.copy()
+                # 调整点
+                seg1.end_point = pt.copy()
+                seg2.start_point = pt.copy()
             elif isinstance(seg2,LineSegment) and isinstance(seg1,Arc):
                 t=seg1.intersec_point_with_line_as_circle(seg2.line)
                 if t is None:
@@ -200,9 +203,9 @@ class PolyLine:
                         pt=pt1
                     else:
                         pt=pt2
-                    # 调整点
-                    seg1.end_point = pt.copy()
-                    seg2.start_point = pt.copy()
+                # 调整点
+                seg1.end_point = pt.copy()
+                seg2.start_point = pt.copy()
             else:
                 raise Exception("未知的seg1 seg2 类型组合")
         return PolyLine(lst)
@@ -224,4 +227,35 @@ class PolyLine:
             else:
                 dist+=seg.length
         return seg.point_by_length_coord(length-dist)
+
+    def trim(self,pt:Vector3D,pt_direction:Vector3D)->'PolyLine':
+        """
+        裁切 类似于cad中trim
+        @param pt: 裁断点
+        @param pt_direction:指定要裁切部分 内部通过长度坐标计算 建议使用start 和end point指定 其他的可能引发意外
+        @return:
+        """
+        assert isinstance(pt,Vector3D) and isinstance(pt_direction,Vector3D),"类型错误"
+        #确定pt出现的seg
+        target_id=-1
+        target=None#包含pt的seg
+        for i,seg in enumerate(self):
+            if pt in seg:
+                target=seg
+                target_id=i
+        assert target is not None,"pt不在线上"
+        #确定trim的方向
+        _, coord0, _ = self.calc_nearest_point(pt)#这一行与上段代码有重复计算 暂时没时间优化
+        _,coord1,_=self.calc_nearest_point(pt_direction)
+        if coord1<=coord0:#裁切小坐标侧
+            lst=[x.copy() for x in self.segs[target_id:]]
+             #修剪target
+            lst[0]=lst[0].trim(pt,lst[0].start_point)
+        else:
+            lst=[x.copy() for x in self.segs[0:target_id+1]]
+             #修剪target
+            lst[-1]=lst[-1].trim(pt,lst[-1].end_point)
+        return PolyLine(lst)
+
+
 

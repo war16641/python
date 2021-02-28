@@ -78,6 +78,14 @@ class TestLineSegment(TestCase):
         goal=Vector3D(g3/2,0.5)
         t,_=elo.point_by_length_coord(1)
         self.assertTrue(t==goal)
-
+    def test_trim(self):
+        g3 = 3 ** 0.5
+        elo = LineSegment(Vector3D(0, 0), Vector3D(g3, 1))
+        elo1=elo.trim(Vector3D(g3/2,1/2),elo.start_point)
+        goal=LineSegment(Vector3D(g3/2,1/2), Vector3D(g3, 1))
+        self.assertTrue(elo1==goal)
+        elo1=elo.trim(Vector3D(g3/2,1/2),elo.end_point)
+        goal=LineSegment(Vector3D(0, 0),Vector3D(g3/2,1/2))
+        self.assertTrue(elo1==goal)
 if __name__ == '__main__':
         main()

@@ -65,11 +65,11 @@ class Arc(BaseGeometric):
         @param center:
         @param radius:
         @param angle1:
-        @param da: 为正时 逆时针转 不能大于2pi
+        @param da: 为正时 逆时针转 绝对值不能大于2pi
         """
         assert isinstance(center,Vector3D),"类型错误"
         assert abs(da)<=1e-6+2*pi,"da绝对值必须在2pi内"
-        self._center=center #type:Vector3D
+        self._center=center.copy() #type:Vector3D
         self._angle1=angle1
         self._da=da
         self._angle2=self._angle1+self._da
@@ -192,9 +192,9 @@ class Arc(BaseGeometric):
             return False
         if abs(self.radius-other.radius)>Vector3D.tol_for_eq:
             return False
-        if abs(self._angle1-other._angle1)>Vector3D.tol_for_eq:
+        if abs(AngleTool.format(self._angle1-other._angle1))>Vector3D.tol_for_eq:
             return  False
-        if abs(self.da-other.da)>Vector3D.tol_for_eq:
+        if abs(AngleTool.format(self.da-other.da))>Vector3D.tol_for_eq:
             return False
         return True
 
@@ -284,7 +284,7 @@ class Arc(BaseGeometric):
         逆向 返回一个新的
         @return:
         """
-        return Arc.make_by_3_points(self.center,self.end_point,self.start_point)
+        return Arc.make_by_3_points(self.center,self.end_point,self.start_point,-1*self.da)
 
     def copy(self)->'Arc':
         """复制一个新的"""
@@ -369,4 +369,28 @@ class Arc(BaseGeometric):
             beta=3*pi/2+alpha
         t=Vector3D(alpha,self.radius)
         return self.tfi(t),beta
+
+
+    def trim(self,pt:Vector3D,pt_direction:Vector3D)->'Arc':
+        """
+        裁切 类似于cad中trim
+        @param pt: 裁断点
+        @param pt_direction:指定要裁切部分 内部通过长度坐标计算 建议使用start 和end point指定 其他的可能引发意外
+        @return:
+        """
+        assert isinstance(pt,Vector3D) and isinstance(pt_direction,Vector3D),"类型错误"
+        assert pt in self,"pt不在线上"
+        #确定trim的方向
+        _, coord0, _ = self.calc_nearest_point(pt)
+        _,coord1,_=self.calc_nearest_point(pt_direction)
+        if coord1<=coord0:#裁切小坐标一侧
+            return Arc.make_by_3_points(p0=self.center,
+                                        p1=pt,
+                                        p2=self.end_point,
+                                        direction=self.da)
+        else:
+            return Arc.make_by_3_points(p0=self.center,
+                                        p1=self.start_point,
+                                        p2=pt,
+                                        direction=self.da)
 

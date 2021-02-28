@@ -197,3 +197,23 @@ class LineSegment(BaseGeometric):
         t=Vector3D(length,0)
         return self.tfi(t),self.dangle
 
+    def trim(self,pt:Vector3D,pt_direction:Vector3D)->'Vector3D':
+        """
+        裁切 类似于cad中trim
+        @param pt: 裁断点
+        @param pt_direction:指定要裁切部分 内部通过长度坐标计算 建议使用start 和end point指定 其他的可能引发意外
+        @return:
+        """
+        assert isinstance(pt,Vector3D) and isinstance(pt_direction,Vector3D),"类型错误"
+        assert pt in self,"pt不在线上"
+        #确定trim的方向
+        _, coord0, _ = self.calc_nearest_point(pt)
+        _,coord1,_=self.calc_nearest_point(pt_direction)
+        if coord1<=coord0:#裁切小坐标一侧
+            rt=self.copy()
+            rt.start_point=pt.copy()
+        else:#裁切大坐标
+            rt=self.copy()
+            rt.end_point=pt.copy()
+        return rt
+
