@@ -259,3 +259,5 @@ class PolyLine:
 
 
 
+    def copy(self)->'PolyLine':
+        return PolyLine([x.copy() for x in self])
