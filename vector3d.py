@@ -3,7 +3,7 @@ from math import cos, sin, pi
 import random
 import copy
 import unittest
-from typing import TypeVar, Generic, List, Tuple
+from typing import TypeVar, Generic, List, Tuple, overload
 import numpy
 from GoodToolPython.linearalgebra import MyLinearAlgebraEquations
 from enum import Enum, unique
@@ -651,6 +651,94 @@ class Plane3D(Generic[T_Plane]):
         return self.get_random_line().get_random_point()
 
 
+
+class ParametricEquationOfLine:
+    """
+    直线的参数方程
+    x=x1*t + x2
+    y=y1*t + y2
+    """
+    zeros_tol=1e-9#等于0的误差
+    @overload
+    def __init__(self,A:float,B:float,C:float):
+        pass
+    @overload
+    def __init__(self,elo:Line3D):
+        pass
+
+    def __init__(self,A:float=None,B:float=None,C:float=None,
+                 elo:Line3D=None):
+        """
+        可以通过直线一般方程的三个系数实例化
+        或者 通过line3d对象实例化
+        @param A:
+        @param B:
+        @param C:
+        @param elo:
+        """
+        self.x1,self.x2=0,0
+        self.y1,self.y2=0,0
+        if A is not None and B is not None and C is not None:
+            assert isinstance(A,(int,float)) and isinstance(B,(int,float)) and \
+                   isinstance(C, (int, float)),"类型错误"
+            if abs(A)>ParametricEquationOfLine.zeros_tol:
+                self.x1=-B
+                self.x2=-C/A
+                self.y1=A
+                self.y2=0
+            elif abs(B)>ParametricEquationOfLine.zeros_tol:
+                self.x1=B
+                self.x2=0
+                self.y1=-A
+                self.y2=-C/B
+            else:
+                raise Exception("A B都等于0")
+        elif isinstance(elo,Line3D):
+            A,B,C=elo.expression()
+            if abs(A)>ParametricEquationOfLine.zeros_tol:
+                self.x1=-B
+                self.x2=-C/A
+                self.y1=A
+                self.y2=0
+            elif abs(B)>ParametricEquationOfLine.zeros_tol:
+                self.x1=B
+                self.x2=0
+                self.y1=-A
+                self.y2=-C/B
+            else:
+                raise Exception("A B都等于0")
+        else:
+            raise Exception("参数错误")
+
+
+    def calc_t(self,pt:Vector3D)->float:
+        """
+        求解点pt的参数
+        @param pt:
+        @return:
+        """
+        assert isinstance(pt,Vector3D)
+        x=pt.x
+        y=pt.y
+
+        # 判断哪一个的一阶系数不为0
+        if abs(self.x1) > ParametricEquationOfLine.zeros_tol:
+            rt= (x - self.x2) / self.x1
+        else:
+            rt= (y - self.y2) / self.y1
+
+        #反向验证是否得到这个点
+        if self.get_point(rt)==pt:
+            return rt
+        else:
+            raise Exception("求解t失败，点%s不在此参数方程上"%pt.__str__())
+
+
+    def get_point(self,t:float)->Vector3D:
+        """通过参数t得到点"""
+        assert isinstance(t,(int,float))
+        return Vector3D(self.x1*t+self.x2,self.y1*t+self.y2)
+
 class Line3D(Generic[T_Line]):
     """线"""
 
@@ -1196,5 +1284,16 @@ class TestCase(unittest.TestCase):
         p2=p1.rotate(base_point=Vector3D(1,0),angle=pi/2)
         goal=Vector3D(1,1)
         self.assertTrue(goal==p2)
+
+
+    def test_ParametricEquationOfLine(self):
+        elo=Line3D.make_line_by_2_points(Vector3D(1,0),Vector3D(1,1))
+        p=ParametricEquationOfLine(elo=elo)
+        for i in range(10):
+            t=random.random()
+            pt=p.get_point(t)
+            self.assertAlmostEqual(t,p.calc_t(pt),delta=1e-9)
+            self.assertAlmostEqual(t, p.calc_t(pt), delta=1e-9)
+
 if __name__ == '__main__':
     unittest.main()
