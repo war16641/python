@@ -4,6 +4,7 @@ import code2021.MyGeometric.entitytool as ET
 from code2021.MyGeometric.linesegment import LineSegment
 from typing import List, Tuple
 
+from sympy import symbols
 from vector3d import Vector3D, Line3D
 
 
@@ -261,3 +262,58 @@ class PolyLine:
 
     def copy(self)->'PolyLine':
         return PolyLine([x.copy() for x in self])
+
+    def line_integral_of_vector_function(self,P,Q,pt0,pt1,i1:int=None)->float:
+        """
+        计算第二类曲线积分
+        @param P:
+        @param Q:
+        @param pt0:
+        @param pt1:
+        @param i1: 强制指定pt1所在seg的id 基于0
+        @return:
+        """
+        flag0,i0=self.find_seg_index(pt0)
+
+        if isinstance(i1,int):#强制指定i1
+            i1=len(self.segs)-1
+            flag1=True
+        else:
+            flag1, i1 = self.find_seg_index(pt1)
+        assert flag0 and flag1,"pt0 pt1要求在线上"
+        sp=pt0#每次积分的起点
+        jf=0
+        for i in range(i0,i1):
+            seg=self.segs[i]
+            jf+=seg.line_integral_of_vector_function(P,Q,sp,seg.end_point)
+            sp=seg.end_point.copy()
+        seg=self.segs[i1]
+        jf+=seg.line_integral_of_vector_function(P,Q,sp,pt1)
+        return jf
+
+    def find_seg_index(self,pt:Vector3D)->Tuple[bool,int]:
+        """
+        contain的加强版
+        除了返回是否在线上，还回返回pt所在seg的编号
+        @param pt:
+        @return:
+        """
+        assert isinstance(pt,Vector3D),"类型错误"
+        for i,seg in enumerate(self.segs):
+            t= pt in seg
+            if t is True:
+                return True,i
+        return False,-1
+
+    def get_area(self):
+        """
+        求取面积
+        运用第二类曲线积分算 使P=0,Q=x 格林公式
+        @return:
+        """
+        #检查是否闭合
+        assert self.start_point==self.end_point,"多段线不闭合，无法计算面积"
+        return self.line_integral_of_vector_function(P=0,Q=symbols('x'),
+                                                     pt0=self.start_point,
+                                                     pt1=self.end_point,
+                                                     i1=len(self.segs)-1)

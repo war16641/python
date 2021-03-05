@@ -1,7 +1,7 @@
 from typing import Tuple
 
 from code2021.MyGeometric.basegeometric import BaseGeometric
-from vector3d import Vector3D, Line3D, get_trans_func
+from vector3d import Vector3D, Line3D, get_trans_func, ParametricEquationOfLine
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -216,4 +216,8 @@ class LineSegment(BaseGeometric):
             rt=self.copy()
             rt.end_point=pt.copy()
         return rt
+
+    def line_integral_of_vector_function(self, P, Q, pt0, pt1) -> float:
+        pl=ParametricEquationOfLine(elo=self.line)
+        return pl.line_integral_of_vector_function(P,Q,pt0,pt1)
 

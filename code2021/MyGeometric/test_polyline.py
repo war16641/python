@@ -5,6 +5,7 @@ from code2021.MyGeometric.angletool import AngleTool
 from code2021.MyGeometric.arc import Arc
 from code2021.MyGeometric.linesegment import LineSegment
 from code2021.MyGeometric.polyline import PolyLine
+from sympy import symbols
 from vector3d import Vector3D
 
 
@@ -126,5 +127,17 @@ class TestPolyLine(TestCase):
         self.assertAlmostEqual(pl.length-0.5,pl1.length,delta=0.001)
         pl1=pl.trim(Vector3D(0.5,0),pl.end_point)
         self.assertAlmostEqual(0.5,pl1.length,delta=0.001)
+
+    def test_line_integral_of_vector_function(self):
+        pl = PolyLine.make1(
+            [Vector3D(0, 0), Vector3D(1, 0), Vector3D(1, 1), Vector3D(0.5, 2), Vector3D(0, 1), Vector3D(0, 0)])
+        # x, y = symbols('x y')
+        # jg=pl.line_integral_of_vector_function(P=0, Q=x, pt0=pl.start_point, pt1=pl.end_point, i1=3)
+        # self.assertAlmostEqual(1.5,jg,delta=0.00001)
+        self.assertAlmostEqual(1.5, pl.get_area(), delta=0.00001)
+        pl=pl.rotate(base_point=Vector3D(12.314,123.1),angle=1.82637)
+        # jg = pl.line_integral_of_vector_function(P=0, Q=x, pt0=pl.start_point, pt1=pl.end_point, i1=3)
+        # self.assertAlmostEqual(1.5, jg, delta=0.00001)
+        self.assertAlmostEqual(1.5, pl.get_area(), delta=0.00001)
 if __name__ == '__main__':
     main()

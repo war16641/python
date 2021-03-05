@@ -10,6 +10,8 @@ from enum import Enum, unique
 import nose.tools
 from collections.abc import Iterable
 import  sympy as sp
+from sympy import symbols, integrate
+
 T_Vector = TypeVar('T_Vector')
 T_Plane = TypeVar('T_Plane')
 T_Line = TypeVar('T_Line')
@@ -739,6 +741,40 @@ class ParametricEquationOfLine:
         assert isinstance(t,(int,float))
         return Vector3D(self.x1*t+self.x2,self.y1*t+self.y2)
 
+    def line_integral_of_vector_function(self,P,Q,pt0,pt1)->float:
+        """
+        第二类曲线积分
+        即：int(Pdx+Qdy)
+        算法：微积分下册 P182
+        注意：本函数不会检查参数的类型
+        @param P: x,y的函数 由含有x y的表达式构成
+        @param Q:x,y的函数 由含有x y的表达式构成
+        @param pt0:起点
+        @param pt1:终点
+        @return:积分值
+        """
+        t,x,y=symbols('t,x,y')
+        dx=self.x1#dx/dt
+        dy=self.y1#dy/dt
+        tihuan={x:self.x1*t+self.x2,
+                y:self.y1*t+self.y2}#使用t替换x y
+        if isinstance(P,(int,float)):
+            P1=P
+        else:
+            P1=P.subs(tihuan)
+        if isinstance(Q,(int,float)):
+            Q1=Q
+        else:
+            Q1=Q.subs(tihuan)
+        jfs=P1*dx+Q1*dy#积分式 Pdx+Qdy 使用t替换后 需加上xy对t的导数
+        t0=self.calc_t(pt0)
+        t1=self.calc_t(pt1)#计算积分起止点
+        jg=integrate(jfs,(t,t0,t1))
+        return float(jg)
+
+
+
+
 class Line3D(Generic[T_Line]):
     """线"""
 
@@ -1294,6 +1330,17 @@ class TestCase(unittest.TestCase):
             pt=p.get_point(t)
             self.assertAlmostEqual(t,p.calc_t(pt),delta=1e-9)
             self.assertAlmostEqual(t, p.calc_t(pt), delta=1e-9)
+
+    def test_ParametricEquationOfLine2(self):
+
+        elo = Line3D.make_line_by_2_points(Vector3D(0, 0), Vector3D(1, 1))
+        x, y = symbols('x y')
+        pl = ParametricEquationOfLine(elo=elo)
+        jg = pl.line_integral_of_vector_function(P=x + y,
+                                                 Q=x * y,
+                                                 pt0=Vector3D(0, 0),
+                                                 pt1=Vector3D(1, 1))
+        self.assertAlmostEqual(4/3,jg,delta=0.00001)
 
 if __name__ == '__main__':
     unittest.main()
