@@ -4,10 +4,14 @@ import code2021.MyGeometric.entitytool as ET
 from code2021.MyGeometric.linesegment import LineSegment
 from typing import List, Tuple
 
+from mybaseclasses.mylogger import MyLogger
 from sympy import symbols
 from vector3d import Vector3D, Line3D
 
-
+logger=MyLogger('polyline1231')
+logger.setLevel('debug')
+logger.hide_level=True
+logger.hide_name=True
 class PolyLine:
     def __init__(self,segs):
         self.segs=[]#type:List[BaseGeometric]
@@ -285,10 +289,14 @@ class PolyLine:
         jf=0
         for i in range(i0,i1):
             seg=self.segs[i]
-            jf+=seg.line_integral_of_vector_function(P,Q,sp,seg.end_point)
+            this_jfz=seg.line_integral_of_vector_function(P,Q,sp,seg.end_point)
+            logger.debug("第%d段积分=%f"%(i,this_jfz))
+            jf+=this_jfz
             sp=seg.end_point.copy()
         seg=self.segs[i1]
-        jf+=seg.line_integral_of_vector_function(P,Q,sp,pt1)
+        this_jfz=seg.line_integral_of_vector_function(P,Q,sp,pt1)
+        jf+=this_jfz
+        logger.debug("第%d段积分=%f" % (i1, this_jfz))
         return jf
 
     def find_seg_index(self,pt:Vector3D)->Tuple[bool,int]:
@@ -312,8 +320,16 @@ class PolyLine:
         @return:
         """
         #检查是否闭合
-        assert self.start_point==self.end_point,"多段线不闭合，无法计算面积"
-        return self.line_integral_of_vector_function(P=0,Q=symbols('x'),
+        # assert self.start_point==self.end_point,"多段线不闭合，无法计算面积"
+        return self.line_integral_of_vector_function(P=-0.5*symbols('y'),Q=0.5*symbols('x'),
                                                      pt0=self.start_point,
                                                      pt1=self.end_point,
                                                      i1=len(self.segs)-1)
+
+
+    def check_continuity(self):
+        """检查连续性"""
+        for i in range(len(self.segs)-1):
+            if self.segs[i].end_point!=self.segs[i+1].start_point:
+                return False
+        return True

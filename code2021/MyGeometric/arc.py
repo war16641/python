@@ -3,8 +3,10 @@ from math import pi, sqrt
 from typing import Tuple
 
 import matplotlib.patches as mpatches
+import sympy
 
 from code2021.MyGeometric.basegeometric import BaseGeometric
+from sympy import symbols
 from vector3d import Vector3D, get_trans_func_polar, Line3D
 import matplotlib.pyplot as plt
 from code2021.MyGeometric.angletool import AngleTool
@@ -212,7 +214,11 @@ class Arc(BaseGeometric):
         p1=Vector3D(p.x,self.radius)#计算最近点
         rt=self.tfi(p1)
         #计算长度坐标
-        le=abs(p.x-self._angle1)*self.radius
+        # 根据转向来
+        if self.da>=0:
+            le=AngleTool.format(p.x-self._angle1)*self.radius
+        else:
+            le = AngleTool.format(self._angle1-p.x) * self.radius
         #判断是否在arc上
         on=False
         #计算小的端点
@@ -394,3 +400,41 @@ class Arc(BaseGeometric):
                                         p2=pt,
                                         direction=self.da)
 
+    def line_integral_of_vector_function(self, P, Q, pt0:Vector3D, pt1:Vector3D) -> float:
+        """
+        第二类线积分
+        参数方程：
+        x=x0+r*cos(theta)
+        y=y0+r*siun(theta)
+        x0,y0为圆心
+
+        @param P: x,y的函数 由含有x y的表达式构成
+        @param Q: x,y的函数 由含有x y的表达式构成
+        @param pt0:
+        @param pt1:
+        @return: 积分值
+        """
+        t, x, y = symbols('t,x,y')#t代表theta
+        dx = -self.radius*sympy.sin(t)  # dx/dt
+        dy = self.radius*sympy.cos(t)  # dy/dt
+        tihuan={x:self.center.x+self.radius*sympy.cos(t),
+                y:self.center.y+self.radius*sympy.sin(t)}#使用t替换x y
+        if isinstance(P,(int,float)):
+            P1=P
+        else:
+            P1=P.subs(tihuan)
+        if isinstance(Q,(int,float)):
+            Q1=Q
+        else:
+            Q1=Q.subs(tihuan)
+        jfs = P1 * dx + Q1 * dy  # 积分式 Pdx+Qdy 使用t替换后 需加上xy对t的导数
+        _,cd0,_=self.calc_nearest_point(pt0)
+        _,cd1,_ = self.calc_nearest_point(pt1)#计算积分起止点的长度坐标
+        tt=self.tf(pt0)
+        t0=tt.x#积分起点的角度
+        if self.da>=0:
+            t1=t0+(cd1-cd0)/self.radius
+        else:
+            t1=t0-(cd1-cd0)/self.radius
+        jg = sympy.integrate(jfs, (t, t0, t1))
+        return float(jg)

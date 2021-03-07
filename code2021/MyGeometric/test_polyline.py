@@ -139,5 +139,19 @@ class TestPolyLine(TestCase):
         # jg = pl.line_integral_of_vector_function(P=0, Q=x, pt0=pl.start_point, pt1=pl.end_point, i1=3)
         # self.assertAlmostEqual(1.5, jg, delta=0.00001)
         self.assertAlmostEqual(1.5, pl.get_area(), delta=0.00001)
+
+        elo0=LineSegment(Vector3D(-1, 1), Vector3D(-1, 0))
+        elo1 = LineSegment(Vector3D(-1, 0), Vector3D(1, 0))
+        elo2 = LineSegment(Vector3D(1, 0), Vector3D(1, 1))
+        a = Arc(Vector3D(0, 1), 1, 0, pi)
+        pl = PolyLine([elo0,elo1, elo2, a])
+        # x, y = symbols('x y')
+        # jg = pl.line_integral_of_vector_function(P=0, Q=x, pt0=pl.start_point, pt1=pl.end_point, i1=3)
+        jg=pl.get_area()
+        self.assertAlmostEqual(0.5*pi+2,jg,delta=0.0001)
+        pl=pl.reverse()
+        jg = pl.get_area()
+        self.assertAlmostEqual(-0.5 * pi - 2, jg, delta=0.0001)
+
 if __name__ == '__main__':
     main()
