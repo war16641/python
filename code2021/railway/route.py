@@ -133,4 +133,48 @@ def draw_occupied_area(br_route:PolyLine,
 
 
 
+def test():
+    """
+    这个是一个未完成的片段
+    实现从excel表定义的断链表 曲线表 桥表中生成 路线(polyline) 桥的用地边界(polyline)
+    @return:
+    """
+    quxianbiao = FlatDataModel.load_from_excel_file(fullname=r"C:\Users\niyinhao\Desktop\test\工作簿1.xlsx",
+                                                    sheetname='曲线表')
+    duanlianbiao = FlatDataModel.load_from_excel_file(fullname=r"C:\Users\niyinhao\Desktop\test\工作簿1.xlsx",
+                                                      sheetname='断链表')
+    qiaobiao = FlatDataModel.load_from_excel_file(fullname=r"C:\Users\niyinhao\Desktop\test\工作簿1.xlsx",
+                                                  sheetname='桥表')
+    route, sm, em = make_route(duanlianbiao=duanlianbiao, quxianbiao=quxianbiao)
+    areas = []
+    for u in qiaobiao:
+        # 得到桥范围内的左线
+        start_mil = Mileage(u.data['起里程'])
+        start_mil.duanlianbiao = duanlianbiao
+        end_mil = Mileage(u.data['止里程'])
+        end_mil.duanlianbiao = duanlianbiao
+        rou = route.copy()
+        pt, _ = rou.point_by_length_coord(end_mil - sm)
+        rou = rou.trim(pt, rou.end_point)
+        pt, _ = rou.point_by_length_coord(start_mil - sm)
+        rou = rou.trim(pt, rou.start_point)
+
+        areas.append(draw_occupied_area(rou, 10))
+
+    # for i,v in enumerate(areas):
+    #     print(v.get_area())
+    #     print(toline(v,'pl%d'%i))
+
+    pl = areas[1]
+    t = pl.get_area()
+    print(t)
+    print(pl.check_continuity())
+    st = toline(pl, 'pl')
+    print(st)
+    # d = make_data_from_paragraph(st,ignore_lines=0)
+    # yd=draw_occupied_area(route,10)
+    # print(toline(yd,'pl1'))
+
+
+
 
