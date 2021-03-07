@@ -806,6 +806,8 @@ class Line3D(Generic[T_Line]):
     def __contains__(self, item):
         """判断点是否在线上"""
         assert isinstance(item, Vector3D)
+        if item==self.point:
+            return True
         return Vector3D.is_parallel(item - self.point, self.direction)
 
     def __eq__(self, other: T_Line) -> bool:

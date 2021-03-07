@@ -6,6 +6,7 @@ from code2021.MyGeometric.arc import Arc
 from code2021.MyGeometric.entitytool import Entitytool
 from code2021.MyGeometric.linesegment import LineSegment
 from code2021.MyGeometric.polyline import PolyLine
+from code2021.MyGeometric.ray import Ray
 from vector3d import Vector3D
 class TestEntitytool(TestCase):
     def test__intersection_point_line_line(self):
@@ -69,5 +70,30 @@ class TestEntitytool(TestCase):
         self.assertTrue(t==Vector3D(0.989898,0.000000))
 
 
+    def test__intersection_point_ray_line3d(self):
+        ray = Ray(base_pt=Vector3D(0, 0), direct=Vector3D(1, 0))
+        elo=LineSegment(Vector3D(0.5,-1),Vector3D(0.5,1))
+        goal=Vector3D(0.5,0)
+        jg=Entitytool.intersection_point(ray,elo)
+        self.assertTrue(jg==goal)
+
+        ray = Ray(base_pt=Vector3D(0, 0), direct=Vector3D(0, 1))
+        a = Arc(Vector3D(0, 1), 1, 0, pi)
+        goal=Vector3D(0,2)
+        jg=Entitytool.intersection_point(ray,a)
+        self.assertTrue(goal==jg)
+
+        ray = Ray(base_pt=Vector3D(0, 0), direct=Vector3D(0, -1))
+        a = Arc(Vector3D(0, 1), 1, 0, pi)
+        goal = Vector3D(0, 2)
+        jg = Entitytool.intersection_point(ray, a)
+        self.assertTrue(jg is None)
+
+        ray = Ray(base_pt=Vector3D(-10, 0), direct=Vector3D(1,0))
+        a = Arc(Vector3D(0, 0), 1, 0, pi+1)
+        goal = Vector3D(1, 0)
+        goal1 = Vector3D(-1,0)
+        jg = Entitytool.intersection_point(ray, a)
+        self.assertTrue(goal in jg and goal1 in jg)
 if __name__ == '__main__':
     main()
