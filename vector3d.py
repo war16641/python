@@ -730,7 +730,8 @@ class ParametricEquationOfLine:
             rt= (y - self.y2) / self.y1
 
         #反向验证是否得到这个点
-        if self.get_point(rt)==pt:
+
+        if abs(self.get_point(rt)-pt)<1e-4:#判断是否相等 这里的阈值可以调
             return rt
         else:
             raise Exception("求解t失败，点%s不在此参数方程上"%pt.__str__())

@@ -1,9 +1,12 @@
+from enum import unique, Enum
+
 from code2021.MyGeometric.arc import Arc
 from code2021.MyGeometric.basegeometric import BaseGeometric
 import code2021.MyGeometric.entitytool as ET
 from code2021.MyGeometric.linesegment import LineSegment
 from typing import List, Tuple
 
+from code2021.MyGeometric.ray import Ray
 from mybaseclasses.mylogger import MyLogger
 from sympy import symbols
 from vector3d import Vector3D, Line3D
@@ -12,6 +15,14 @@ logger=MyLogger('polyline1231')
 logger.setLevel('debug')
 logger.hide_level=True
 logger.hide_name=True
+
+
+@unique
+class PointRegionRelation(Enum):  # 点与面域关系
+    inside = 1 #内部
+    out = 2 #外部
+    on_border = 3 #边境
+
 class PolyLine:
     def __init__(self,segs):
         self.segs=[]#type:List[BaseGeometric]
@@ -333,3 +344,61 @@ class PolyLine:
             if self.segs[i].end_point!=self.segs[i+1].start_point:
                 return False
         return True
+
+    def in_closed_area(self,pt:Vector3D)->PointRegionRelation:
+        assert isinstance(pt,Vector3D)
+        assert self.start_point==self.end_point,'必须要求闭合多段线'
+        if pt in self:#在线上
+            return PointRegionRelation.on_border
+        #从pt到startpoint的射线判断
+        r1=Ray(base_pt=pt,direct=self.start_point-pt)
+        lst=[]#存储交点
+        for seg in self.segs:
+            t=ET.Entitytool.intersection_point(seg,r1)
+            if isinstance(t,Vector3D):
+                lst.append(t)
+            elif isinstance(t,list):
+                lst.extend(t)
+        if len(lst) % 2==0:
+            rt1=PointRegionRelation.out
+        else:
+            rt1 = PointRegionRelation.inside
+
+        #从pt到endpoint的射线判断
+        r1=Ray(base_pt=pt,direct=self.end_point-pt)
+        lst=[]#存储交点
+        for seg in self.segs:
+            t=ET.Entitytool.intersection_point(seg,r1)
+            if isinstance(t,Vector3D):
+                lst.append(t)
+            elif isinstance(t,list):
+                lst.extend(t)
+        if len(lst) % 2==0:
+            rt2=PointRegionRelation.out
+        else:
+            rt2 = PointRegionRelation.inside
+
+        #若rt1 和rt2一致 返回 否则引入第三个点
+        if rt1==rt2:
+            return rt1
+
+        #从pt到endpoint的射线判断
+        t,_=self.point_by_length_coord(self.length/2.0)
+        r1=Ray(base_pt=pt,direct=t-pt)
+        lst=[]#存储交点
+        for seg in self.segs:
+            t=ET.Entitytool.intersection_point(seg,r1)
+            if isinstance(t,Vector3D):
+                lst.append(t)
+            elif isinstance(t,list):
+                lst.extend(t)
+        if len(lst) % 2==0:
+            rt3=PointRegionRelation.out
+        else:
+            rt3 = PointRegionRelation.inside
+        rt=[rt1,rt2,rt3]
+        #返回大多数结果
+        if rt.count(PointRegionRelation.inside)==2:
+            return PointRegionRelation.inside
+        else:
+            return PointRegionRelation.out
