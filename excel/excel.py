@@ -953,6 +953,56 @@ class FlatDataModel:
                     return False
         return True
 
+    def fill_data_to_other_model(self,other:'FlatDataModel',
+                                  link_vars:List[str],
+                                 add_vars:List[str])->None:
+        """
+        把自己的数据填充到other
+        @param other:
+        @param link_vars: 连接变量 可以是一个变量 也可以是多个变量
+        @param add_vars: 要改变other中的变量 可以是一个变量 也可以是多个变量
+        @return:
+        """
+        class compare_class:
+            def __init__(self):
+                self.vns=[]#link_vars的变量名
+                self.values=[]#link_vars的值
+            def match(self,u:DataUnit)->bool:#比较函数 检查当前u是否满足要求
+                for k,v in zip(self.vns,self.values):
+                    if u[k]!=v:
+                        return False
+                return True
+
+        assert isinstance(other,FlatDataModel)
+        if isinstance(link_vars,str):
+            link_vars=[link_vars]
+        assert is_sequence_with_specified_type(link_vars,str),"类型错误"
+        if isinstance(add_vars,str):
+            add_vars=[add_vars]
+        assert is_sequence_with_specified_type(add_vars,str),"类型错误"
+        #检查变量名是否在两个表中存在
+        for i in link_vars:
+            assert i in self.vn and i in other.vn,"变量%s不存在"
+        #
+        for u in self:
+            #制作compare class
+            cc=compare_class()
+            cc.vns=link_vars
+            cc.values=[u[x] for x in cc.vns]
+            #在other中匹配
+            t=other.find(epxr=cc.match,
+                         flag_find_all=True) #匹配全部 以防出现两个满足要求的u 而数据歧义
+            if len(t) ==0:
+                raise Exception("未匹配到unit：%s"%u.__str__())
+            elif len(t)>1:
+                raise Exception("匹配到多个。unit：%s"%u.__str__())
+            #修改匹配到u的值
+            target=t[0]
+            for k in add_vars:
+                target.data[k]=u[k]
+            pass
+
+
 
 class TestCase(unittest.TestCase):
     def test_append_unit(self):
@@ -1197,6 +1247,25 @@ class TestCase(unittest.TestCase):
         fdm2 = FlatDataModel.load_from_string(st, separator='\t')
         self.assertTrue(fdm==fdm1)
         self.assertFalse(fdm==fdm2)
+
+    def test_fill_data_to_other_model(self):
+        fdm1=FlatDataModel.load_from_excel_file(fullname=r"E:\我的文档\python\GoodToolPython\excel\测试.xlsx",
+                                                sheetname='Sheet1')
+        fdm2 = FlatDataModel.load_from_excel_file(fullname=r"E:\我的文档\python\GoodToolPython\excel\测试.xlsx",
+                                                  sheetname='Sheet2')
+        fdm2.fill_data_to_other_model(other=fdm1,
+                                      link_vars=['项目','部位'],
+                                      add_vars='值')
+        st="""
+        项目	部位	值
+挖基	深3m	2
+挖基	深6m	1
+挖基	深9m	3
+回填	填土	1
+回填	C15混凝土	4
+"""
+        fdm3=FlatDataModel.load_from_string(stringtxt=st)
+        self.assertTrue(fdm1==fdm3)
 
 if __name__ == '__main__':
     unittest.main()
