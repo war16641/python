@@ -346,6 +346,18 @@ class PolyLine:
         return True
 
     def in_closed_area(self,pt:Vector3D)->PointRegionRelation:
+        """
+        判断点是否在多段线围城的内部
+        通过射线法判断
+        @param pt:
+        @return:
+        """
+        def quchong(lst):#去重
+            t=[]
+            for i in lst:
+                if i not in t:
+                    t.append(i)
+            return t
         assert isinstance(pt,Vector3D)
         assert self.start_point==self.end_point,'必须要求闭合多段线'
         if pt in self:#在线上
@@ -359,13 +371,16 @@ class PolyLine:
                 lst.append(t)
             elif isinstance(t,list):
                 lst.extend(t)
+        #去重
+        lst=quchong(lst)
         if len(lst) % 2==0:
             rt1=PointRegionRelation.out
         else:
             rt1 = PointRegionRelation.inside
 
-        #从pt到endpoint的射线判断
-        r1=Ray(base_pt=pt,direct=self.end_point-pt)
+        #从pt到0.9长度坐标的射线判断
+        t, _ = self.point_by_length_coord(self.length *0.9)
+        r1=Ray(base_pt=pt,direct=t-pt)
         lst=[]#存储交点
         for seg in self.segs:
             t=ET.Entitytool.intersection_point(seg,r1)
@@ -373,6 +388,8 @@ class PolyLine:
                 lst.append(t)
             elif isinstance(t,list):
                 lst.extend(t)
+        # 去重
+        lst = quchong(lst)
         if len(lst) % 2==0:
             rt2=PointRegionRelation.out
         else:
@@ -382,7 +399,7 @@ class PolyLine:
         if rt1==rt2:
             return rt1
 
-        #从pt到endpoint的射线判断
+        #从pt到
         t,_=self.point_by_length_coord(self.length/2.0)
         r1=Ray(base_pt=pt,direct=t-pt)
         lst=[]#存储交点
@@ -392,6 +409,8 @@ class PolyLine:
                 lst.append(t)
             elif isinstance(t,list):
                 lst.extend(t)
+        # 去重
+        lst = quchong(lst)
         if len(lst) % 2==0:
             rt3=PointRegionRelation.out
         else:
