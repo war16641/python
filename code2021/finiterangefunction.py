@@ -125,7 +125,7 @@ class TestC(TestCase):
     pass
 
     def test3(self):
-        pts = [(1, '一'),
+        pts = [[1, '一'],
                (2, '一'),
                (3, '三'),
                (4, '二'),
