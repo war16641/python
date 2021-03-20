@@ -30,3 +30,11 @@ def locate(nds,nd):
     if i is None:
         raise Exception("未在节点列表中发现节点%d"%i)
     return i
+
+
+def node_coords(mapdl,nd_id):
+    """获取节点坐标"""
+    x = mapdl.get_value(entity="node", entnum=nd_id, item1="loc", it1num='x')
+    y = mapdl.get_value(entity="node", entnum=nd_id, item1="loc", it1num='y')
+    z = mapdl.get_value(entity="node", entnum=nd_id, item1="loc", it1num='z')
+    return x,y,z
