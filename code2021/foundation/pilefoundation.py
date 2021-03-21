@@ -88,7 +88,7 @@ class SoilLayer:
             cur_ht=last_ht-self.layers[i][0]
             if ht1>=cur_ht:#ht的高度就在这一层
                 stiff+=self.layers[i][1].m*(last_ht-ht1)
-                return stiff
+                return stiff*1e3 #基本上输入的m单位时 kpa
             else:
                 stiff += self.layers[i][1].m * self.layers[i][0]
                 last_ht=cur_ht
@@ -101,6 +101,28 @@ class Pile:
         self.sl=sl#土层信息
         self.pf=pf
 
+        self.rsts=[]#type:List[PileRst]
+
+    def print_rst(self):
+        print("桩位%f,%f:"%(self.x,self.y))
+        for lc in self.rsts:
+            for i in lc.data:
+                print("lc=%s,tab=%s,相对高度=%f,值=%f"%(lc.lc.name,i[0],i[3],i[1]))
+class LoadCase:
+    def __init__(self,xuhao=0,name="",fx=0,fy=0,fz=0,mx=0,my=0,mz=0):
+        self.xuhao,self.name=xuhao,name
+        # self.fx,self.fy,self.fz=fx,fy,fz
+        # self.mx,self.my,self.mz=mx,my,mz
+        self.force={'fx':fx,'fy':fy,'fz':fz,
+                    'mx':mx,'my':my,'mz':mz}
+        self.time_InA=0#在ansys中的time
+
+class PileRst:
+    def __init__(self):
+        self.pile=None
+        self.pf=None
+        self.lc=None
+        self.data=None#[[table名，值，高程，相对高程],...]
 
 class Platform:
     def __init__(self,x=0,y=0,z=0,ctd_height=0):
@@ -116,47 +138,7 @@ class Platform:
         """添加桩"""
         self.piles.append(Pile(d,H,x,y,sl,self))
 
-    # def fem(self):
-    #     dl=0.1
-    #     E=3.3e10
-    #     G=1e10
-    #     s = System()
-    #     for pile in self.piles:
-    #         pile.nodes=[]
-    #         I=pi/64*pile.d**4 #惯距
-    #         for z in np.arange(self.ctd_height,self.ctd_height-pile.H-dl,-dl):
-    #             pile.nodes.append(Node(pile.x,pile.y,z))
-    #         s.add_nodes(pile.nodes)
-    #         pile.eles=[]
-    #         for i in range(len(pile.nodes)-1):
-    #             pile.eles.append(Beam3D11((pile.nodes[i],pile.nodes[i+1]),
-    #                                       E=E,
-    #                                       G=G,
-    #                                       A=pi/4*pile.d**2,
-    #                                       I=(2*I,I,I)))
-    #         s.add_elements(pile.eles)
-    #
-    #     #处理各个桩顶到承台底中心
-    #     scale=1000#使用梁来代替钢杆 其EA EI*scale作为钢杆
-    #     nd_zx=Node(0,0,self.ctd_height)
-    #     s.add_node(nd_zx)
-    #     for pile in self.piles:
-    #         t=Beam3D11((nd_zx,pile.nodes[0]),
-    #                                       E=E,
-    #                                       G=G,
-    #                                       A=pi/4*pile.d**2*scale,
-    #                                       I=(2*I*scale,I*scale,I*scale))
-    #         s.add_element(t)
-    #
-    #     #边界条件
-    #     for pile in self.piles:
-    #         s.add_fixed_sup(pile.nodes[-1].ID) #给柱底施加约束
-    #     s.add_node_force(nd_zx.ID, Fz=-4e5)
-    #
-    #     s.solve()
-    #     for pile in self.piles:
-    #         print(pile.nodes[0].disp['Uz'])
-    def fem(self):
+    def fem(self,lcs:List[LoadCase]=None):
         dl=0.1
         E=3.3e10
         G=1e10
@@ -165,9 +147,9 @@ class Platform:
                                      override=True,
                                      loglevel="warning")
         mapdl.prep7()
-        mapdl.n(1,0,0,self.ctd_height) #1号节点是承台中心
+        mapdl.n(1,0,0,self.ctd_height) #1号节点是承台中心 地面
         mapdl.et(1, 188)
-        mapdl.mp('ex', 1, 3.5e10)
+        mapdl.mp('ex', 1, E)
         mapdl.mp('nuxy', 1, 0.2)
         mapdl.mp('dens', 1, 2700)
         mapdl.sectype(1, 'beam', 'csolid')
@@ -186,7 +168,7 @@ class Platform:
             knum_down.append(knum)
             mapdl.l(knum-1,knum)
         mapdl.latt(1, 0, 1, 0, 0, 1)
-        mapdl.lesize('all', 0.1)#单元大小默认0.1
+        mapdl.lesize('all', dl)#单元大小默认0.1
         mapdl.esel('none')
         mapdl.lmesh('all')
         mapdl.cm('el_piles','elem')
@@ -200,7 +182,9 @@ class Platform:
         #选择桩底节点 并约束
         select_kps(mapdl,knum_down)
         mapdl.nslk()
-        mapdl.d('all','all')
+        mapdl.d('all','ux')
+        mapdl.d('all', 'uy')
+        mapdl.d('all', 'uz')
 
         #处理承台中心与桩顶连接
         select_kps(mapdl, knum_up)
@@ -210,7 +194,9 @@ class Platform:
 
         #处理承台中心单元
         mapdl.et(2, 21)
-        mapdl.r(1, 10,10,10,10,10,10)
+        mass_ct=self.x*self.y*self.z*2700 #承台质量
+        # mapdl.r(1, mass_ct,mass_ct,mass_ct,10,10,10)
+        mapdl.r(1, 10, 10, 10, 10, 10, 10)
         mapdl.nsel('s', '', '', 1)
         mapdl.type(2)
         mapdl.real(1)
@@ -249,62 +235,95 @@ class Platform:
             mapdl.e(cur_nd, max_nd + 2)
             mapdl.d(max_nd+1,'all')
             mapdl.d(max_nd + 2, 'all')
-        #加载力
+        #进入求解模块
+        mapdl.slashsolu()  # 进入求解模块
+        #计算纵横刚度 分别在time1和time2上
         mapdl.nsel('s', '', '', 1)
         test_force=1000
         mapdl.f(1,'fx',test_force)
-        #求解
-        mapdl.slashsolu()  # 进入求解模块
         mapdl.allsel()
         mapdl.solve()
         mapdl.fdele(1,'all')
         mapdl.f(1, 'fy', test_force)
         mapdl.time(2)
         mapdl.solve()
+        mapdl.fdele(1, 'all')
+        #lcs中的力 从time11开始
+        cur_time=10
+        for i,lc in enumerate(lcs):
+            cur_time+=1
+            mapdl.time(cur_time)
+            lc.time_InA=cur_time
+            for cp,v in lc.force.items():
+                print(cp,v)
+                mapdl.f(1,cp,v)
+            mapdl.solve()
 
         #后处理
         mapdl.post1()
-        result = mapdl.result
-        ndnum, ndisp = result.nodal_displacement(0)  # 0代表第一个dataframe
-        dx=ndisp[locate(ndnum,1)][0] #节点1的ux
+        #纵横刚度
+        mapdl.set('','','','',1)
+        dx=mapdl.get_value(entity="node", entnum=1, item1="u",it1num='x')
+        # result = mapdl.result
+        # ndnum, ndisp = result.nodal_displacement(0)  # 0代表第一个dataframe
+        # dx=ndisp[locate(ndnum,1)][0] #节点1的ux
         self.stiff_x=test_force/dx
-        ndnum, ndisp = result.nodal_displacement(1)  # 0代表第一个dataframe
-        dy=ndisp[locate(ndnum,1)][1] #节点1的ux
+        mapdl.set('', '', '', '', 2)
+        dy = mapdl.get_value(entity="node", entnum=1, item1="u", it1num='y')
+        # ndnum, ndisp = result.nodal_displacement(1)  # 0代表第一个dataframe
+        # dy=ndisp[locate(ndnum,1)][1] #节点1的ux
         self.stiff_y = test_force / dy
         print('刚度%f'%self.stiff_x)
         print('刚度%f' % self.stiff_y)
 
-        mapdl.etable('fx','smisc',1)
-        mapdl.etable('myi', 'smisc', 2)
-        mapdl.etable('myj', 'smisc', 15)
-        mapdl.etable('mzi', 'smisc', 3)
-        mapdl.etable('mzj', 'smisc', 16)
-        ks=['fx','myi','myj','mzi','mzj']
-        eds=[]
-        for pile in self.piles:
-            mapdl.cmsel('s',pile.cm_name)
-            mapdl.nsle()
-            mapdl.etable('refl')
-            cur_el=0
-            num_el=mapdl.get_value(entity="elem", entnum=0, item1="count")#获取选择节点个数
-            #收集每一个单元的结果
-            for i in range(int(num_el)):
-                cur_el = mapdl.get_value(entity="elem", entnum=cur_el, item1="nxth")
-                ed={}
-                for k in ks:
-                    ed[k]=mapdl.get_value(entity="elem", entnum=cur_el, item1="etab",it1num=k)
-                    #添加坐标
-                    ed['x']=mapdl.get_value(entity="elem", entnum=cur_el, item1="cent",it1num='x')
-                    ed['y'] = mapdl.get_value(entity="elem", entnum=cur_el, item1="cent", it1num='y')
-                    ed['z'] = mapdl.get_value(entity="elem", entnum=cur_el, item1="cent", it1num='z')
-                eds.append(ed)
-            #处理收集到的结果 主要是统计最大值
-            for k in ks:
-                eds.sort(key=lambda x:abs(x[k]),reverse=True)
-                print("%s 值=%f 位置=%f"%(k,eds[0][k],eds[0]['z']))
+        if lcs is not None:#处理lcs的力 桩基
+            mapdl.etable('fx', 'smisc', 1)
+            mapdl.etable('myi', 'smisc', 2)
+            mapdl.etable('myj', 'smisc', 15)
+            mapdl.etable('mzi', 'smisc', 3)
+            mapdl.etable('mzj', 'smisc', 16)
+            ks = ['fx', 'myi', 'myj', 'mzi', 'mzj']
+            for lc in lcs:
+                mapdl.set('', '', '', '', lc.time_InA)
+                eds=[]
+                for pile in self.piles:
+                    mapdl.cmsel('s',pile.cm_name)
+                    mapdl.nsle()
+                    mapdl.etable('refl')
+                    cur_el=0
+                    num_el=mapdl.get_value(entity="elem", entnum=0, item1="count")#获取选择节点个数
+                    #收集每一个单元的结果
+                    for i in range(int(num_el)):
+                        cur_el = mapdl.get_value(entity="elem", entnum=cur_el, item1="nxth")
+                        ed={}
+                        for k in ks:
+                            ed[k]=mapdl.get_value(entity="elem", entnum=cur_el, item1="etab",it1num=k)
+                            #添加坐标
+                            ed['x']=mapdl.get_value(entity="elem", entnum=cur_el, item1="cent",it1num='x')
+                            ed['y'] = mapdl.get_value(entity="elem", entnum=cur_el, item1="cent", it1num='y')
+                            ed['z'] = mapdl.get_value(entity="elem", entnum=cur_el, item1="cent", it1num='z')
+                        eds.append(ed)
+                    #处理收集到的结果 主要是统计最大值
+                    pr=PileRst()
+                    pr.pile=pile
+                    pr.pf=self
+                    pr.lc=lc
+                    pr.data=[]
+                    for k in ks:
+                        eds.sort(key=lambda x:abs(x[k]),reverse=True)
+                        tab_name=k
+                        peak_v=eds[0][k]
+                        gc_of_peak=eds[0]['z']
+                        # print("%s 值=%f 位置=%f"%(k,eds[0][k],eds[0]['z']))
+                        pr.data.append([tab_name,peak_v,gc_of_peak,gc_of_peak-self.ctd_height])
+                    pile.rsts.append(pr)
+
         mapdl.save()
         self.mapdl=mapdl
 
+    def print_pile_rsts(self):
+        for pile in self.piles:
+            pile.print_rst()
 
 
 class TestC(TestCase):
