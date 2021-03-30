@@ -80,25 +80,31 @@ class FiniteRangeFunction:
         for i in self.pts:
             print(i[0].__str__(),i[1].__str__())
 
-    def integrate(self,x1:float,x2:float)->float:
+    def integrate(self,x1:float,x2:float,func=None)->float:
         """
         求积分
-        要求object2实现了 乘object1
+        要求func(object2)实现了 乘object1
         @param x1: 积分上下限
         @param x2:
+        @param func:操作object2的函数 默认为自己
         @return:
         """
         assert x2<=self.zongdian,"积分上限不得超过终点"
         assert x2>x1,"积分上下限错误"
+        if func is None:
+            func=lambda x:x
+        else:
+            assert callable(func),"参数错误"
         cur_x = x1
         sumv = 0.0
         while 1:
             t = self.get_next_pt(cur_x)
             if t[0] <= x2:
-                sumv +=  t[1]*(t[0] - cur_x)
+                sumv +=  func(t[1])*(t[0] - cur_x)
             else:
-                sumv +=  t[1] *(t[0] - x2)
-            if t[0] == self.zongdian:
+                sumv +=  func(t[1]) *(t[0] - x2)
+                break
+            if t[0] == self.zongdian or abs(t[0]-x2)<1e-4:
                 break
             cur_x = t[0]
         return sumv
@@ -198,5 +204,6 @@ class TestC(TestCase):
         ff = FiniteRangeFunction(pts)
         self.assertAlmostEqual(4,ff.integrate(1.5,3.5),delta=0.001)
         self.assertAlmostEqual(5.5, ff.integrate(1.5, 4), delta=0.001)
+        self.assertAlmostEqual(11, ff.integrate(1.5, 4,func=lambda x:2*x), delta=0.001)
 if __name__ == '__main__':
     main()

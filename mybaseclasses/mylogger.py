@@ -48,7 +48,7 @@ class MyLogger:
             raise Exception("logger（%s）已存在。"%name)#要求新建时 name不一样
         self.logger.propagate=False
         self._hidelevel=True
-        self._hidename=False
+        self._hidename=True
         format1 = logging.Formatter(MyLogger.fortxt[self.fortxt_key])
         sh=logging.StreamHandler()
         self.logger.addHandler(sh)

@@ -8,6 +8,15 @@ from unittest import TestCase,main
 from feon.sa import *
 import numpy as np
 from mybaseclasses.emptyclass import EmptyClass
+import unittest
+
+from mybaseclasses.mylogger import MyLogger
+
+logger=MyLogger(name="pilefoundationasd234")
+logger.setLevel('debug')
+
+
+
 
 
 class Soil:
@@ -27,7 +36,7 @@ class Soil:
             return True
         return False
 
-class SoilLayer:
+class SoilLayers:
     """
     土层信息：
     FiniteRangeFunction 描述土层厚度和土层信息 它的结构是[[高度，soil]，...] 从高程低的向高程高的排列
@@ -88,13 +97,14 @@ class SoilLayer:
             cur_ht=last_ht-self.layers[i][0]
             if ht1>=cur_ht:#ht的高度就在这一层
                 stiff+=self.layers[i][1].m*(last_ht-ht1)
-                return stiff*1e3 #基本上输入的m单位时 kpa
+                # return stiff*1e3 #基本上输入的m单位时 kpa
+                return stiff * 1  # 基本上输入的m单位时 kpa
             else:
                 stiff += self.layers[i][1].m * self.layers[i][0]
                 last_ht=cur_ht
         raise Exception("高度%f=相对高度%f，超出最低层土"%(ht,ht1))
 class Pile:
-    def __init__(self,d=0,H=0,x=0,y=0,sl:SoilLayer=None,pf:'Platform'=None):
+    def __init__(self, d=0, H=0, x=0, y=0, sl:SoilLayers=None, pf: 'Platform'=None):
         self.d=d#直径 m
         self.H=H #桩长
         self.x,self.y=x,y#桩在承台平面的坐标
@@ -108,6 +118,25 @@ class Pile:
         for lc in self.rsts:
             for i in lc.data:
                 print("lc=%s,tab=%s,相对高度=%f,值=%f"%(lc.lc.name,i[0],i[3],i[1]))
+
+    def calc_capacity(self):
+
+        #求桩侧阻力side这一项
+        #使用有限值域函数的积分方法求 fi*li
+        #判断自由桩长
+        t=self.pf.ctd_height-self.sl.dm_height
+        if t>1e-6:
+            logger.debug('存在%fm的自由桩长'%t)
+            t=0
+
+        side=self.sl.ff.integrate(self.pf.ctd_height-self.H-self.sl.dm_height,t,func=lambda x:x.fi)
+        side=0.5*pi*self.d*side
+
+        end=0
+        return 0,side,end
+        pass
+
+
 class LoadCase:
     def __init__(self,xuhao=0,name="",fx=0,fy=0,fz=0,mx=0,my=0,mz=0):
         self.xuhao,self.name=xuhao,name
@@ -134,7 +163,7 @@ class Platform:
         self.stiff_x=0
         self.stiff_y=0#刚度
 
-    def add_pile(self,d=0,H=0,x=0,y=0,sl:SoilLayer=None):
+    def add_pile(self, d=0, H=0, x=0, y=0, sl:SoilLayers=None):
         """添加桩"""
         self.piles.append(Pile(d,H,x,y,sl,self))
 
@@ -332,7 +361,7 @@ class TestC(TestCase):
         s1 = Soil(gamma=25, sigma0=0, fi=0, m=1500)
         s2 = Soil(gamma=35, sigma0=0, fi=0, m=1500)
         layers = [[1, s0], [2, s1], [3, s2]]
-        sl = SoilLayer(layers)
+        sl = SoilLayers(layers)
         self.assertEqual(-6,sl.ff.qidian)
         self.assertEqual(0,sl.ff.zongdian)
         self.assertEqual(s2, sl.soil_at_height(-5.5))
@@ -342,7 +371,7 @@ class TestC(TestCase):
         s1 = Soil(gamma=25, sigma0=0, fi=0, m=2500)
         s2 = Soil(gamma=35, sigma0=0, fi=0, m=1500)
         layers = [[1, s0], [2, s1], [3, s2]]
-        sl = SoilLayer(layers,dm_height=100)
+        sl = SoilLayers(layers, dm_height=100)
         self.assertEqual(-6,sl.ff.qidian)
         self.assertEqual(0,sl.ff.zongdian)
         self.assertEqual(s2, sl.soil_at_height(94.5))
@@ -353,12 +382,13 @@ class TestC(TestCase):
         self.assertAlmostEqual(150, sl.stiff_of_soil(99.9), delta=0.1)
         self.assertAlmostEqual(1500+250, sl.stiff_of_soil(100-1.1), delta=0.1)
 
+    @unittest.skip('pyansys')
     def test_pf(self):
         s0 = Soil(gamma=15, sigma0=0, fi=0, m=1500)
         s1 = Soil(gamma=25, sigma0=0, fi=0, m=1500)
         s2 = Soil(gamma=35, sigma0=0, fi=0, m=1500)
         layers = [[1, s0], [2, s1], [3, s2]]
-        sl = SoilLayer(layers,dm_height=100)
+        sl = SoilLayers(layers, dm_height=100)
         pf=Platform(x=9,y=18,z=2,ctd_height=100)
         pf.add_pile(d=1,H=5,x=2,y=2,sl=sl)
         pf.add_pile(d=1, H=5, x=-2, y=2, sl=sl)
@@ -367,5 +397,50 @@ class TestC(TestCase):
         pf.fem()
         self.assertAlmostEqual(582795486,pf.stiff_x,delta=1)
         self.assertAlmostEqual(582795486, pf.stiff_x, delta=1)
+
+    def test_pile_cacapity(self):
+        s0 = Soil(gamma=15, sigma0=0, fi=3, m=150000)
+        s1 = Soil(gamma=25, sigma0=0, fi=1, m=250000)
+        s2 = Soil(gamma=35, sigma0=0, fi=2, m=150000)
+        layers = [[1, s0], [2, s1], [3, s2]]
+        sl = SoilLayers(layers, dm_height=100)
+        pf = Platform(x=9, y=18, z=2, ctd_height=100)
+        pf.add_pile(d=1, H=5, x=2, y=2, sl=sl)
+        pf.add_pile(d=1, H=5, x=-2, y=2, sl=sl)
+        pf.add_pile(d=1, H=5, x=-2, y=-2, sl=sl)
+        pf.add_pile(d=1, H=5, x=2, y=-2, sl=sl)
+        pile = pf.piles[0]
+        cap,side,end=pile.calc_capacity()
+        self.assertAlmostEqual(14.13716,side,delta=0.01)
+
+        s0 = Soil(gamma=15, sigma0=0, fi=3, m=150000)
+        s1 = Soil(gamma=25, sigma0=0, fi=1, m=250000)
+        s2 = Soil(gamma=35, sigma0=0, fi=2, m=150000)
+        layers = [[1, s0], [2, s1], [3, s2]]
+        sl = SoilLayers(layers, dm_height=100)
+        pf = Platform(x=9, y=18, z=2, ctd_height=99)
+        pf.add_pile(d=1, H=5, x=2, y=2, sl=sl)
+        pf.add_pile(d=1, H=5, x=-2, y=2, sl=sl)
+        pf.add_pile(d=1, H=5, x=-2, y=-2, sl=sl)
+        pf.add_pile(d=1, H=5, x=2, y=-2, sl=sl)
+        pile = pf.piles[0]
+        cap,side,end=pile.calc_capacity()
+        self.assertAlmostEqual(12.56637061,side,delta=0.01)
+
+        s0 = Soil(gamma=15, sigma0=0, fi=3, m=150000)
+        s1 = Soil(gamma=25, sigma0=0, fi=1, m=250000)
+        s2 = Soil(gamma=35, sigma0=0, fi=2, m=150000)
+        layers = [[1, s0], [2, s1], [3, s2]]
+        sl = SoilLayers(layers, dm_height=100)
+        pf = Platform(x=9, y=18, z=2, ctd_height=101)
+        pf.add_pile(d=1, H=5, x=2, y=2, sl=sl)
+        pf.add_pile(d=1, H=5, x=-2, y=2, sl=sl)
+        pf.add_pile(d=1, H=5, x=-2, y=-2, sl=sl)
+        pf.add_pile(d=1, H=5, x=2, y=-2, sl=sl)
+        pile = pf.piles[0]
+        cap, side, end = pile.calc_capacity()
+        self.assertAlmostEqual(10.9955742, side, delta=0.01)
+
+
 if __name__ == '__main__':
     main()
