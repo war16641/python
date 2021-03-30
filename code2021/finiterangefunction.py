@@ -79,6 +79,29 @@ class FiniteRangeFunction:
     def print(self):
         for i in self.pts:
             print(i[0].__str__(),i[1].__str__())
+
+    def integrate(self,x1:float,x2:float)->float:
+        """
+        求积分
+        要求object2实现了 乘object1
+        @param x1: 积分上下限
+        @param x2:
+        @return:
+        """
+        assert x2<=self.zongdian,"积分上限不得超过终点"
+        assert x2>x1,"积分上下限错误"
+        cur_x = x1
+        sumv = 0.0
+        while 1:
+            t = self.get_next_pt(cur_x)
+            if t[0] <= x2:
+                sumv +=  t[1]*(t[0] - cur_x)
+            else:
+                sumv +=  t[1] *(t[0] - x2)
+            if t[0] == self.zongdian:
+                break
+            cur_x = t[0]
+        return sumv
 class TestC(TestCase):
     def test1(self):
         pts = [(1, '一'),
@@ -165,5 +188,15 @@ class TestC(TestCase):
         self.assertEqual([['一', '香'], ['一', '香'], ['三', '香'], ['二', '香'], ['二', '桃'], ['三', '桃'], ['三', '橙'], ['一', '橙']],
                          y)
 
+    def test5(self):
+        pts = [(1, 1),
+               (2, 1),
+               (3, 2),
+               (4, 3),
+               ]
+
+        ff = FiniteRangeFunction(pts)
+        self.assertAlmostEqual(4,ff.integrate(1.5,3.5),delta=0.001)
+        self.assertAlmostEqual(5.5, ff.integrate(1.5, 4), delta=0.001)
 if __name__ == '__main__':
     main()
