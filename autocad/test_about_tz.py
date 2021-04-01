@@ -127,7 +127,7 @@ class TestTZ_result(TestCase):
         tzs.append(tz)
         tz = TZ_result.load_from_file(
             r"E:\我的文档\python\GoodToolPython\autocad\测试环境\38.7ZJ.RST")
-        tzs.append(tz)
+        tzs.append(tz)#7
         tz = TZ_result.load_from_file(
             r"E:\我的文档\python\GoodToolPython\autocad\测试环境\38.8ZJ.RST")
         tzs.append(tz)
