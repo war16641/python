@@ -2,15 +2,16 @@ from collections.abc import Iterable
 from math import pi
 from typing import List
 from GoodToolPython.code2021.pyansysexs.myansystool import select_kps, locate, node_coords
-import pyansys
+#import pyansys
 from code2021.finiterangefunction import FiniteRangeFunction
 from unittest import TestCase,main
-from feon.sa import *
+#from feon.sa import *
 import numpy as np
 from mybaseclasses.emptyclass import EmptyClass
 import unittest
 
 from mybaseclasses.mylogger import MyLogger
+from xydata import XYData
 
 logger=MyLogger(name="pilefoundationasd234")
 logger.setLevel('debug')
@@ -23,18 +24,24 @@ class Soil:
     """
     描述土体信息的
     """
+
+    m0=XYData(name='桩底支撑力折减系数',
+              x=[5,10,25,50],
+              y=[0.7,0.5,0.4,0.3])
     def __init__(self,gamma=0,sigma0=0,fi=0,m=0):
         self.gamma=gamma
         self.sigma0=sigma0
         self.fi=fi
         self.m=m
 
+        self.k2=5
 
     def __eq__(self, other):
         assert isinstance(other,Soil),"类型错误"
         if id(self)==id(other):
             return True
         return False
+
 
 class SoilLayers:
     """
@@ -124,16 +131,33 @@ class Pile:
         #求桩侧阻力side这一项
         #使用有限值域函数的积分方法求 fi*li
         #判断自由桩长
-        t=self.pf.ctd_height-self.sl.dm_height
-        if t>1e-6:
-            logger.debug('存在%fm的自由桩长'%t)
-            t=0
+        ht_csx=self.pf.ctd_height-self.sl.dm_height
+        if ht_csx>1e-6:
+            logger.debug('存在%fm的自由桩长'%ht_csx)
+            ht_csx=0
 
-        side=self.sl.ff.integrate(self.pf.ctd_height-self.H-self.sl.dm_height,t,func=lambda x:x.fi)
+        side=self.sl.ff.integrate(self.pf.ctd_height-self.H-self.sl.dm_height,ht_csx,func=lambda x:x.fi)
         side=0.5*pi*self.d*side
 
-        end=0
-        return 0,side,end
+        #桩端项end
+        #识别桩端土层
+        soil=self.sl.soil_at_height(self.pf.ctd_height-self.H)
+        sigma0=soil.sigma0
+        k2=soil.k2
+        #桩侧土平均重度
+        gama2=self.sl.ff.integrate(self.pf.ctd_height-self.H-self.sl.dm_height,ht_csx,
+                                   func=lambda x:x.gamma)
+        gama2=gama2/self.H#计算平均重度时未考虑自由桩长的情况
+        if self.H<4*self.d:
+            sigma=sigma0+k2*gama2*(self.H-3)
+        elif self.H<10*self.d:
+            sigma=sigma0+k2*gama2*(4*self.d-3)
+        else:
+            sigma=sigma0+k2*gama2*(4*self.d-3)+k2/2*gama2*6*self.d
+        m0=Soil.m0.get_similar_value(self.H/self.d)
+        end=m0*pi/4*self.d**2*sigma
+
+        return side+end,side,end
         pass
 
 
@@ -399,9 +423,9 @@ class TestC(TestCase):
         self.assertAlmostEqual(582795486, pf.stiff_x, delta=1)
 
     def test_pile_cacapity(self):
-        s0 = Soil(gamma=15, sigma0=0, fi=3, m=150000)
-        s1 = Soil(gamma=25, sigma0=0, fi=1, m=250000)
-        s2 = Soil(gamma=35, sigma0=0, fi=2, m=150000)
+        s0 = Soil(gamma=15, sigma0=4, fi=3, m=150000)
+        s1 = Soil(gamma=25, sigma0=7, fi=1, m=250000)
+        s2 = Soil(gamma=35, sigma0=1, fi=2, m=150000)
         layers = [[1, s0], [2, s1], [3, s2]]
         sl = SoilLayers(layers, dm_height=100)
         pf = Platform(x=9, y=18, z=2, ctd_height=100)
