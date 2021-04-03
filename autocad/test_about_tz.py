@@ -131,11 +131,15 @@ class TestTZ_result(TestCase):
         tz = TZ_result.load_from_file(
             r"E:\我的文档\python\GoodToolPython\autocad\测试环境\38.8ZJ.RST")
         tzs.append(tz)
+        tz = TZ_result.load_from_file(
+            r"E:\我的文档\python\GoodToolPython\autocad\测试环境\38.9ZJ.RST")
+        tzs.append(tz)
 
         fdm=TZ_result.run_TZDiagnosis_batch(tzs,[TZDiagnosisMethods.check_K,
                                                  TZDiagnosisMethods.check_capacity,
                                                  TZDiagnosisMethods.check_soil,
                                                  TZDiagnosisMethods.check_stress])
+        self.assertEqual("承载力过大", fdm[0].data["承载力"])
         self.assertEqual("刚度不足",fdm[1].data["刚度"])
         self.assertEqual("承载力不足", fdm[2].data["承载力"])
         self.assertEqual("承载力不足", fdm[3].data["承载力"])
@@ -144,6 +148,6 @@ class TestTZ_result(TestCase):
         self.assertEqual("砼应力超限", fdm[6].data["砼和钢筋应力"])
         self.assertEqual("砼应力超限", fdm[7].data["砼和钢筋应力"])
         self.assertEqual("砼应力超限", fdm[8].data["砼和钢筋应力"])
-
+        self.assertEqual("", fdm[9].data["承载力"])
 if __name__ == '__main__':
     unittest.main()

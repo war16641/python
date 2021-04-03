@@ -264,21 +264,44 @@ class TZDiagnosisMethods:
         rt = TZDiagnosisResult.make_good_one()
         rt.topic="承载力"
         rt.tz = tz
+        factors_zhu=[]
+        factors_dizhen=[]
         for i in tz.caps:
             if i.design > i.allowable:
                 rt.brief="承载力不足"
                 rt.result=False
                 return rt
-            if "主力" in i.casename and "附" not in i.casename and "地震" not in i.casename and\
-                    "特殊" not in i.casename :#主力
-                if i.safety_factor<1.05:
-                    rt.brief = "承载力过小"
-                    rt.result = False
-                    return rt
-                elif i.safety_factor > 1.2 and "摩擦桩"==tz.type:
-                    rt.brief = "承载力过大"
-                    rt.result = False
-                    return rt
+
+            #识别工况名 放入不同的列表中
+            if "地震"  in i.casename:
+                factors_dizhen.append(i.safety_factor)
+            elif "主力"==i.casename:
+                factors_zhu.append(i.safety_factor)
+            elif "附加" in i.casename:
+                factors_zhu.append(i.safety_factor)
+            else:
+                raise Exception("未知的荷载名%s"%i.casename)
+            # if "主力" in i.casename and "附" not in i.casename and "地震" not in i.casename and\
+            #         "特殊" not in i.casename :#主力
+            #     if i.safety_factor<1.05:
+            #         rt.brief = "承载力过小"
+            #         rt.result = False
+            #         return rt
+            #     elif i.safety_factor > 1.2 and "摩擦桩"==tz.type:
+            #         rt.brief = "承载力过大"
+            #         rt.result = False
+            #         return rt
+        # 如果地震富裕不足1.04跳过检查主力和主加附
+        if len(factors_dizhen)>0 and min(factors_dizhen)<=1.04:
+            return rt
+        if min(factors_zhu)<1.05:
+            rt.brief = "承载力过小"
+            rt.result = False
+            return rt
+        elif min(factors_zhu)>1.11:
+            rt.brief = "承载力过大"
+            rt.result = False
+            return rt
         return rt
 
     @staticmethod
